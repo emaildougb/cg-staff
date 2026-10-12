@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CG Staff">
+<meta name="theme-color" content="#1C3A1C">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<title>NCEMS CG Staff</title>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"></script>
+<style>
+  :root {
+    --g-deep:#1C3A1C; --g-mid:#2E6B2E; --g-accent:#3A8A3A; --g-pale:#EBF5EB;
+    --warn:#B87E0A; --bad:#C13E3E; --info:#1F5C8B;
+    --text:#1A1A1A; --muted:#5a635a; --border:#C5DFC5; --bg:#eef3ee;
+    --hdr-h:64px; --bar-h:58px; --nav-h:50px;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0; }
+  html, body { height:100%; width:100%; overflow:hidden;
+    font-family:'SF Mono', ui-monospace, 'Cascadia Code', 'Menlo', monospace;
+    background:var(--g-deep); color:var(--text); overscroll-behavior:none; -webkit-text-size-adjust:100%; }
+  button, input, textarea, select { font-family:inherit; font-size:inherit; }
+  button { cursor:pointer; }
+
+  /* header */
+  .hdr { position:fixed; top:0; left:0; right:0; height:calc(var(--hdr-h) + env(safe-area-inset-top));
+    padding:env(safe-area-inset-top) 10px 0; background:linear-gradient(135deg,var(--g-deep) 0%,var(--g-mid) 100%);
+    color:#fff; display:flex; align-items:center; gap:10px; z-index:30; box-shadow:0 2px 12px rgba(0,0,0,.3); }
+  .hdr-logo { width:40px; height:40px; border-radius:50%; background:#fff; object-fit:cover; flex-shrink:0; }
+  .hdr-text { flex:1; min-width:0; }
+  .hdr-text h1 { font-size:14px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hdr-text p { font-size:10px; opacity:.8; margin-top:2px; letter-spacing:.4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hdr-text p.err { color:#ffd0d0; font-weight:700; opacity:1; }
+  .icon-btn { flex-shrink:0; width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+    color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none; }
+  .icon-btn:active { background:rgba(255,255,255,.3); }
+  .icon-btn svg { width:19px; height:19px; }
+  .icon-btn.spin svg { animation:spin .9s linear infinite; }
+  .icon-btn.wide { width:auto; padding:0 12px; border-radius:19px; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; gap:6px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .info-i { font-size:19px; font-weight:800; font-style:italic; font-family:Georgia,serif; }
+
+  /* toolbar */
+  .bar { position:fixed; left:0; right:0; top:calc(var(--hdr-h) + var(--nav-h) + env(safe-area-inset-top)); height:var(--bar-h);
+    background:#f6f9f6; border-bottom:1px solid #d7e3d7; display:flex; align-items:center; gap:8px; padding:0 12px; z-index:20; overflow-x:auto; }
+  .bar::-webkit-scrollbar { display:none; }
+  .search { flex:0 1 280px; min-width:140px; height:40px; padding:0 12px; font-size:14px; border:2px solid var(--border); border-radius:10px; background:#fff; outline:none; }
+  .search:focus { border-color:var(--g-accent); }
+  .fchip { flex-shrink:0; height:38px; border:2px solid var(--border); background:#fff; color:var(--g-deep); border-radius:19px; padding:0 13px;
+    font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; }
+  .fchip.on { background:var(--g-mid); border-color:var(--g-mid); color:#fff; }
+  .fchip b { font-weight:800; opacity:.75; margin-left:3px; }
+  .bar .spacer { flex:1; }
+  .add-btn { flex-shrink:0; height:40px; border:none; border-radius:10px; padding:0 16px; background:linear-gradient(135deg,var(--g-mid),var(--g-accent));
+    color:#fff; font-size:12px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; box-shadow:0 2px 6px rgba(0,0,0,.18); white-space:nowrap; }
+
+  /* main area */
+  .main { position:fixed; left:0; right:0; bottom:0; top:calc(var(--hdr-h) + var(--nav-h) + var(--bar-h) + env(safe-area-inset-top)); background:var(--bg); }
+  body.v-home .bar, body.v-home .fab, body.v-home .done-strip, body.v-home #board, body.v-board #home { display:none !important; }
+  body.v-home .main { top:calc(var(--hdr-h) + var(--nav-h) + env(safe-area-inset-top)); }
+  .nav { position:fixed; left:0; right:0; top:calc(var(--hdr-h) + env(safe-area-inset-top)); height:var(--nav-h); background:#f0f4f0; border-bottom:1px solid #d7e3d7;
+    display:flex; gap:6px; padding:6px 12px; z-index:21; }
+  .nav button { flex:0 1 200px; border:2px solid var(--border); background:#fff; color:var(--g-deep); border-radius:10px; font-size:12px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; }
+  .nav button.on { background:var(--g-mid); border-color:var(--g-mid); color:#fff; }
+  .nav button b { margin-left:5px; font-weight:800; opacity:.8; }
+  @media (max-width:760px) { .nav button { flex:1; } }
+
+  /* home dashboard */
+  .home { height:100%; overflow-y:auto; padding:14px 14px 40px; }
+  .hello { max-width:1300px; margin:0 auto 12px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .hello h2 { font-size:18px; font-weight:800; color:var(--g-deep); letter-spacing:.5px; }
+  .hello span { font-size:11px; color:var(--muted); letter-spacing:.4px; }
+  .grid { max-width:1300px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:14px; }
+  @media (max-width:760px) { .grid { grid-template-columns:1fr; } .home { padding:10px 10px 40px; } }
+  .sec { background:#fff; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.08); overflow:hidden; display:flex; flex-direction:column; border-top:6px solid var(--c); }
+  .sec-head { display:flex; align-items:center; gap:10px; padding:12px 14px 8px; }
+  .sec-ico { width:36px; height:36px; border-radius:10px; background:var(--c); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .sec-ico svg { width:20px; height:20px; }
+  .sec-head h3 { flex:1; font-size:14px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--g-deep); }
+  .sec-head small { font-size:10px; color:var(--muted); letter-spacing:.3px; }
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:4px 14px 10px; }
+  .stat { background:#f4f7f4; border-radius:10px; padding:9px 6px; text-align:center; }
+  .stat b { display:block; font-size:24px; font-weight:800; line-height:1; color:var(--g-deep); }
+  .stat span { display:block; font-size:9px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+  .stat.bad b { color:var(--bad); } .stat.warn b { color:#9a6b00; } .stat.good b { color:var(--g-accent); }
+  .rows { padding:0 14px 6px; display:flex; flex-direction:column; gap:6px; flex:1; }
+  .rowi { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; line-height:1.35; padding:7px 9px; border-radius:8px; background:#fafcfa; border:1px solid #e6ede6; }
+  .rowi .dot { width:9px; height:9px; border-radius:50%; margin-top:4px; flex-shrink:0; background:#8A918A; }
+  .rowi .dot.bad { background:var(--bad); } .rowi .dot.warn { background:#D9A400; } .rowi .dot.info { background:var(--info); }
+  .rowi .tx { flex:1; min-width:0; } .rowi .tx em { display:block; font-style:normal; font-size:10.5px; color:var(--muted); margin-top:1px; }
+  .rows .none { font-size:12px; color:var(--muted); padding:4px 2px; }
+  .sec-foot { display:flex; gap:8px; padding:10px 14px 14px; flex-wrap:wrap; }
+  .go { flex:1; min-height:44px; border:none; border-radius:10px; background:var(--c); color:#fff; font-size:12px; font-weight:800; letter-spacing:1px; text-transform:uppercase; text-decoration:none;
+    display:flex; align-items:center; justify-content:center; padding:0 12px; text-align:center; }
+  .go.ghost { background:#fff; color:var(--g-deep); border:2px solid var(--border); }
+  .sec-msg { margin:0 14px 8px; font-size:11.5px; color:#7a5a00; background:#FFF6D6; border-radius:8px; padding:8px 10px; line-height:1.4; }
+  .sec-msg.err { color:#8a1f1f; background:#FBE7E7; }
+  .gate { max-width:460px; margin:60px auto; background:#fff; border-radius:16px; padding:26px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.12); font-size:14px; line-height:1.6; }
+  .gate h2 { font-size:16px; letter-spacing:1.5px; text-transform:uppercase; color:var(--g-deep); margin-bottom:8px; }
+  .board { height:100%; display:flex; gap:12px; padding:12px 12px 70px; overflow-x:auto; overflow-y:hidden; align-items:flex-start; }
+  .col { flex:0 0 288px; max-height:100%; display:flex; flex-direction:column; background:#e2eae2; border-radius:12px; border-top:6px solid var(--c, var(--g-mid)); }
+  .col.over { outline:3px dashed var(--c, var(--g-mid)); outline-offset:-3px; background:#d6e3d6; }
+  .col-head { padding:10px 12px 8px; display:flex; align-items:baseline; gap:8px; }
+  .col-name { font-size:13px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--g-deep); flex:1; }
+  .col-count { font-size:12px; font-weight:800; background:#fff; color:var(--c, var(--g-mid)); border-radius:11px; padding:2px 9px; }
+  .col-owner { font-size:10px; color:var(--muted); padding:0 12px 6px; letter-spacing:.3px; }
+  .col-body { overflow-y:auto; padding:2px 8px 10px; display:flex; flex-direction:column; gap:8px; min-height:60px; }
+  .col-empty { font-size:12px; color:var(--muted); text-align:center; padding:16px 6px; border:2px dashed #c4d3c4; border-radius:10px; }
+  .col-add { margin:0 8px 10px; border:none; background:transparent; color:var(--muted); font-size:12px; font-weight:800; letter-spacing:.8px; text-align:left; padding:8px 6px; border-radius:8px; }
+  .col-add:hover { background:rgba(0,0,0,.05); color:var(--g-deep); }
+
+  .card { background:#fff; border-radius:10px; padding:10px 11px 9px; box-shadow:0 1px 3px rgba(0,0,0,.12); border-left:5px solid #cfd8cf; cursor:pointer; user-select:none; -webkit-user-select:none; }
+  .card:hover { box-shadow:0 3px 10px rgba(0,0,0,.16); }
+  .card.age-amber { border-left-color:#D9A400; }
+  .card.age-red { border-left-color:var(--bad); }
+  .card.dragging { opacity:.4; }
+  .card-top { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:10px; color:var(--muted); letter-spacing:.5px; }
+  .age { font-weight:800; padding:2px 6px; border-radius:5px; background:#eef2ee; color:#5a635a; }
+  .age.amber { background:#FFF2C2; color:#7a5a00; }
+  .age.red { background:#FBE0E0; color:#9a2a2a; }
+  .card-title { font-size:13.5px; font-weight:700; line-height:1.3; margin:6px 0 8px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .card-foot { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .who { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:var(--g-deep); }
+  .av { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; color:#fff; background:#8A918A; flex-shrink:0; }
+  .tag { font-size:9px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; border-radius:4px; padding:3px 6px; background:#eef2ee; color:#4d574d; }
+  .pill { font-size:9px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; border-radius:4px; padding:3px 6px; color:#fff; }
+  .pill.ip { background:#D9A400; color:#1A1A1A; } .pill.wt { background:var(--info); } .pill.dn { background:var(--g-accent); }
+  .card-note { font-size:10px; color:var(--muted); margin-left:auto; }
+
+  /* phone */
+  .tabs { display:none; }
+  @media (max-width:760px) {
+    .board { display:block; padding:0 0 90px; overflow-y:auto; overflow-x:hidden; }
+    .tabs { display:flex; gap:6px; overflow-x:auto; padding:10px 10px 6px; position:sticky; top:0; background:var(--bg); z-index:5; }
+    .tabs::-webkit-scrollbar { display:none; }
+    .tab { flex-shrink:0; border:2px solid var(--border); background:#fff; color:var(--g-deep); border-radius:10px; padding:8px 11px;
+      font-size:11px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; border-bottom:4px solid var(--c); }
+    .tab.on { background:var(--c); border-color:var(--c); color:#fff; }
+    .tab b { margin-left:4px; }
+    .col { display:none; max-height:none; margin:4px 10px 0; border-radius:12px; }
+    .col.show { display:flex; }
+    .col-body { overflow:visible; }
+    .card { padding:13px 13px 11px; }
+    .card-title { font-size:15px; }
+    .search { flex:1 1 auto; }
+    .add-btn.bar-add { display:none; }
+    .fab { display:flex !important; }
+  }
+  @media (max-width:760px) { .brief-word { display:none; } .icon-btn.wide { width:38px; padding:0; border-radius:50%; } }
+  .fab { display:none; position:fixed; right:18px; bottom:calc(20px + env(safe-area-inset-bottom)); width:60px; height:60px; border-radius:50%; border:none;
+    background:linear-gradient(135deg,var(--g-mid),var(--g-accent)); color:#fff; font-size:32px; font-weight:300; align-items:center; justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.3); z-index:25; }
+
+  /* done drawer button */
+  .done-strip { position:fixed; left:12px; bottom:calc(12px + env(safe-area-inset-bottom)); z-index:15; border:none; background:#fff; color:var(--g-deep);
+    border-radius:22px; padding:10px 16px; font-size:12px; font-weight:800; letter-spacing:1px; text-transform:uppercase; box-shadow:0 3px 12px rgba(0,0,0,.18); border:2px solid var(--border); }
+  .done-strip b { color:var(--g-accent); }
+
+  /* sheets */
+  .scrim { position:fixed; inset:0; background:rgba(0,0,0,.42); z-index:40; display:none; }
+  .scrim.show { display:block; }
+  .sheet { position:fixed; z-index:41; background:#fff; display:none; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,.3);
+    top:0; right:0; bottom:0; width:min(520px,100%); }
+  .sheet.show { display:flex; }
+  @media (max-width:760px) { .sheet { top:auto; left:0; width:100%; max-height:92%; border-radius:18px 18px 0 0; } }
+  .sh-head { background:linear-gradient(135deg,var(--g-deep) 0%,var(--g-mid) 100%); color:#fff; padding:14px 16px; display:flex; align-items:center; gap:10px; }
+  @media (max-width:760px) { .sh-head { border-radius:18px 18px 0 0; } }
+  .sh-head h2 { flex:1; font-size:13px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; }
+  .sh-body { padding:14px 16px calc(24px + env(safe-area-inset-bottom)); overflow-y:auto; flex:1; }
+  .lbl { display:block; font-size:10px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:14px 0 6px; }
+  .lbl:first-child { margin-top:2px; }
+  .inp, .sel, .ta { width:100%; border:2px solid var(--border); border-radius:10px; padding:11px 12px; font-size:15px; background:#fff; outline:none; }
+  .inp:focus, .sel:focus, .ta:focus { border-color:var(--g-accent); }
+  .ta { min-height:80px; resize:vertical; line-height:1.4; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .meta { font-size:11px; color:var(--muted); line-height:1.6; }
+  .seg { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .seg button { min-height:44px; border:2px solid var(--border); background:#fff; border-radius:10px; font-size:11px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--g-deep); }
+  .seg button.on { color:#fff; }
+  .seg button.on[data-s="Open"] { background:#6b7d6b; border-color:#6b7d6b; }
+  .seg button.on[data-s="In Progress"] { background:#D9A400; border-color:#D9A400; color:#1A1A1A; }
+  .seg button.on[data-s="Waiting"] { background:var(--info); border-color:var(--info); }
+  .btns { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+  .btn { flex:1; min-height:50px; border:none; border-radius:10px; font-size:13px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#fff;
+    background:var(--g-mid); box-shadow:0 2px 6px rgba(0,0,0,.15); padding:0 14px; }
+  .btn.ghost { background:#fff; color:var(--g-deep); border:2px solid var(--border); box-shadow:none; }
+  .btn.done { background:linear-gradient(135deg,#2E6B2E,#3A8A3A); font-size:15px; min-height:58px; }
+  .btn.warn { background:#8A918A; }
+  .btn[disabled] { opacity:.4; }
+  .notes { margin-top:6px; display:flex; flex-direction:column; gap:6px; }
+  .note { background:#f3f6f3; border-radius:8px; padding:8px 10px; font-size:13px; line-height:1.4; white-space:pre-wrap; word-break:break-word; }
+  .note small { display:block; font-size:10px; color:var(--muted); font-weight:700; margin-bottom:2px; letter-spacing:.3px; }
+  .note-add { display:flex; gap:8px; margin-top:8px; }
+  .note-add .inp { flex:1; }
+  .note-add .btn { flex:0 0 auto; min-height:46px; }
+  .done-box { background:#E6F4E6; border:2px solid #b9dcb9; border-radius:10px; padding:12px; font-size:13px; color:#1C3A1C; font-weight:700; margin-top:14px; }
+  .link a { color:var(--info); word-break:break-all; font-size:13px; }
+  .dlist { display:flex; flex-direction:column; gap:8px; }
+  .ditem { border:1px solid #dfe8df; border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:center; }
+  .ditem .t { flex:1; min-width:0; }
+  .ditem .t b { display:block; font-size:13px; line-height:1.3; }
+  .ditem .t span { font-size:11px; color:var(--muted); }
+  .ditem button { flex-shrink:0; border:2px solid var(--border); background:#fff; border-radius:8px; padding:8px 10px; font-size:10px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--g-deep); }
+
+  /* center pages */
+  .center { position:fixed; inset:0; background:var(--bg); z-index:35; display:none; overflow-y:auto; }
+  .center.show { display:block; }
+  .center-card { max-width:440px; margin:60px auto; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.12); text-align:center; }
+  .center-head { background:linear-gradient(135deg,var(--g-deep) 0%,var(--g-mid) 100%); color:#fff; padding:26px 20px; }
+  .center-head img { width:80px; height:80px; border-radius:50%; background:#fff; object-fit:cover; margin-bottom:10px; }
+  .center-head h2 { font-size:17px; font-weight:800; letter-spacing:2px; text-transform:uppercase; }
+  .center-head p { font-size:11px; opacity:.85; margin-top:6px; }
+  .center-body { padding:22px 20px 26px; font-size:13px; line-height:1.55; color:#333; }
+  .big-btn { width:100%; min-height:56px; border:none; border-radius:12px; background:linear-gradient(135deg,var(--g-mid),var(--g-accent)); color:#fff; font-size:15px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; margin-top:14px; }
+  .err-box { display:none; margin-top:14px; background:#FBE7E7; color:#8a1f1f; border-radius:10px; padding:10px; font-size:12px; text-align:left; }
+  .err-box.show { display:block; }
+  .small-link { display:block; margin-top:14px; font-size:12px; color:var(--g-mid); }
+
+  /* briefing */
+  .brief { position:fixed; inset:0; z-index:38; background:#fff; display:none; overflow-y:auto; }
+  .brief.show { display:block; }
+  .br-head { background:linear-gradient(135deg,var(--g-deep) 0%,var(--g-mid) 100%); color:#fff; padding:16px 22px; display:flex; align-items:center; gap:14px; position:sticky; top:0; z-index:2; }
+  .br-head img { width:52px; height:52px; border-radius:50%; background:#fff; }
+  .br-head h2 { font-size:22px; font-weight:800; letter-spacing:2px; text-transform:uppercase; }
+  .br-head p { font-size:12px; opacity:.85; margin-top:3px; }
+  .br-head .grow { flex:1; }
+  .br-head .fchip { background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.35); color:#fff; }
+  .br-head .fchip.on { background:#fff; color:var(--g-deep); border-color:#fff; }
+  .br-body { padding:18px 22px 40px; max-width:1300px; margin:0 auto; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:8px; }
+  .tile { border-radius:12px; background:#f3f6f3; padding:12px; border-top:6px solid var(--c); }
+  .tile b { display:block; font-size:34px; font-weight:800; line-height:1; color:var(--g-deep); }
+  .tile span { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+  .br-sec { margin-top:22px; }
+  .br-sec h3 { font-size:14px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--g-deep); border-bottom:3px solid var(--g-pale); padding-bottom:6px; margin-bottom:10px; }
+  .br-sec h3 small { color:var(--muted); font-size:12px; letter-spacing:1px; margin-left:6px; }
+  .br-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:8px; }
+  .br-item { display:flex; gap:10px; align-items:flex-start; padding:9px 11px; border-radius:10px; background:#fafcfa; border:1px solid #e2eae2; border-left:6px solid var(--c); }
+  .br-item .t { flex:1; font-size:15px; font-weight:700; line-height:1.3; }
+  .br-item .t span { display:block; font-size:11px; color:var(--muted); font-weight:600; margin-top:3px; }
+  .br-none { font-size:14px; color:var(--muted); padding:6px 2px; }
+  @media (max-width:760px) { .br-list { grid-template-columns:1fr; } .br-head h2 { font-size:16px; } .br-head img { display:none; } }
+  @media print {
+    body, html { overflow:visible; height:auto; background:#fff; }
+    .hdr, .bar, .main, .fab, .done-strip, .no-print { display:none !important; }
+    .brief { position:static; display:block; }
+    .br-head { position:static; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .tile, .br-item { -webkit-print-color-adjust:exact; print-color-adjust:exact; break-inside:avoid; }
+  }
+
+  /* toast */
+  .toast { position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px); background:#1C3A1C; color:#fff;
+    padding:12px 16px; border-radius:12px; font-size:13px; font-weight:700; z-index:60; opacity:0; pointer-events:none; transition:all .2s; max-width:92%; text-align:center; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.err { background:#9a2a2a; }
+  .demo-flag { position:fixed; top:calc(var(--hdr-h) + var(--bar-h) + env(safe-area-inset-top) + 6px); right:12px; z-index:19; background:#FFF2C2; color:#7a5a00; font-size:10px; font-weight:800; letter-spacing:1px; padding:4px 8px; border-radius:6px; text-transform:uppercase; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <a class="icon-btn" id="hub-link" href="#" title="NCEMS apps" aria-label="Back to NCEMS apps">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </a>
+  <img class="hdr-logo" src="logo.png" alt="">
+  <div class="hdr-text">
+    <h1>NCEMS CG Staff</h1>
+    <p id="sync">Loading...</p>
+  </div>
+  <button class="icon-btn wide" id="brief-btn" onclick="openBrief()" title="Shift briefing">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
+    <span class="brief-word">Briefing</span>
+  </button>
+  <button class="icon-btn" id="refresh-btn" onclick="refresh(true)" title="Refresh" aria-label="Refresh">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+  </button>
+  <button class="icon-btn" onclick="openInfo()" title="Info" aria-label="Info"><span class="info-i">i</span></button>
+</header>
+
+<nav class="nav" id="nav">
+  <button data-v="home" class="on" onclick="setView('home')">Dashboard</button>
+  <button data-v="board" onclick="setView('board')">Shift Ops<b id="nav-open"></b></button>
+</nav>
+
+<div class="bar" id="bar">
+  <input class="search" id="search" type="search" placeholder="Search items..." oninput="setSearch(this.value)">
+  <button class="fchip on" data-f="all" onclick="setFilter('all')">All</button>
+  <button class="fchip" data-f="mine" onclick="setFilter('mine')">Mine</button>
+  <button class="fchip" data-f="stale" onclick="setFilter('stale')">Getting old</button>
+  <button class="fchip" data-f="waiting" onclick="setFilter('waiting')">Waiting</button>
+  <span class="spacer"></span>
+  <button class="add-btn bar-add" onclick="openAdd()">+ Add item</button>
+</div>
+
+<main class="main">
+  <div class="home" id="home"></div>
+  <div class="board" id="board"></div>
+</main>
+
+<button class="fab" onclick="openAdd()" aria-label="Add item">+</button>
+<button class="done-strip" id="done-strip" onclick="openDone()">Done this week <b id="done-n">0</b></button>
+
+<div class="scrim" id="scrim" onclick="closeSheets()"></div>
+
+<div class="sheet" id="sh-item">
+  <div class="sh-head"><h2 id="it-head">Item</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-body" id="it-body"></div>
+</div>
+
+<div class="sheet" id="sh-add">
+  <div class="sh-head"><h2>Add item</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-body">
+    <label class="lbl" for="add-title">What is it?</label>
+    <input class="inp" id="add-title" maxlength="250" placeholder="Short title, like M19 rear light out">
+    <label class="lbl" for="add-details">Details (optional)</label>
+    <textarea class="ta" id="add-details" placeholder="Who reported it, where, anything already done"></textarea>
+    <div class="row2">
+      <div><label class="lbl" for="add-cat">Group</label><select class="sel" id="add-cat" onchange="addCatChanged()"></select></div>
+      <div><label class="lbl" for="add-who">Assigned to</label><select class="sel" id="add-who"></select></div>
+    </div>
+    <div class="btns"><button class="btn" id="add-save" onclick="saveAdd()">Add to board</button></div>
+  </div>
+</div>
+
+<div class="sheet" id="sh-done">
+  <div class="sh-head"><h2>Completed</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-body">
+    <div style="display:flex;gap:6px;margin-bottom:12px" id="done-range"></div>
+    <div class="dlist" id="done-list"></div>
+  </div>
+</div>
+
+<div class="sheet" id="sh-info">
+  <div class="sh-head"><h2>About Shift Ops</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-body" id="info-body"></div>
+</div>
+
+<section class="brief" id="brief">
+  <div class="br-head">
+    <img src="logo.png" alt="">
+    <div class="grow"><h2>Shift Briefing</h2><p id="br-date"></p></div>
+    <div class="no-print" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="fchip" data-h="24" onclick="setBriefHours(24)">24 hrs</button>
+      <button class="fchip on" data-h="48" onclick="setBriefHours(48)">48 hrs</button>
+      <button class="fchip" data-h="168" onclick="setBriefHours(168)">7 days</button>
+      <button class="fchip" onclick="window.print()">Print</button>
+      <button class="fchip" onclick="closeBrief()">Close</button>
+    </div>
+  </div>
+  <div class="br-body" id="br-body"></div>
+</section>
+
+<div class="center" id="pg-signin">
+  <div class="center-card">
+    <div class="center-head"><img src="logo.png" alt=""><h2>CG Staff</h2><p>Command staff dashboard for NCEMS</p></div>
+    <div class="center-body">
+      Sign in with your NCEMS Microsoft account. This is for CG Staff: Shift Ops, Facilities, Grounds, Incident Reports and Overtime in one spot.
+      <button class="big-btn" id="signin-btn" onclick="signIn()">Sign in with Microsoft</button>
+      <div class="err-box" id="signin-err"></div>
+      <a class="small-link" id="open-browser" href="#" target="_blank" rel="noopener" style="display:none">Open in browser</a>
+      <a class="small-link" href="?demo=1">Try the demo (sample data, no sign-in)</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   NCEMS Shift Ops
+   Trello style board on top of the "Shift Ops" SharePoint list
+   in the CG Staff team. The email sweep and the Power Automate
+   flows keep feeding the same list; this app is just the face.
+   Sign-in is MSAL (no secrets). Data is Microsoft Graph.
+   ============================================================ */
+const VERSION = '1.0';  /* CG Staff dashboard, includes Shift Ops board */
+
+const CONFIG = {
+  clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
+  tenantId:  '153dc089-095e-4a20-8d10-39321a0aca09',
+  siteHost:  'northcountryemsorg.sharepoint.com',
+  sitePath:  '/sites/BattalionChiefLocal',             // CG Staff
+  listId:    'a74e70d7-2646-4ba7-9b7a-8cc11b1d6dba',   // Shift Ops list
+  listUrl:   'https://northcountryemsorg.sharepoint.com/sites/BattalionChiefLocal/Lists/Shift%20Ops/AllItems.aspx',
+  hubUrl:    'https://hub.northcountryems.org/',
+  refreshSeconds: 60,
+  fngSitePath: '/sites/FacilitiesandGrounds',
+  groundsListId: 'd8b3c948-246c-4371-8b8a-f27f2b1e2cbd',
+  fngUrl:     'https://fng.northcountryems.org/',
+  fngDashUrl: 'https://fng.northcountryems.org/?view=dash',
+  reportsUrl: 'https://reports.northcountryems.org/',
+  reportsApi: 'https://ncems-api.d-boyce.workers.dev/bin/incident-reports',
+  overtimeUrl:'https://overtime.northcountryems.org/',
+  /* who gets in (lower case). Everyone else sees a "CG Staff only" note. */
+  staff: ['d.boyce@northcountryems.org', 'd.langdon@northcountryems.org', 'd.madler@northcountryems.org', 'b.shirley@northcountryems.org', 'c.andrus@northcountryems.org', 'n.stafford@northcountryems.org'],
+  amberDays: 7,
+  redDays:   14
+};
+const SCOPES = ['Sites.ReadWrite.All'];
+const GRAPH = 'https://graph.microsoft.com/v1.0';
+
+/* Groups (buckets). key = Category choice value in the list. */
+const GROUPS = [
+  { key: 'Needs Triaged',   name: 'Needs Triaged',   color: '#B87E0A', owner: 'Unassigned' },
+  { key: 'Training',        name: 'Training',        color: '#2E6B2E', owner: 'Doug Boyce' },
+  { key: 'Logistics',       name: 'Logistics',       color: '#1F5C8B', owner: 'Dennis Madler' },
+  { key: 'Operations',      name: 'Operations',      color: '#5B3F8C', owner: 'Derek Langdon' },
+  { key: 'Chief',           name: 'Chief',           color: '#7a1f1f', owner: 'Bryce Shirley' },
+  { key: 'Fire Department', name: 'Fire Dept',       color: '#C1502E', owner: 'Unassigned' },
+  { key: 'Admin',           name: 'Admin',           color: '#555B66', owner: 'Unassigned' },
+  { key: 'General',         name: 'General',         color: '#6b7d6b', owner: 'Unassigned' }
+];
+const PEOPLE = ['Doug Boyce', 'Derek Langdon', 'Dennis Madler', 'Bryce Shirley', 'Tyler Komm', 'Nick Stafford', 'Unassigned'];
+const PERSON_COLOR = { 'Doug Boyce': '#2E6B2E', 'Dennis Madler': '#1F5C8B', 'Derek Langdon': '#5B3F8C', 'Bryce Shirley': '#7a1f1f', 'Tyler Komm': '#8a6a1f', 'Nick Stafford': '#1f6f6f', 'Unassigned': '#8A918A' };
+const EMAIL_TO_PERSON = {
+  'd.boyce@northcountryems.org': 'Doug Boyce', 'd.langdon@northcountryems.org': 'Derek Langdon', 'd.madler@northcountryems.org': 'Dennis Madler',
+  'b.shirley@northcountryems.org': 'Bryce Shirley', 't.komm@northcountryems.org': 'Tyler Komm', 'n.stafford@northcountryems.org': 'Nick Stafford'
+};
+const STATUS = { OPEN: 'Open', IP: 'In Progress', WAIT: 'Waiting', DONE: 'Completed' };
+const SOURCES = ['Shift Notes', 'Email', 'LP35 Form', 'Add to Trello', 'Manual'];
+const FIELDS = 'Title,ItemID,DateIn,Details,Category,Source,AssignedTo,Status,Notes,CompletedBy,CompletedDate,Link';
+
+const DEMO = /[?&]demo=1/.test(location.search);
+const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || 'doug';
+const LS = { cache: 'so_cache_v1', site: 'so_site_v1', filter: 'so_filter_v1', tab: 'so_tab_v1', hours: 'so_hours_v1', view: 'cg_view_v1', fng: 'cg_fng_v1', fsite: 'cg_fsite_v1' };
+
+let msalApp = null, account = null, siteId = null;
+let items = [];
+let filter = 'all', search = '', phoneTab = '', briefHours = 48, doneDays = 7;
+let openId = null, refreshing = false, lastSync = null, timer = null, dragId = null;
+let view = 'home', fng = null, fngErr = '', reports = null, repErr = '', fngSiteId = null;
+
+/* ---------------- small helpers ---------------- */
+const $ = id => document.getElementById(id);
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function group(key) { return GROUPS.find(g => g.key === key) || GROUPS[0]; }
+function initials(n) { if (!n || n === 'Unassigned') return '?'; return n.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
+function firstName(n) { return !n || n === 'Unassigned' ? 'Unassigned' : n.split(' ')[0]; }
+function parseDate(s) { if (!s) return null; const d = new Date(s); return isNaN(d) ? null : d; }
+function daysSince(d) { if (!d) return 0; return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000)); }
+function fmtDate(d) { return d ? (d.getMonth() + 1) + '/' + d.getDate() + '/' + String(d.getFullYear()).slice(2) : ''; }
+function fmtDT(d) { if (!d) return ''; let h = d.getHours(), m = String(d.getMinutes()).padStart(2, '0'); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(h).padStart(2, '0') + m; }
+function ageLabel(n) { return n === 0 ? 'today' : n + 'd'; }
+function ageClass(n) { return n >= CONFIG.redDays ? 'red' : n >= CONFIG.amberDays ? 'amber' : ''; }
+function soId(it) { return it.itemId || ('SO-' + String(it.id).padStart(3, '0')); }
+function toast(msg, err) { const t = $('toast'); t.textContent = msg; t.classList.toggle('err', !!err); t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), err ? 5000 : 2400); }
+function isPhone() { return window.matchMedia('(max-width:760px)').matches; }
+
+/* who am I */
+function meEmail() { if (DEMO) return ({ doug: 'd.boyce', dennis: 'd.madler', derek: 'd.langdon', bryce: 'b.shirley', nick: 'n.stafford', tyler: 't.komm', chuck: 'c.andrus' }[DEMO_AS] || 'd.boyce') + '@northcountryems.org'; return ((account && account.username) || '').toLowerCase(); }
+function meName() { if (DEMO) return EMAIL_TO_PERSON[meEmail()] || 'Doug Boyce'; return EMAIL_TO_PERSON[meEmail()] || (account && account.name) || meEmail(); }
+function mePerson() { return EMAIL_TO_PERSON[meEmail()] || null; }
+function isStaff() { return CONFIG.staff.indexOf(meEmail()) >= 0; }
+EMAIL_TO_PERSON['c.andrus@northcountryems.org'] = 'Chuck Andrus';
+
+/* ---------------- auth ---------------- */
+const IN_FRAME = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+const IS_AUTH_POPUP = !!window.opener && window.opener !== window && /[#&?](code|error)=/.test(location.hash + location.search);
+function redirectUri() { return location.origin + location.pathname.replace(/index\.html$/, ''); }
+async function initAuth() {
+  if (typeof msal === 'undefined') throw new Error('Could not load Microsoft sign-in. Check the internet connection and reopen the app.');
+  msalApp = new msal.PublicClientApplication({
+    auth: { clientId: CONFIG.clientId, authority: 'https://login.microsoftonline.com/' + CONFIG.tenantId, redirectUri: redirectUri(), navigateToLoginRequestUrl: false },
+    cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true }
+  });
+  await msalApp.initialize();
+  const res = await msalApp.handleRedirectPromise();
+  if (res && res.account) account = res.account;
+  else account = msalApp.getActiveAccount() || msalApp.getAllAccounts()[0] || null;
+  if (account) msalApp.setActiveAccount(account);
+}
+function signIn() {
+  $('signin-err').classList.remove('show');
+  if (IN_FRAME) {
+    msalApp.loginPopup({ scopes: SCOPES, prompt: 'select_account' }).then(r => { account = r.account; msalApp.setActiveAccount(account); location.reload(); })
+      .catch(e => showSigninErr({ message: (e && (e.errorMessage || e.message) || String(e)) + ' If the sign-in window was blocked, use "Open in browser" below.' }));
+    return;
+  }
+  msalApp.loginRedirect({ scopes: SCOPES, prompt: 'select_account' }).catch(showSigninErr);
+}
+function showSigninErr(e) { const b = $('signin-err'); b.textContent = (e && (e.errorMessage || e.message)) || String(e); b.classList.add('show'); }
+function signOut() {
+  if (DEMO) { location.href = location.pathname; return; }
+  [LS.cache, LS.site].forEach(lsDel);
+  msalApp.logoutRedirect({ account, postLogoutRedirectUri: redirectUri() });
+}
+async function getToken() {
+  try { const r = await msalApp.acquireTokenSilent({ scopes: SCOPES, account }); return r.accessToken; }
+  catch (e) {
+    if (e instanceof msal.InteractionRequiredAuthError || /interaction_required|login_required|consent_required/.test(e.errorCode || '')) {
+      if (IN_FRAME) { const r = await msalApp.acquireTokenPopup({ scopes: SCOPES, account }); return r.accessToken; }
+      await msalApp.acquireTokenRedirect({ scopes: SCOPES, account });
+      return new Promise(() => {});
+    }
+    throw e;
+  }
+}
+
+/* ---------------- Graph ---------------- */
+async function graph(path, opts, tries) {
+  opts = opts || {}; tries = tries || 0;
+  const url = path.startsWith('http') ? path : GRAPH + path;
+  const token = await getToken();
+  const headers = Object.assign({ Authorization: 'Bearer ' + token }, opts.headers || {});
+  if (opts.json !== undefined) headers['Content-Type'] = 'application/json';
+  let res;
+  try { res = await fetch(url, { method: opts.method || 'GET', headers, body: opts.json !== undefined ? JSON.stringify(opts.json) : undefined }); }
+  catch (e) { const err = new Error('No connection. Check signal and try again.'); err.status = 0; throw err; }
+  if ((res.status === 429 || res.status === 503) && tries < 3) {
+    await sleep(Math.min(10, Number(res.headers.get('Retry-After')) || (2 ** tries)) * 1000);
+    return graph(path, opts, tries + 1);
+  }
+  if (res.status === 204) return null;
+  if (!res.ok) {
+    let msg = 'HTTP ' + res.status;
+    try { const j = await res.json(); if (j.error && j.error.message) msg = j.error.message; } catch (e) {}
+    if (res.status === 403) msg = 'No permission. You need to be a member of the CG Staff team. (' + msg + ')';
+    if (res.status === 429 || res.status === 503) msg = 'SharePoint is busy. Try again in a minute.';
+    const err = new Error(msg); err.status = res.status; throw err;
+  }
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('json') ? res.json() : null;
+}
+async function getSiteId() {
+  if (siteId) return siteId;
+  const c = lsGet(LS.site, null);
+  if (c && c.path === CONFIG.siteHost + CONFIG.sitePath) { siteId = c.id; return siteId; }
+  const j = await graph('/sites/' + CONFIG.siteHost + ':' + CONFIG.sitePath + '?$select=id');
+  siteId = j.id; lsSet(LS.site, { path: CONFIG.siteHost + CONFIG.sitePath, id: siteId });
+  return siteId;
+}
+function listPath() { return '/sites/' + siteId + '/lists/' + CONFIG.listId; }
+
+/* ---------------- data ---------------- */
+function mapItem(it) {
+  const f = it.fields || {};
+  return {
+    id: String(it.id), title: f.Title || '(untitled)', itemId: f.ItemID || '', dateIn: parseDate(f.DateIn) || parseDate(it.createdDateTime),
+    created: parseDate(it.createdDateTime), modified: parseDate(it.lastModifiedDateTime),
+    details: f.Details || '', category: f.Category || 'Needs Triaged', source: f.Source || '', assigned: f.AssignedTo || 'Unassigned',
+    status: f.Status || STATUS.OPEN, notes: f.Notes || '', completedBy: f.CompletedBy || '', completedDate: parseDate(f.CompletedDate),
+    link: (f.Link && (f.Link.Url || f.Link.url)) || ''
+  };
+}
+async function loadItems() {
+  if (DEMO) return;
+  await getSiteId();
+  let out = [], next = listPath() + '/items?$expand=fields($select=' + FIELDS + ')&$top=500';
+  while (next) { const j = await graph(next); out = out.concat(j.value || []); next = j['@odata.nextLink'] || null; }
+  items = out.map(mapItem);
+  lsSet(LS.cache, { at: Date.now(), items: out });
+}
+async function patchFields(id, fields) {
+  if (DEMO) { await sleep(150); return; }
+  await getSiteId();
+  await graph(listPath() + '/items/' + id + '/fields', { method: 'PATCH', json: fields });
+}
+async function createItem(fields) {
+  if (DEMO) { await sleep(200); const id = String(Math.max(0, ...items.map(i => +i.id)) + 1); return { id, fields, createdDateTime: new Date().toISOString(), lastModifiedDateTime: new Date().toISOString() }; }
+  await getSiteId();
+  return graph(listPath() + '/items', { method: 'POST', json: { fields } });
+}
+/* apply a change locally first, put it back if SharePoint says no */
+async function applyChange(id, local, fields, okMsg) {
+  const it = items.find(i => i.id === id); if (!it) return false;
+  const before = Object.assign({}, it);
+  Object.assign(it, local); render();
+  try { await patchFields(id, fields); if (okMsg) toast(okMsg); cacheLocal(); return true; }
+  catch (e) { Object.assign(it, before); render(); toast('Did not save. ' + e.message, true); return false; }
+}
+function cacheLocal() { /* cache is refreshed on next load; nothing to do in demo */ }
+
+async function refresh(manual) {
+  if (refreshing) return; refreshing = true;
+  $('refresh-btn').classList.add('spin');
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; })]); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
+  finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
+}
+function setSync(err) {
+  const p = $('sync');
+  if (err) { p.textContent = 'Offline: ' + err; p.classList.add('err'); return; }
+  p.classList.remove('err');
+  const open = items.filter(i => i.status !== STATUS.DONE).length;
+  p.textContent = (DEMO ? 'DEMO, ' : '') + open + ' open' + (lastSync ? ' · updated ' + fmtDT(lastSync).split(' ')[1] : '') + ' · ' + firstName(meName());
+}
+
+/* ---------------- filtering ---------------- */
+function openItems() { return items.filter(i => i.status !== STATUS.DONE); }
+function passes(it) {
+  if (search) {
+    const q = search.toLowerCase();
+    if (![it.title, it.details, it.notes, it.assigned, it.source, soId(it)].join(' ').toLowerCase().includes(q)) return false;
+  }
+  if (filter === 'mine') return it.assigned === mePerson();
+  if (filter === 'stale') return daysSince(it.dateIn) >= CONFIG.amberDays;
+  if (filter === 'waiting') return it.status === STATUS.WAIT;
+  return true;
+}
+function setFilter(f) { filter = f; lsSet(LS.filter, f); document.querySelectorAll('.bar .fchip').forEach(b => b.classList.toggle('on', b.dataset.f === f)); render(); }
+function setSearch(v) { search = v.trim(); render(); }
+function sortItems(a, b) {
+  const rank = s => s === STATUS.IP ? 0 : s === STATUS.OPEN ? 1 : 2;
+  return (a.dateIn || 0) - (b.dateIn || 0) || rank(a.status) - rank(b.status);
+}
+
+/* ---------------- board ---------------- */
+function cardHtml(it) {
+  const age = daysSince(it.dateIn), ac = ageClass(age);
+  const pill = it.status === STATUS.IP ? '<span class="pill ip">In progress</span>' : it.status === STATUS.WAIT ? '<span class="pill wt">Waiting</span>' : '';
+  const noteCount = it.notes ? it.notes.split(/\n(?=\d{1,2}\/\d{1,2} )/).filter(Boolean).length : 0;
+  return '<div class="card ' + (ac ? 'age-' + ac : '') + '" data-id="' + esc(it.id) + '" draggable="' + (!isPhone()) + '" onclick="openItem(\'' + esc(it.id) + '\')">' +
+    '<div class="card-top"><span>' + esc(soId(it)) + '</span><span class="age ' + ac + '" title="Days on the board">' + ageLabel(age) + '</span></div>' +
+    '<div class="card-title">' + esc(it.title) + '</div>' +
+    '<div class="card-foot"><span class="who"><span class="av" style="background:' + (PERSON_COLOR[it.assigned] || '#8A918A') + '">' + esc(initials(it.assigned)) + '</span>' + esc(firstName(it.assigned)) + '</span>' +
+    (it.source ? '<span class="tag">' + esc(it.source === 'Add to Trello' ? 'Email' : it.source) + '</span>' : '') + pill +
+    (noteCount ? '<span class="card-note">' + noteCount + ' note' + (noteCount > 1 ? 's' : '') + '</span>' : '') + '</div></div>';
+}
+function render() {
+  const open = openItems().filter(passes).sort(sortItems);
+  const byG = {}; GROUPS.forEach(g => byG[g.key] = []);
+  open.forEach(it => (byG[it.category] || byG['Needs Triaged']).push(it));
+  if (!phoneTab || !byG[phoneTab]) phoneTab = lsGet(LS.tab, '') || (mePerson() && GROUPS.find(g => g.owner === mePerson()) || GROUPS[1]).key;
+  // hide empty side groups on desktop unless something is in them
+  const show = GROUPS.filter(g => byG[g.key].length || ['Needs Triaged', 'Training', 'Logistics', 'Operations', 'Chief'].includes(g.key));
+  let h = '<div class="tabs" id="tabs">' + GROUPS.map(g => '<button class="tab ' + (g.key === phoneTab ? 'on' : '') + '" style="--c:' + g.color + '" onclick="setTab(\'' + esc(g.key) + '\')">' + esc(g.name) + '<b>' + byG[g.key].length + '</b></button>').join('') + '</div>';
+  h += (isPhone() ? GROUPS : show).map(g => {
+    const list = byG[g.key];
+    return '<section class="col ' + (g.key === phoneTab ? 'show' : '') + '" style="--c:' + g.color + '" data-g="' + esc(g.key) + '">' +
+      '<div class="col-head"><span class="col-name">' + esc(g.name) + '</span><span class="col-count">' + list.length + '</span></div>' +
+      '<div class="col-owner">' + (g.owner !== 'Unassigned' ? 'Default: ' + esc(g.owner) : g.key === 'Needs Triaged' ? 'Sort these into a group' : '&nbsp;') + '</div>' +
+      '<div class="col-body">' + (list.length ? list.map(cardHtml).join('') : '<div class="col-empty">' + (search || filter !== 'all' ? 'Nothing matches' : 'Nothing here') + '</div>') + '</div>' +
+      '<button class="col-add" onclick="openAdd(\'' + esc(g.key) + '\')">+ Add item</button></section>';
+  }).join('');
+  $('board').innerHTML = h;
+  wireDrag();
+  const weekAgo = Date.now() - 7 * 86400000;
+  $('done-n').textContent = items.filter(i => i.status === STATUS.DONE && i.completedDate && i.completedDate.getTime() >= weekAgo).length;
+  $('nav-open').textContent = openItems().length;
+  renderHome();
+  document.querySelectorAll('.bar .fchip').forEach(b => { if (b.dataset.f === 'mine') b.innerHTML = 'Mine<b>' + openItems().filter(i => i.assigned === mePerson()).length + '</b>'; });
+  setSync();
+}
+function setTab(k) { phoneTab = k; lsSet(LS.tab, k); render(); $('board').scrollTop = 0; }
+
+/* drag and drop (desktop) */
+function wireDrag() {
+  if (isPhone()) return;
+  document.querySelectorAll('.card').forEach(c => {
+    c.addEventListener('dragstart', e => { dragId = c.dataset.id; c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', dragId); } catch (x) {} });
+    c.addEventListener('dragend', () => { c.classList.remove('dragging'); document.querySelectorAll('.col.over').forEach(x => x.classList.remove('over')); });
+  });
+  document.querySelectorAll('.col').forEach(col => {
+    col.addEventListener('dragover', e => { if (!dragId) return; e.preventDefault(); col.classList.add('over'); });
+    col.addEventListener('dragleave', e => { if (!col.contains(e.relatedTarget)) col.classList.remove('over'); });
+    col.addEventListener('drop', e => { e.preventDefault(); col.classList.remove('over'); const id = dragId; dragId = null; if (id) moveItem(id, col.dataset.g); });
+  });
+}
+/* move to a group. owner follows the group if it was the old group's default */
+function moveItem(id, newCat) {
+  const it = items.find(i => i.id === id); if (!it || it.category === newCat) return;
+  const oldDefault = group(it.category).owner, newDefault = group(newCat).owner;
+  const followOwner = it.assigned === oldDefault || it.assigned === 'Unassigned';
+  const local = { category: newCat }, fields = { Category: newCat };
+  if (followOwner) { local.assigned = newDefault; fields.AssignedTo = newDefault; }
+  return applyChange(id, local, fields, 'Moved to ' + group(newCat).name + (followOwner && newDefault !== 'Unassigned' ? ', assigned to ' + firstName(newDefault) : ''));
+}
+
+/* phone swipe between groups */
+(function () {
+  let sx = 0, sy = 0, on = false;
+  document.addEventListener('touchstart', e => { if (!isPhone() || !e.target.closest('#board')) return; on = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!on) return; on = false;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > 50 || e.target.closest('.tabs')) return;
+    const i = GROUPS.findIndex(g => g.key === phoneTab), n = GROUPS[(i + (dx < 0 ? 1 : -1) + GROUPS.length) % GROUPS.length];
+    setTab(n.key);
+    const t = document.querySelector('.tab.on'); if (t) t.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, { passive: true });
+})();
+
+/* ---------------- sheets ---------------- */
+function showSheet(id) { closeSheets(true); $('scrim').classList.add('show'); $(id).classList.add('show'); }
+function closeSheets(keepOpenId) { document.querySelectorAll('.sheet').forEach(s => s.classList.remove('show')); $('scrim').classList.remove('show'); if (keepOpenId !== true) openId = null; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('brief').classList.contains('show')) closeBrief(); else closeSheets(); } });
+
+function personOptions(sel) { return PEOPLE.map(p => '<option ' + (p === sel ? 'selected' : '') + '>' + esc(p) + '</option>').join(''); }
+function groupOptions(sel) { return GROUPS.map(g => '<option value="' + esc(g.key) + '" ' + (g.key === sel ? 'selected' : '') + '>' + esc(g.name) + '</option>').join(''); }
+
+/* notes are stored newest first, one entry per block: "M/D HHMM Name: text" */
+function parseNotes(s) {
+  if (!s) return [];
+  return s.split(/\n(?=\d{1,2}\/\d{1,2} \d{4} )/).map(b => b.trim()).filter(Boolean).map(b => {
+    const m = b.match(/^(\d{1,2}\/\d{1,2} \d{4}) ([^:]{1,40}): ([\s\S]*)$/);
+    return m ? { when: m[1], who: m[2], text: m[3] } : { when: '', who: '', text: b };
+  });
+}
+
+function openItem(id) { openId = id; renderItemSheet(); showSheet('sh-item'); }
+function renderItemSheet() {
+  const it = items.find(i => i.id === openId); if (!it) { closeSheets(); return; }
+  const g = group(it.category), done = it.status === STATUS.DONE;
+  $('it-head').textContent = soId(it) + ' · ' + g.name;
+  const notes = parseNotes(it.notes);
+  let h = '<div class="meta">In ' + fmtDate(it.dateIn) + ' (' + ageLabel(daysSince(it.dateIn)) + ')' + (it.source ? ' · from ' + esc(it.source) : '') + (it.modified ? ' · changed ' + fmtDT(it.modified) : '') + '</div>';
+  h += '<label class="lbl" for="it-title">Item</label><input class="inp" id="it-title" value="' + esc(it.title) + '" maxlength="250">';
+  h += '<label class="lbl" for="it-details">Details</label><textarea class="ta" id="it-details">' + esc(it.details) + '</textarea>';
+  if (it.link) h += '<div class="link" style="margin-top:6px"><a href="' + esc(it.link) + '" target="_blank" rel="noopener">' + esc(it.link) + '</a></div>';
+  h += '<div class="row2"><div><label class="lbl" for="it-cat">Group</label><select class="sel" id="it-cat">' + groupOptions(it.category) + '</select></div>' +
+       '<div><label class="lbl" for="it-who">Assigned to</label><select class="sel" id="it-who">' + personOptions(it.assigned) + '</select></div></div>';
+  if (!done) {
+    h += '<label class="lbl">Status</label><div class="seg">' + [STATUS.OPEN, STATUS.IP, STATUS.WAIT].map(s => '<button data-s="' + s + '" class="' + (it.status === s ? 'on' : '') + '" onclick="setStatus(\'' + s + '\')">' + (s === STATUS.IP ? 'In progress' : s) + '</button>').join('') + '</div>';
+  }
+  h += '<div class="btns"><button class="btn ghost" onclick="saveItem()">Save changes</button>' +
+       (mePerson() && it.assigned !== mePerson() && !done ? '<button class="btn ghost" onclick="takeIt()">Take it</button>' : '') + '</div>';
+  h += '<label class="lbl">Notes</label>';
+  h += '<div class="note-add"><input class="inp" id="note-in" placeholder="Add a note, like parts ordered, ETA Friday" onkeydown="if(event.key===\'Enter\')addNote()"><button class="btn" onclick="addNote()">Add</button></div>';
+  h += '<div class="notes">' + (notes.length ? notes.map(n => '<div class="note">' + (n.when ? '<small>' + esc(n.when) + ' · ' + esc(n.who) + '</small>' : '') + esc(n.text) + '</div>').join('') : '<div class="meta">No notes yet.</div>') + '</div>';
+  if (done) {
+    h += '<div class="done-box">Completed' + (it.completedBy ? ' by ' + esc(it.completedBy) : '') + (it.completedDate ? ' on ' + fmtDate(it.completedDate) : '') + '. Assigned to ' + esc(it.assigned) + '.</div>';
+    h += '<div class="btns"><button class="btn warn" onclick="reopen()">Reopen</button></div>';
+  } else {
+    h += '<div class="btns"><button class="btn done" onclick="complete()">&#10003; Complete</button></div>';
+  }
+  $('it-body').innerHTML = h;
+}
+function setStatus(s) {
+  const it = items.find(i => i.id === openId); if (!it || it.status === s) return;
+  applyChange(it.id, { status: s }, { Status: s }, s === STATUS.WAIT ? 'Marked waiting. Add a note saying on what.' : 'Status: ' + s).then(renderItemSheet);
+}
+async function saveItem() {
+  const it = items.find(i => i.id === openId); if (!it) return;
+  const t = $('it-title').value.trim(), d = $('it-details').value, c = $('it-cat').value, w = $('it-who').value;
+  if (!t) { toast('Item needs a title', true); return; }
+  const local = {}, fields = {};
+  if (t !== it.title) { local.title = t; fields.Title = t; }
+  if (d !== it.details) { local.details = d; fields.Details = d; }
+  if (c !== it.category) { local.category = c; fields.Category = c; }
+  if (w !== it.assigned) { local.assigned = w; fields.AssignedTo = w; }
+  if (!Object.keys(fields).length) { toast('No changes'); return; }
+  if (await applyChange(it.id, local, fields, 'Saved')) renderItemSheet();
+}
+async function takeIt() {
+  const it = items.find(i => i.id === openId); if (!it || !mePerson()) return;
+  if (await applyChange(it.id, { assigned: mePerson() }, { AssignedTo: mePerson() }, 'It\'s yours')) renderItemSheet();
+}
+function noteStamp() { const d = new Date(); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0') + ' ' + meName().replace(/:/g, ''); }
+async function addNote() {
+  const it = items.find(i => i.id === openId), inp = $('note-in'); if (!it) return;
+  const text = inp.value.trim(); if (!text) return;
+  const notes = noteStamp() + ': ' + text + (it.notes ? '\n' + it.notes : '');
+  inp.value = '';
+  if (await applyChange(it.id, { notes }, { Notes: notes }, 'Note added')) renderItemSheet();
+}
+async function complete() {
+  const it = items.find(i => i.id === openId); if (!it) return;
+  const now = new Date();
+  const ok = await applyChange(it.id, { status: STATUS.DONE, completedBy: meName(), completedDate: now }, { Status: STATUS.DONE, CompletedBy: meName(), CompletedDate: now.toISOString() }, 'Completed. Nice work.');
+  if (ok) closeSheets();
+}
+async function reopen() {
+  const it = items.find(i => i.id === openId); if (!it) return;
+  const notes = noteStamp() + ': Reopened' + (it.notes ? '\n' + it.notes : '');
+  if (await applyChange(it.id, { status: STATUS.OPEN, completedBy: '', completedDate: null, notes }, { Status: STATUS.OPEN, CompletedBy: '', CompletedDate: null, Notes: notes }, 'Reopened')) renderItemSheet();
+}
+
+/* add */
+function openAdd(cat) {
+  const c = cat || (isPhone() ? phoneTab : 'Needs Triaged');
+  $('add-title').value = ''; $('add-details').value = '';
+  $('add-cat').innerHTML = groupOptions(c);
+  $('add-who').innerHTML = personOptions(group(c).owner);
+  showSheet('sh-add'); setTimeout(() => $('add-title').focus(), 50);
+}
+function addCatChanged() { $('add-who').value = group($('add-cat').value).owner; }
+async function saveAdd() {
+  const t = $('add-title').value.trim(); if (!t) { toast('What is it? Add a short title.', true); return; }
+  const btn = $('add-save'); btn.disabled = true;
+  const today = new Date(); const dateIn = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0') + 'T19:00:00Z';
+  const fields = { Title: t, Details: $('add-details').value.trim(), Category: $('add-cat').value, AssignedTo: $('add-who').value, Status: STATUS.OPEN, Source: 'Manual', DateIn: dateIn };
+  try {
+    const res = await createItem(fields);
+    const it = mapItem({ id: res.id, fields: Object.assign({}, fields, res.fields || {}), createdDateTime: res.createdDateTime, lastModifiedDateTime: res.lastModifiedDateTime });
+    it.itemId = 'SO-' + String(res.id).padStart(3, '0');
+    items.push(it);
+    patchFields(it.id, { ItemID: it.itemId }).catch(() => {});
+    closeSheets(); render(); toast('Added to ' + group(it.category).name);
+  } catch (e) { toast('Did not save. ' + e.message, true); }
+  finally { btn.disabled = false; }
+}
+
+/* completed drawer */
+function openDone() { renderDone(); showSheet('sh-done'); }
+function setDoneDays(n) { doneDays = n; renderDone(); }
+function renderDone() {
+  $('done-range').innerHTML = [[7, 'This week'], [30, '30 days'], [3650, 'All']].map(([n, l]) => '<button class="fchip ' + (doneDays === n ? 'on' : '') + '" onclick="setDoneDays(' + n + ')">' + l + '</button>').join('');
+  const since = Date.now() - doneDays * 86400000;
+  const list = items.filter(i => i.status === STATUS.DONE && (!i.completedDate || i.completedDate.getTime() >= since)).sort((a, b) => (b.completedDate || 0) - (a.completedDate || 0));
+  $('done-list').innerHTML = list.length ? list.map(i => '<div class="ditem"><span class="av" style="background:' + group(i.category).color + '">&#10003;</span><div class="t"><b>' + esc(i.title) + '</b><span>' +
+    esc(group(i.category).name) + ' · done by ' + esc(i.completedBy || 'unknown') + (i.completedDate ? ' ' + fmtDate(i.completedDate) : '') + ' · assigned ' + esc(firstName(i.assigned)) + '</span></div>' +
+    '<button onclick="openItem(\'' + esc(i.id) + '\')">Open</button></div>').join('') : '<div class="meta">Nothing completed in this range yet.</div>';
+}
+
+/* ---------------- briefing ---------------- */
+function openBrief() { $('brief').classList.add('show'); renderBrief(); }
+function closeBrief() { $('brief').classList.remove('show'); }
+function setBriefHours(h) { briefHours = h; lsSet(LS.hours, h); renderBrief(); }
+function brItem(i, extra) {
+  return '<div class="br-item" style="--c:' + group(i.category).color + '"><div class="t">' + esc(i.title) + '<span>' + esc(group(i.category).name) + ' · ' + esc(i.assigned) + (extra ? ' · ' + extra : '') + '</span></div></div>';
+}
+function renderBrief() {
+  document.querySelectorAll('#brief .fchip[data-h]').forEach(b => b.classList.toggle('on', +b.dataset.h === briefHours));
+  const now = new Date(), since = now.getTime() - briefHours * 3600000, word = briefHours === 168 ? '7 days' : briefHours + ' hrs';
+  $('br-date').textContent = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) + ' · ' + fmtDT(now).split(' ')[1] + ' · looking back ' + word;
+  const open = openItems();
+  const isNew = i => { const t = Math.max(i.created ? i.created.getTime() : 0, i.dateIn ? i.dateIn.getTime() : 0); return t >= since; };
+  const fresh = open.filter(isNew).sort(sortItems);
+  const moving = open.filter(i => i.status === STATUS.IP || i.status === STATUS.WAIT).sort(sortItems);
+  const doneNow = items.filter(i => i.status === STATUS.DONE && i.completedDate && i.completedDate.getTime() >= since).sort((a, b) => b.completedDate - a.completedDate);
+  const old = open.filter(i => daysSince(i.dateIn) >= CONFIG.redDays && !isNew(i)).sort(sortItems);
+  let h = '<div class="tiles">' + GROUPS.filter(g => open.some(i => i.category === g.key) || ['Training', 'Logistics', 'Operations', 'Chief'].includes(g.key))
+    .map(g => '<div class="tile" style="--c:' + g.color + '"><b>' + open.filter(i => i.category === g.key).length + '</b><span>' + esc(g.name) + ' open</span></div>').join('') + '</div>';
+  const sec = (title, list, fn) => '<div class="br-sec"><h3>' + title + '<small>' + list.length + '</small></h3>' + (list.length ? '<div class="br-list">' + list.map(fn).join('') + '</div>' : '<div class="br-none">None</div>') + '</div>';
+  h += sec('New since last shift', fresh, i => brItem(i, i.source ? 'from ' + esc(i.source) : ''));
+  h += sec('Being worked', moving, i => brItem(i, i.status === STATUS.WAIT ? '<b>waiting</b>' + (parseNotes(i.notes)[0] ? ': ' + esc(parseNotes(i.notes)[0].text.slice(0, 80)) : '') : 'in progress'));
+  h += sec('Done', doneNow, i => brItem(i, 'done by ' + esc(i.completedBy || 'unknown')));
+  h += sec('Getting old (' + CONFIG.redDays + '+ days)', old, i => brItem(i, daysSince(i.dateIn) + ' days'));
+  $('br-body').innerHTML = h;
+}
+
+/* ---------------- info ---------------- */
+function openInfo() {
+  $('info-body').innerHTML =
+    '<div class="meta" style="font-size:13px;line-height:1.6;color:#333">' +
+    '<b>CG Staff version ' + VERSION + '</b>' + (DEMO ? ' (demo, sample data, nothing saves)' : '') + '<br>Signed in as ' + esc(meName()) + (DEMO ? '' : ' (' + esc(meEmail()) + ')') + (IN_FRAME ? '<br>Running inside Teams.' : '') +
+    '<br><br><b>How it works</b><br>' +
+    'Every card is a row in the Shift Ops list in the CG Staff team. The email sweep adds shift notes, equipment issues, LP35 reports and "Add to Trello" emails every 4 hours. Anyone on CG Staff can add, move, note and complete items.<br><br>' +
+    '<b>Move a card</b>: drag it to another group (computer), or open it and change Group (phone). If it was with that group\'s default person, it goes to the new group\'s default person.<br>' +
+    '<b>Card colors</b>: the left edge turns amber after ' + CONFIG.amberDays + ' days and red after ' + CONFIG.redDays + '.<br>' +
+    '<b>Complete</b> records who finished it and when. Find it again under Done this week, where you can reopen it.<br>' +
+    '<b>Briefing</b> is a clean summary for shift change: new, being worked, done, and getting old. Print it or put it on the TV. Direct link: <a href="?view=brief">?view=brief</a><br><br>' +
+    '<a href="' + esc(CONFIG.listUrl) + '" target="_blank" rel="noopener">Open the SharePoint list</a></div>' +
+    '<div class="btns"><button class="btn ghost" onclick="refresh(true)">Refresh</button><button class="btn warn" onclick="signOut()">' + (DEMO ? 'Leave demo' : 'Sign out') + '</button></div>';
+  showSheet('sh-info');
+}
+
+/* ---------------- demo data ---------------- */
+function demoItems() {
+  const raw = [
+    [1, 'Bryce needs 2027 budget requests from us, ASAP', 27, 'General', 'Unassigned', 'Email', 'Open', 'Budget earmark requests for the board meeting.'],
+    [2, 'St52 fridge water dispenser slow / dribbly', 27, 'Logistics', 'Dennis Madler', 'Manual', 'Open', ''],
+    [3, 'SAR51 rear compartment warning light not flashing when compartment left open', 27, 'Logistics', 'Dennis Madler', 'Manual', 'Waiting', ''],
+    [4, 'M25b OOS: no start, stuck rear door, waiting on mechanic diagnosis', 27, 'Logistics', 'Dennis Madler', 'Manual', 'Waiting', ''],
+    [5, 'M18 hood won\'t stay up, new struts coming (9/15 shift notes)', 26, 'Logistics', 'Dennis Madler', 'Shift Notes', 'In Progress', 'Hood will fall on your head.'],
+    [6, 'Vitals very slow downloading from the monitor (9/15 shift notes)', 26, 'Training', 'Doug Boyce', 'Shift Notes', 'Open', ''],
+    [7, 'Versed concentration change needed: 1mg/mL on FDA backorder (9/21 email)', 20, 'Training', 'Doug Boyce', 'Email', 'Open', 'Switching to 5mg/mL. Needs Dr. Macht\'s input.'],
+    [8, 'Alerting system for Station 51', 19, 'Operations', 'Derek Langdon', 'Manual', 'In Progress', ''],
+    [9, 'Schedule meetings with groups', 19, 'Chief', 'Bryce Shirley', 'Manual', 'Open', ''],
+    [11, 'Shared drives for CG staff', 16, 'Operations', 'Derek Langdon', 'Manual', 'Open', ''],
+    [12, 'Station 52 computer login', 16, 'Operations', 'Derek Langdon', 'Manual', 'Open', ''],
+    [14, 'Diltiazem still on backorder, none in stock (9/29 shift notes)', 12, 'Logistics', 'Dennis Madler', 'Shift Notes', 'Open', ''],
+    [16, 'LP35-3 reported to Stryker for BP "XXX" issue', 12, 'Training', 'Doug Boyce', 'Manual', 'Waiting', 'Already sent to Stryker.'],
+    [18, 'LP35 issue report submitted (9/30)', 11, 'Training', 'Doug Boyce', 'LP35 Form', 'Open', 'Respondent: Lyndsey Maylone.'],
+    [19, 'Radio returned from Bob needs a new antenna (10/3 shift notes)', 8, 'Operations', 'Derek Langdon', 'Shift Notes', 'Open', ''],
+    [21, 'M19 windshield replacement Mon 10/12, 1000 to 1200 at Station 1', 4, 'Logistics', 'Dennis Madler', 'Email', 'Open', 'From Lyndsey Maylone.'],
+    [25, 'Bay 4 garage door running slower, seems to be binding (10/11 shift notes)', 0, 'Logistics', 'Dennis Madler', 'Shift Notes', 'Open', 'Derek\'s shift notes.'],
+    [26, 'Lower bay 1 new garage door OOS, track runner and bolts loose (10/11 shift notes)', 0, 'Logistics', 'Dennis Madler', 'Shift Notes', 'Open', 'Derek\'s shift notes.'],
+    [27, 'Station 52 needs 2 boxes of atropine delivered (10/11 shift notes)', 0, 'Needs Triaged', 'Unassigned', 'Shift Notes', 'Open', ''],
+    [28, 'Printers: reboot station computers to pick up new printers', 0, 'Operations', 'Derek Langdon', 'Email', 'Open', ''],
+    [10, 'M18 liquid spring compressor weak, use M18 as Last Out', 18, 'Logistics', 'Dennis Madler', 'Shift Notes', 'Completed', ''],
+    [13, 'Lower bay radio room demo waiting on dumpster', 12, 'Logistics', 'Dennis Madler', 'Shift Notes', 'Completed', ''],
+    [20, 'M18 hydro pump ordered with extra fluid', 8, 'Logistics', 'Dennis Madler', 'Shift Notes', 'Completed', '']
+  ];
+  const day = 86400000, now = Date.now();
+  return raw.map(r => {
+    const dIn = new Date(now - r[2] * day - 3600000);
+    const it = { id: String(r[0]), title: r[1], itemId: 'SO-' + String(r[0]).padStart(3, '0'), dateIn: dIn, created: dIn, modified: dIn, details: r[7], category: r[3], source: r[5], assigned: r[4], status: r[6], notes: '', completedBy: '', completedDate: null, link: '' };
+    if (r[6] === 'Completed') { it.completedBy = it.assigned; it.completedDate = new Date(now - (r[0] % 5) * day - 7200000); }
+    if (r[0] === 16) it.notes = '10/2 0915 Doug Boyce: Stryker case open, loaner on the way\n9/30 1440 Dennis Madler: Pulled LP35-3 from M25a';
+    if (r[0] === 4) it.notes = '10/8 1100 Dennis Madler: Mechanic says starter, parts ETA Tuesday';
+    return it;
+  });
+}
+
+/* ================= CG Staff dashboard (home) ================= */
+const ICON = {
+  ops: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>',
+  fac: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/></svg>',
+  grd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="M12 12C12 7 8 4 3 4c0 5 4 8 9 8z"/><path d="M12 14c0-4 3-7 9-7 0 4-3 7-9 7z"/></svg>',
+  rep: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+  ot:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+};
+const GSTATION = { 'Station 1 (404 S Parcel)': 'St 51', 'Station 1.5 Admin (300 W Hoag)': 'St 51.5', 'Station 2 (15413 NE Fargher Lake Hwy)': 'St 52' };
+const REP_TYPE = { injury: 'Injury / illness', biological: 'Biological exposure', chemical: 'Chemical exposure', vehicle: 'Vehicle incident' };
+
+function setView(v) {
+  view = v; lsSet(LS.view, v);
+  document.body.classList.toggle('v-home', v === 'home'); document.body.classList.toggle('v-board', v === 'board');
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  if (v === 'board') render(); else renderHome();
+}
+function startOfDay(d) { const x = new Date(d || Date.now()); x.setHours(0, 0, 0, 0); return x; }
+function weekBounds() { const t = startOfDay(), dow = (t.getDay() + 6) % 7, a = new Date(t); a.setDate(t.getDate() - dow); const b = new Date(a); b.setDate(a.getDate() + 7); return [a, b]; }
+
+/* ---------- Facilities and Grounds (same SharePoint site the F&G app uses) ---------- */
+async function getFngSiteId() {
+  if (fngSiteId) return fngSiteId;
+  const c = lsGet(LS.fsite, null); if (c && c.id) { fngSiteId = c.id; return fngSiteId; }
+  const j = await graph('/sites/' + CONFIG.siteHost + ':' + CONFIG.fngSitePath + '?$select=id');
+  fngSiteId = j.id; lsSet(LS.fsite, { id: fngSiteId }); return fngSiteId;
+}
+async function allItems(path) { let out = [], next = path; while (next) { const j = await graph(next); out = out.concat(j.value || []); next = j['@odata.nextLink'] || null; } return out; }
+async function loadFng() {
+  if (DEMO) return;
+  const sid = await getFngSiteId();
+  const lists = (await graph('/sites/' + sid + '/lists?$select=id,displayName&$top=200')).value || [];
+  const id = n => (lists.find(l => l.displayName === n) || {}).id;
+  const woId = id('Facility Work Orders'), svcId = id('Facility Services');
+  const [wo, svc, grd] = await Promise.all([
+    woId ? allItems('/sites/' + sid + '/lists/' + woId + '/items?$expand=fields($select=Title,Station,Priority,WOStatus,WorkType)&$top=999') : [],
+    svcId ? allItems('/sites/' + sid + '/lists/' + svcId + '/items?$expand=fields($select=Title,Station,NextDue,Active,Importance)&$top=999') : [],
+    allItems('/sites/' + sid + '/lists/' + CONFIG.groundsListId + '/items?$expand=fields($select=Title,Station,DueDate,TaskStatus)&$top=999')
+  ]);
+  fng = {
+    setup: !!woId,
+    wo: wo.map(i => ({ title: i.fields.Title || '', station: i.fields.Station || '', prio: i.fields.Priority || 'Routine', status: i.fields.WOStatus || 'Open', created: parseDate(i.createdDateTime) })),
+    svc: svc.map(i => ({ title: i.fields.Title || '', station: i.fields.Station || '', next: parseDate(i.fields.NextDue), active: i.fields.Active !== false, imp: i.fields.Importance || '' })),
+    grd: grd.map(i => ({ title: i.fields.Title || '', station: GSTATION[i.fields.Station] || i.fields.Station || '', due: parseDate(i.fields.DueDate), status: i.fields.TaskStatus || 'Not Started' }))
+  };
+  fngErr = ''; lsSet(LS.fng, { at: Date.now(), fng });
+}
+/* ---------- Incident reports (Cloudflare Worker, read only) ---------- */
+async function loadReports() {
+  if (DEMO) return;
+  let res;
+  try { res = await fetch(CONFIG.reportsApi, { cache: 'no-store' }); } catch (e) { throw new Error('Could not reach the incident report data from here.'); }
+  if (!res.ok) throw new Error('Incident report data said ' + res.status + '.');
+  const j = await res.json();
+  reports = (j && j.reports || []).map(r => ({ id: r.id, type: r.type || '', status: (r.status || 'new').toLowerCase(), when: r.submittedAt ? new Date(r.submittedAt) : parseDate(r.date), agency: r.agency || '' }));
+  repErr = '';
+}
+
+function stat(n, label, cls) { return '<div class="stat ' + (cls || '') + '"><b>' + n + '</b><span>' + label + '</span></div>'; }
+function rowi(text, sub, dot) { return '<div class="rowi"><span class="dot ' + (dot || '') + '"></span><div class="tx">' + esc(text) + (sub ? '<em>' + sub + '</em>' : '') + '</div></div>'; }
+function rowsHtml(list, none) { return '<div class="rows">' + (list.length ? list.join('') : '<div class="none">' + none + '</div>') + '</div>'; }
+function secHtml(c, ico, title, small, body, foot) {
+  return '<section class="sec" style="--c:' + c + '"><div class="sec-head"><span class="sec-ico">' + ico + '</span><h3>' + title + '</h3><small>' + (small || '') + '</small></div>' + body + '<div class="sec-foot">' + foot + '</div></section>';
+}
+function link(url, label, ghost) { return '<a class="go ' + (ghost ? 'ghost' : '') + '" href="' + esc(url) + '" target="_blank" rel="noopener">' + label + '</a>'; }
+
+function renderHome() {
+  const el = $('home'); if (!el) return;
+  if (!DEMO && account && !isStaff()) {
+    el.innerHTML = '<div class="gate"><h2>CG Staff only</h2>You are signed in as ' + esc(meEmail()) + '. This dashboard is for the CG Staff. Your crew apps are on the NCEMS hub.<br><br><a class="go" style="--c:#2E6B2E" href="' + esc(CONFIG.hubUrl) + '">Open the NCEMS hub</a></div>';
+    return;
+  }
+  const now = new Date(), today = startOfDay(), day = 86400000;
+  let h = '<div class="hello"><h2>' + (now.getHours() < 12 ? 'Morning' : now.getHours() < 17 ? 'Afternoon' : 'Evening') + ', ' + esc(firstName(meName())) + '</h2><span>' + now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) + (lastSync ? ' · updated ' + fmtDT(lastSync).split(' ')[1] : '') + '</span></div><div class="grid">';
+
+  /* Shift Ops */
+  const open = openItems(), since48 = now.getTime() - 48 * 3600000;
+  const fresh = open.filter(i => Math.max(i.created ? i.created.getTime() : 0, i.dateIn ? i.dateIn.getTime() : 0) >= since48);
+  const old = open.filter(i => daysSince(i.dateIn) >= CONFIG.redDays), mine = open.filter(i => i.assigned === mePerson());
+  const triage = open.filter(i => i.category === 'Needs Triaged');
+  const opsRows = [].concat(
+    triage.slice(0, 3).map(i => rowi(i.title, 'Needs a group · ' + ageLabel(daysSince(i.dateIn)), 'warn')),
+    fresh.filter(i => i.category !== 'Needs Triaged').slice(0, 4).map(i => rowi(i.title, 'New · ' + esc(group(i.category).name) + ' · ' + esc(firstName(i.assigned)), 'info'))
+  ).slice(0, 5);
+  h += secHtml('#2E6B2E', ICON.ops, 'Shift Ops', 'Board', '<div class="stats">' + stat(open.length, 'Open') + stat(fresh.length, 'New 48 hrs', fresh.length ? 'good' : '') + stat(mine.length, 'Mine') + stat(old.length, CONFIG.redDays + '+ days', old.length ? 'bad' : '') + '</div>' +
+    rowsHtml(opsRows, 'Nothing new or waiting to be sorted.'),
+    '<button class="go" onclick="setView(\'board\')">Open board</button><button class="go ghost" onclick="openBrief()">Briefing</button>');
+
+  /* Facilities */
+  let facBody, grdBody;
+  if (!fng) {
+    const msg = fngErr ? '<div class="sec-msg err">' + esc(fngErr) + '</div>' : '<div class="sec-msg">Loading...</div>';
+    facBody = msg; grdBody = msg;
+  } else {
+    const wOpen = fng.wo.filter(w => ['Done', 'Cancelled'].indexOf(w.status) < 0);
+    const crit = wOpen.filter(w => w.prio === 'Critical'), wait = wOpen.filter(w => w.status === 'Waiting');
+    const sAct = fng.svc.filter(s => s.active), over = sAct.filter(s => s.next && s.next < today), soon = sAct.filter(s => s.next && s.next >= today && s.next < new Date(today.getTime() + 30 * day));
+    const fRows = [].concat(
+      crit.map(w => rowi(w.title, 'Critical · ' + esc(w.station) + ' · ' + esc(w.status), 'bad')),
+      over.sort((a, b) => a.next - b.next).slice(0, 4).map(s => rowi(s.title, 'Service overdue since ' + fmtDate(s.next) + ' · ' + esc(s.station), 'warn')),
+      wOpen.filter(w => w.prio === 'Urgent').slice(0, 2).map(w => rowi(w.title, 'Urgent · ' + esc(w.station) + ' · ' + esc(w.status), 'warn'))
+    ).slice(0, 5);
+    facBody = (fng.setup ? '' : '<div class="sec-msg">Facilities lists are not set up yet. Open Facilities and tap Set up Facilities.</div>') +
+      '<div class="stats">' + stat(wOpen.length, 'Open jobs') + stat(crit.length, 'Critical', crit.length ? 'bad' : '') + stat(wait.length, 'Waiting') + stat(over.length, 'Svc overdue', over.length ? 'warn' : '') + '</div>' +
+      rowsHtml(fRows, 'No critical jobs or overdue services. ' + (soon.length ? soon.length + ' services due in 30 days.' : ''));
+    const [wa, wb] = weekBounds();
+    const wk = fng.grd.filter(t => t.due && t.due >= wa && t.due < wb), wkDone = wk.filter(t => t.status === 'Done');
+    const late = fng.grd.filter(t => t.due && t.due < today && t.due >= new Date(today.getTime() - 21 * day) && t.status !== 'Done');
+    const nc = late.filter(t => t.status === 'Not Completed');
+    grdBody = '<div class="stats">' + stat(wk.length, 'This week') + stat(wkDone.length, 'Done', 'good') + stat(late.length, 'Late', late.length ? 'bad' : '') + stat(nc.length, 'Not done') + '</div>' +
+      rowsHtml(late.sort((a, b) => a.due - b.due).slice(0, 5).map(t => rowi(t.title, (t.status === 'Not Completed' ? 'Marked not completed' : 'Due ' + fmtDate(t.due)) + ' · ' + esc(t.station), t.status === 'Not Completed' ? 'bad' : 'warn')), 'Grounds is caught up.');
+  }
+  h += secHtml('#1F5C8B', ICON.fac, 'Facilities', 'Buildings · Nick', facBody, link(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl, 'Facilities admin') + link(CONFIG.fngUrl, 'Report a problem', true));
+  h += secHtml('#5f7d2a', ICON.grd, 'Grounds', 'Tyler', grdBody, link(CONFIG.fngUrl, 'Grounds admin'));
+
+  /* Incident reports */
+  let repBody;
+  if (!reports) repBody = repErr ? '<div class="sec-msg err">' + esc(repErr) + ' Open the app to see reports.</div>' : '<div class="sec-msg">Loading...</div>';
+  else {
+    const newR = reports.filter(r => r.status === 'new'), rev = reports.filter(r => r.status === 'reviewed'), d30 = reports.filter(r => r.when && r.when.getTime() >= now.getTime() - 30 * day);
+    const recent = reports.slice().sort((a, b) => (b.when || 0) - (a.when || 0)).filter(r => r.status !== 'closed').slice(0, 4);
+    repBody = '<div class="stats">' + stat(newR.length, 'New', newR.length ? 'bad' : '') + stat(rev.length, 'Reviewed') + stat(d30.length, 'Last 30 days') + stat(reports.length, 'All time') + '</div>' +
+      rowsHtml(recent.map(r => rowi(REP_TYPE[r.type] || r.type || 'Report', (r.when ? fmtDate(r.when) : '') + ' · ' + esc(r.status === 'new' ? 'New, needs review' : r.status) + (r.agency ? ' · ' + esc(r.agency) : ''), r.status === 'new' ? 'bad' : 'info')), 'No open incident reports.');
+  }
+  h += secHtml('#b91c1c', ICON.rep, 'Incident Reports', 'On-duty', repBody, link(CONFIG.reportsUrl, 'Open reports'));
+
+  /* Overtime */
+  h += secHtml('#8a6a1f', ICON.ot, 'Overtime', 'NCEMS OT', '<div class="rows"><div class="none">OT list, open shifts, log, stats and admin. Live numbers here are coming once the overtime data is shared with this dashboard.</div></div>',
+    link(CONFIG.overtimeUrl, 'Open overtime'));
+
+  h += '</div>';
+  el.innerHTML = h;
+}
+
+function demoExtras() {
+  const day = 86400000, t = Date.now(), d = n => new Date(t + n * day);
+  fng = { setup: true,
+    wo: [{ title: 'Lower bay 1 garage door OOS, track runner loose', station: 'Station 51', prio: 'Critical', status: 'Open' }, { title: 'Bay 4 door binding', station: 'Station 51', prio: 'Urgent', status: 'In Progress' },
+         { title: 'St52 fridge water dispenser slow', station: 'Station 52', prio: 'Routine', status: 'Waiting' }, { title: 'Admin building skirting gap', station: 'Station 51.5', prio: 'Routine', status: 'Open' }, { title: 'Old job', station: 'Station 50', prio: 'Routine', status: 'Done' }],
+    svc: [{ title: 'Fire extinguishers: annual inspection and tag', station: 'Station 52', next: d(-12), active: true }, { title: 'HVAC filters: replace', station: 'Station 51', next: d(-3), active: true }, { title: 'Roof and gutters: inspection', station: 'Station 51', next: d(14), active: true }],
+    grd: [{ title: 'Mow and edge front lawn', station: 'St 51', due: d(-1), status: 'Done' }, { title: 'Generator monthly run test', station: 'St 52', due: d(-2), status: 'Not Completed' }, { title: 'Blow out bays', station: 'St 51', due: d(-4), status: 'Not Started' },
+          { title: 'Weed eat fence line', station: 'St 52', due: d(1), status: 'Not Started' }, { title: 'Empty trash cans', station: 'St 51.5', due: d(0), status: 'In Progress' }] };
+  reports = [{ type: 'biological', status: 'new', when: d(-1) }, { type: 'vehicle', status: 'reviewed', when: d(-6) }, { type: 'injury', status: 'closed', when: d(-20) }, { type: 'injury', status: 'reviewed', when: d(-40) }];
+}
+
+/* ---------------- boot ---------------- */
+async function boot() {
+  if (IS_AUTH_POPUP) { document.body.innerHTML = '<p style="font-family:sans-serif;padding:24px">Signing in...</p>'; return; }
+  $('hub-link').href = CONFIG.hubUrl;
+  filter = lsGet(LS.filter, 'all'); setFilter(filter);
+  briefHours = lsGet(LS.hours, 48);
+  if (DEMO) {
+    items = demoItems(); demoExtras(); lastSync = new Date(); setView(/[?&]view=board/.test(location.search) ? 'board' : lsGet(LS.view, 'home')); render();
+    if (/[?&]view=brief/.test(location.search)) openBrief();
+    return;
+  }
+  if (IN_FRAME) { const a = $('open-browser'); a.style.display = 'block'; a.href = location.href; }
+  try { await initAuth(); } catch (e) { $('pg-signin').classList.add('show'); showSigninErr(e); return; }
+  if (!account) { $('pg-signin').classList.add('show'); return; }
+  const c = lsGet(LS.cache, null);
+  setView(/[?&]view=board/.test(location.search) ? 'board' : lsGet(LS.view, 'home'));
+  const fc = lsGet(LS.fng, null);
+  if (fc && fc.fng) { fng = fc.fng; ['wo', 'svc', 'grd'].forEach(k => (fng[k] || []).forEach(x => ['created', 'next', 'due'].forEach(f => { if (x[f]) x[f] = new Date(x[f]); }))); }
+  if (c && c.items) { items = c.items.map(mapItem); lastSync = new Date(c.at); render(); } else renderHome();
+  if (/[?&]view=brief/.test(location.search)) openBrief();
+  await refresh(false);
+  if (/[?&]view=brief/.test(location.search)) renderBrief();
+  timer = setInterval(() => { if (!document.hidden) refresh(false).then(() => { if ($('brief').classList.contains('show')) renderBrief(); }); }, CONFIG.refreshSeconds * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(false); });
+}
+let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(render, 150); });
+window.addEventListener('DOMContentLoaded', () => { boot().catch(e => { $('pg-signin').classList.add('show'); showSigninErr(e); }); });
+</script>
+</body>
+</html>
