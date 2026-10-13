@@ -256,6 +256,31 @@
     .tile, .br-item { -webkit-print-color-adjust:exact; print-color-adjust:exact; break-inside:avoid; }
   }
 
+  /* vehicle checks */
+  .vbanner { margin:0 14px 10px; border-radius:10px; padding:10px 12px; font-size:13px; font-weight:800; line-height:1.35; }
+  .vbanner.bad { background:#FBE7E7; color:#8a1f1f; } .vbanner.warn { background:#FFF6D6; color:#7a5a00; } .vbanner.good { background:#E6F4E6; color:#1C3A1C; }
+  .vchips { display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 10px; }
+  .vchip { border:2px solid var(--border); background:#fff; border-radius:10px; padding:7px 10px; font-size:12px; font-weight:800; color:var(--g-deep); display:flex; align-items:center; gap:6px; }
+  .vchip i { width:10px; height:10px; border-radius:50%; background:#c9d2c9; font-style:normal; }
+  .vchip.ok i { background:var(--g-accent); } .vchip.iss i { background:#D9A400; } .vchip.bad i { background:var(--bad); } .vchip.oos { opacity:.55; text-decoration:line-through; }
+  .vunit { border:2px solid #dfe8df; border-radius:12px; padding:12px; margin-bottom:12px; border-left:8px solid #c9d2c9; }
+  .vunit.ok { border-left-color:var(--g-accent); } .vunit.iss { border-left-color:#D9A400; } .vunit.bad { border-left-color:var(--bad); } .vunit.oos { border-left-color:#555B66; background:#f4f5f6; }
+  .vunit-head { display:flex; align-items:center; gap:10px; }
+  .vunit-head h4 { font-size:20px; font-weight:800; letter-spacing:1px; color:var(--g-deep); }
+  .vunit-head .st { flex:1; font-size:11px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
+  .vunit-head .st.bad { color:var(--bad); } .vunit-head .st.ok { color:var(--g-accent); } .vunit-head .st.iss { color:#9a6b00; }
+  .vline { font-size:12.5px; line-height:1.45; color:#333; margin-top:6px; }
+  .vline b { color:var(--g-deep); }
+  .viss { display:flex; gap:8px; align-items:flex-start; padding:8px 10px; border-radius:8px; margin-top:6px; font-size:13px; line-height:1.35; }
+  .viss.unfixed { background:#FBE7E7; } .viss.open { background:#FFF6D6; } .viss.fixed { background:#EAF1FA; } .viss.done { background:#f1f3f1; opacity:.7; }
+  .viss .t { flex:1; min-width:0; } .viss .t em { display:block; font-style:normal; font-size:11px; color:var(--muted); margin-top:2px; }
+  .viss button, .vunit .vbtn { flex-shrink:0; border:2px solid var(--border); background:#fff; border-radius:8px; padding:7px 9px; font-size:10px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--g-deep); }
+  .vunit .vbtn { margin-top:10px; min-height:40px; } .vunit .vbtn.red { color:#8a1f1f; border-color:#e6b9b9; }
+  .vtag { display:inline-block; font-size:9.5px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; border-radius:5px; padding:2px 6px; margin-right:4px; }
+  .vtag.unfixed { background:var(--bad); color:#fff; } .vtag.open { background:#D9A400; color:#1A1A1A; } .vtag.fixed { background:var(--info); color:#fff; }
+  .voos { margin-top:8px; display:flex; gap:8px; } .voos .inp { flex:1; }
+  .vsub { font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:14px 0 4px; }
+
   /* toast */
   .toast { position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px); background:#1C3A1C; color:#fff;
     padding:12px 16px; border-radius:12px; font-size:13px; font-weight:700; z-index:60; opacity:0; pointer-events:none; transition:all .2s; max-width:92%; text-align:center; }
@@ -267,8 +292,8 @@
 <body>
 
 <header class="hdr">
-  <a class="icon-btn" id="hub-link" href="#" title="NCEMS apps" aria-label="Back to NCEMS apps">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  <a class="icon-btn" id="hub-link" href="#" title="NCEMS hub" aria-label="Home to NCEMS hub">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
   </a>
   <img class="hdr-logo" src="logo.png" alt="">
   <div class="hdr-text">
@@ -338,6 +363,11 @@
   </div>
 </div>
 
+<div class="sheet" id="sh-veh">
+  <div class="sh-head"><h2>Vehicle Checks</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-body" id="veh-body"></div>
+</div>
+
 <div class="sheet" id="sh-info">
   <div class="sh-head"><h2>About Shift Ops</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
   <div class="sh-body" id="info-body"></div>
@@ -381,7 +411,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.0';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.1';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -399,6 +429,17 @@ const CONFIG = {
   reportsUrl: 'https://reports.northcountryems.org/',
   reportsApi: 'https://ncems-api.d-boyce.workers.dev/bin/incident-reports',
   overtimeUrl:'https://overtime.northcountryems.org/',
+  /* Vehicle checks: the EP Checker app logs every submitted check here */
+  checksUrl:  'https://checks.northcountryems.org/',
+  checksUnits:'https://checks.northcountryems.org/units.json',
+  /* Firebase project shared with the hub. Collections: vehicleChecks, vehicleStatus, vehicleResolved */
+  firebase: { apiKey: 'AIzaSyCBSmzaXRU6TV1Jen5z4xHKZfG28UHXlkY', authDomain: 'ncems-hub-9111d.firebaseapp.com', projectId: 'ncems-hub-9111d',
+              storageBucket: 'ncems-hub-9111d.firebasestorage.app', messagingSenderId: '282446545601', appId: '1:282446545601:web:41f89407c2a1a348f24a40' },
+  vehKeepDays: 45,
+  vehUnits:   ['M25A', 'M25B', 'M19', 'M18', 'M14'], // fallback if units.json can't load
+  vehDayStart: 7,    // a "day" of checks starts at 0700
+  vehMinChecks: 2,   // at least this many ambulances checked each day
+  vehLateHour: 12,   // after noon, short on checks turns red
   /* who gets in (lower case). Everyone else sees a "CG Staff only" note. */
   staff: ['d.boyce@northcountryems.org', 'd.langdon@northcountryems.org', 'd.madler@northcountryems.org', 'b.shirley@northcountryems.org', 'c.andrus@northcountryems.org', 'n.stafford@northcountryems.org'],
   amberDays: 7,
@@ -430,12 +471,13 @@ const FIELDS = 'Title,ItemID,DateIn,Details,Category,Source,AssignedTo,Status,No
 
 const DEMO = /[?&]demo=1/.test(location.search);
 const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || 'doug';
-const LS = { cache: 'so_cache_v1', site: 'so_site_v1', filter: 'so_filter_v1', tab: 'so_tab_v1', hours: 'so_hours_v1', view: 'cg_view_v1', fng: 'cg_fng_v1', fsite: 'cg_fsite_v1' };
+const LS = { cache: 'so_cache_v1', site: 'so_site_v1', filter: 'so_filter_v1', tab: 'so_tab_v1', hours: 'so_hours_v1', view: 'cg_view_v1', fng: 'cg_fng_v1', fsite: 'cg_fsite_v1', veh: 'cg_veh_v1', vunits: 'cg_vunits_v1' };
 
 let msalApp = null, account = null, siteId = null;
 let items = [];
 let filter = 'all', search = '', phoneTab = '', briefHours = 48, doneDays = 7;
 let openId = null, refreshing = false, lastSync = null, timer = null, dragId = null;
+let veh = null, vehErr = '', vehUnits = null, vehOpen = null;
 let view = 'home', fng = null, fngErr = '', reports = null, repErr = '', fngSiteId = null;
 
 /* ---------------- small helpers ---------------- */
@@ -585,7 +627,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; })]); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadVeh().catch(e => { vehErr = e.message; })]); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -901,6 +943,7 @@ const ICON = {
   fac: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/></svg>',
   grd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="M12 12C12 7 8 4 3 4c0 5 4 8 9 8z"/><path d="M12 14c0-4 3-7 9-7 0 4-3 7-9 7z"/></svg>',
   rep: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+  veh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V8a1 1 0 0 1 1-1h11v9"/><path d="M14 10h4l3 3v3h-7"/><circle cx="6.5" cy="17" r="2"/><circle cx="17.5" cy="17" r="2"/><path d="M7 10v3M5.5 11.5h3"/></svg>',
   ot:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
 };
 const GSTATION = { 'Station 1 (404 S Parcel)': 'St 51', 'Station 1.5 Admin (300 W Hoag)': 'St 51.5', 'Station 2 (15413 NE Fargher Lake Hwy)': 'St 52' };
@@ -970,6 +1013,9 @@ function renderHome() {
   const now = new Date(), today = startOfDay(), day = 86400000;
   let h = '<div class="hello"><h2>' + (now.getHours() < 12 ? 'Morning' : now.getHours() < 17 ? 'Afternoon' : 'Evening') + ', ' + esc(firstName(meName())) + '</h2><span>' + now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) + (lastSync ? ' · updated ' + fmtDT(lastSync).split(' ')[1] : '') + '</span></div><div class="grid">';
 
+  /* Vehicle checks (first: daily operations) */
+  h += secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', 'Ambulances today', vehSecBody(), '<button class="go" onclick="openVeh()">Open vehicles</button>' + link(CONFIG.checksUrl, 'EP Checker', true));
+
   /* Shift Ops */
   const open = openItems(), since48 = now.getTime() - 48 * 3600000;
   const fresh = open.filter(i => Math.max(i.created ? i.created.getTime() : 0, i.dateIn ? i.dateIn.getTime() : 0) >= since48);
@@ -1029,6 +1075,197 @@ function renderHome() {
   el.innerHTML = h;
 }
 
+/* ---------- Vehicle checks (EP Checker logs every check to Firebase) ----------
+   vehicleChecks/{id}   = {id, unit, type, date, at, atMs, crew, pct, held, fuel, mileage, issues:[{label, notes, state}]}
+   vehicleStatus/{unit} = {oos, reason, by, at}
+   vehicleResolved/{id} = {checkId, label, by, at}
+   state: fixed = crew fixed it on the spot (so the crew before left it that way)
+          unfixed = crew could not fix it, open = left abnormal                         */
+function vehDayStart(d) { const x = new Date(d || Date.now()); if (x.getHours() < CONFIG.vehDayStart) x.setDate(x.getDate() - 1); x.setHours(CONFIG.vehDayStart, 0, 0, 0); return x; }
+function hhmm(d) { return String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0'); }
+async function loadVehUnits() {
+  if (vehUnits) return vehUnits;
+  const c = lsGet(LS.vunits, null);
+  if (c && c.units && Date.now() - c.at < 86400000) { vehUnits = c.units; return vehUnits; }
+  try {
+    const r = await fetch(CONFIG.checksUnits + '?t=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    const u = (j.ambulances || []).map(a => a.id || a.name).filter(Boolean);
+    if (u.length) { vehUnits = u; lsSet(LS.vunits, { at: Date.now(), units: u }); return vehUnits; }
+  } catch (e) { /* fall back */ }
+  vehUnits = (c && c.units) || CONFIG.vehUnits.slice();
+  return vehUnits;
+}
+let fbDb = null, fbFs = null;
+async function fbReady() {
+  if (fbDb) return fbDb;
+  const fb = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+  fbFs = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  fbDb = fbFs.getFirestore(fb.initializeApp(CONFIG.firebase));
+  return fbDb;
+}
+function resKey(checkId, label) { return (checkId + '__' + label).replace(/[\/]/g, '-').slice(0, 400); }
+async function loadVeh() {
+  if (DEMO) return;
+  await loadVehUnits();
+  let db;
+  try { db = await fbReady(); } catch (e) { throw new Error('Could not load Firebase from here.'); }
+  const F = fbFs, since = Date.now() - CONFIG.vehKeepDays * 86400000;
+  try {
+    const [cs, ss, rs] = await Promise.all([
+      F.getDocs(F.query(F.collection(db, 'vehicleChecks'), F.where('atMs', '>=', since))),
+      F.getDocs(F.collection(db, 'vehicleStatus')),
+      F.getDocs(F.collection(db, 'vehicleResolved'))
+    ]);
+    const checks = [], status = {}, resolved = {};
+    cs.forEach(d => checks.push(d.data()));
+    ss.forEach(d => { const v = d.data(); if (v && v.oos) status[d.id] = v; });
+    rs.forEach(d => { const v = d.data(); if (v) resolved[v.checkId + '|' + v.label] = v; });
+    veh = { checks, status, resolved };
+  } catch (e) {
+    throw new Error(/permission/i.test(e && (e.code || e.message) || '') ? 'Firebase rules are blocking vehicle checks. See the README.' : 'Could not read vehicle checks from Firebase.');
+  }
+  vehErr = ''; lsSet(LS.veh, { at: Date.now(), veh });
+}
+async function vehWrite(fn, local, okMsg) {
+  if (DEMO) { local(veh); renderHome(); renderVehSheet(); toast(okMsg + ' (demo, not saved)'); return; }
+  try {
+    const db = await fbReady();
+    await fn(fbFs, db);
+    local(veh); lsSet(LS.veh, { at: Date.now(), veh });
+    renderHome(); renderVehSheet(); toast(okMsg);
+  } catch (e) { toast(/permission/i.test(e && (e.code || e.message) || '') ? 'Firebase rules blocked the save' : 'Could not save', true); }
+}
+function vehChecksFor(unit) { return (veh ? veh.checks : []).filter(c => c.unit === unit && c.type !== 'rescue').sort((a, b) => new Date(a.at) - new Date(b.at)); }
+function issueKey(c, i) { return c.id + '|' + i.label; }
+/* everything we need to show for one ambulance today */
+function vehUnitState(unit) {
+  const start = vehDayStart().getTime();
+  const all = vehChecksFor(unit);
+  const today = all.filter(c => new Date(c.at).getTime() >= start);
+  const st = (veh && veh.status[unit]) || {};
+  const prevOf = c => { const i = all.indexOf(c); return i > 0 ? all[i - 1] : null; };
+  const res = (veh && veh.resolved) || {};
+  /* open problems: unfixed/open items from the latest check, plus older unfixed ones nobody has resolved */
+  const latest = all[all.length - 1] || null;
+  const openIss = [];
+  all.slice(-6).forEach(c => (c.issues || []).forEach(i => {
+    if (i.state === 'fixed') return;
+    if (res[issueKey(c, i)]) return;
+    if (i.state === 'open' && c !== latest) return; // open items only count from the latest check
+    if (openIss.some(o => o.i.label === i.label)) return;
+    openIss.push({ c, i });
+  }));
+  const handoff = [];
+  today.forEach(c => (c.issues || []).filter(i => i.state === 'fixed').forEach(i => handoff.push({ c, i, prev: prevOf(c) })));
+  const unfixed = openIss.filter(o => o.i.state === 'unfixed');
+  let cls = 'none';
+  if (st.oos) cls = 'oos'; else if (!today.length) cls = 'none'; else if (unfixed.length) cls = 'bad'; else if (openIss.length) cls = 'iss'; else cls = 'ok';
+  return { unit, today, latest, st, openIss, unfixed, handoff, cls, all };
+}
+function vehSummary() {
+  const units = vehUnits || CONFIG.vehUnits;
+  const states = units.map(vehUnitState);
+  const inSvc = states.filter(s => !s.st.oos);
+  const checked = inSvc.filter(s => s.today.length);
+  const need = Math.min(CONFIG.vehMinChecks, inSvc.length);
+  const late = new Date().getHours() >= CONFIG.vehLateHour || new Date().getHours() < CONFIG.vehDayStart;
+  return { states, inSvc, checked, need, late, short: checked.length < need };
+}
+function vehCrew(c) { return c && c.crew ? esc(c.crew) : 'crew'; }
+function vehSecBody() {
+  if (!veh) return vehErr ? '<div class="sec-msg err">' + esc(vehErr) + '</div>' : '<div class="sec-msg">Loading...</div>';
+  const S = vehSummary();
+  const openN = S.states.reduce((n, s) => n + (s.st.oos ? 0 : s.openIss.length), 0);
+  const handN = S.states.reduce((n, s) => n + s.handoff.length, 0);
+  const oosN = S.states.length - S.inSvc.length;
+  let banner;
+  if (S.short) banner = '<div class="vbanner ' + (S.late ? 'bad' : 'warn') + '">' + S.checked.length + ' of ' + S.need + ' minimum ambulances checked since ' + String(CONFIG.vehDayStart).padStart(2, '0') + '00' + (S.late ? '. Crews are behind today.' : '. Still early.') + '</div>';
+  else banner = '<div class="vbanner good">' + S.checked.length + ' checked today. Minimum of ' + S.need + ' is covered.</div>';
+  const chips = '<div class="vchips">' + S.states.map(s => '<span class="vchip ' + (s.cls === 'none' ? '' : s.cls) + '"><i></i>' + esc(s.unit) + (s.today.length ? ' ' + hhmm(new Date(s.today[s.today.length - 1].at)) : '') + '</span>').join('') + '</div>';
+  const rows = [];
+  S.states.forEach(s => {
+    if (s.st.oos) return;
+    s.unfixed.forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Could not fix · ' + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)), 'bad')));
+  });
+  S.states.forEach(s => s.handoff.forEach(h => rows.push(rowi(s.unit + ': ' + h.i.label, 'Fixed at check by ' + vehCrew(h.c) + ', left by ' + (h.prev ? vehCrew(h.prev) + ' ' + fmtDate(new Date(h.prev.at)) : 'prior crew'), 'info'))));
+  S.states.forEach(s => { if (!s.st.oos) s.openIss.filter(o => o.i.state === 'open').forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Open · ' + vehCrew(o.c), 'warn'))); });
+  return banner + '<div class="stats">' + stat(S.checked.length + '/' + S.inSvc.length, 'Checked') + stat(openN, 'Open issues', openN ? 'warn' : '') + stat(handN, 'Left by prior', handN ? 'bad' : '') + stat(oosN, 'Out of svc') + '</div>' +
+    chips + rowsHtml(rows.slice(0, 6), 'No problems reported on the ambulances.');
+}
+function openVeh(unit) { vehOpen = unit || ''; renderVehSheet(); showSheet('sh-veh'); }
+function renderVehSheet() {
+  const el = $('veh-body'); if (!el) return;
+  if (!veh) { el.innerHTML = '<div class="sec-msg' + (vehErr ? ' err' : '') + '">' + esc(vehErr || 'Loading...') + '</div>'; return; }
+  const keep = {}; el.querySelectorAll('input[id^="oos-"]').forEach(i => { if (i.value) keep[i.id] = i.value; });
+  VEH_REFS = [];
+  const S = vehSummary();
+  let h = vehSecBody().split('<div class="stats">')[0];
+  S.states.forEach(s => {
+    const lastT = s.today.length ? s.today[s.today.length - 1] : null;
+    const stTxt = s.st.oos ? 'Out of service' : !s.today.length ? 'Not checked today' : s.cls === 'bad' ? 'Checked, could not fix something' : s.cls === 'iss' ? 'Checked, open issues' : 'Checked, all good';
+    h += '<div class="vunit ' + s.cls + '" id="vu-' + esc(s.unit) + '"><div class="vunit-head"><h4>' + esc(s.unit) + '</h4><span class="st ' + (s.cls === 'oos' ? '' : s.cls) + '">' + stTxt + '</span></div>';
+    if (s.st.oos) h += '<div class="vline"><b>Out of service:</b> ' + esc(s.st.reason || 'no reason given') + '<br>Marked by ' + esc(s.st.by || '') + (s.st.at ? ' ' + fmtDT(new Date(s.st.at)) : '') + '</div>';
+    if (s.today.length) h += s.today.map(c => '<div class="vline"><b>' + hhmm(new Date(c.at)) + '</b> checked by <b>' + vehCrew(c) + '</b>' + (c.pct != null ? ' · ' + c.pct + '% done' : '') + (c.held ? ' (email held till 1700)' : '') + (c.fuel && c.fuel !== 'Full' ? ' · fuel ' + esc(c.fuel) : '') + (c.mileage ? ' · ' + esc(c.mileage) + ' mi' : '') + '</div>').join('');
+    else if (s.latest) h += '<div class="vline">Last check: ' + fmtDT(new Date(s.latest.at)) + ' by ' + vehCrew(s.latest) + '</div>';
+    else h += '<div class="vline">No checks logged yet.</div>';
+    if (s.openIss.length) {
+      h += '<div class="vsub">Open problems</div>';
+      h += s.openIss.map(o => '<div class="viss ' + o.i.state + '"><div class="t"><span class="vtag ' + o.i.state + '">' + (o.i.state === 'unfixed' ? 'Could not fix' : 'Open') + '</span>' + esc(o.i.label) + '<em>' + (o.i.notes ? esc(o.i.notes) + ' · ' : '') + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)) + '</em></div><button onclick="vehResolve(' + (VEH_REFS.push({ id: o.c.id, label: o.i.label }) - 1) + ')">Fixed</button></div>').join('');
+    }
+    if (s.handoff.length) {
+      h += '<div class="vsub">Left by the prior crew (fixed at check)</div>';
+      h += s.handoff.map(x => '<div class="viss fixed"><div class="t"><span class="vtag fixed">Handoff</span>' + esc(x.i.label) + '<em>' + (x.i.notes ? esc(x.i.notes) + ' · ' : '') + 'Fixed by ' + vehCrew(x.c) + ' at ' + hhmm(new Date(x.c.at)) + ' · ' + (x.prev ? 'last checked ' + fmtDT(new Date(x.prev.at)) + ' by ' + vehCrew(x.prev) : 'no earlier check on file') + '</em></div></div>').join('');
+    }
+    /* 7 day look back */
+    const wk = s.all.filter(c => new Date(c.at).getTime() >= vehDayStart().getTime() - 6 * 86400000);
+    const days = new Set(wk.map(c => fmtDate(vehDayStart(new Date(c.at)))));
+    const hand7 = wk.reduce((n, c) => n + (c.issues || []).filter(i => i.state === 'fixed').length, 0);
+    h += '<div class="vline" style="color:var(--muted)">Last 7 days: checked ' + days.size + ' of 7 days' + (hand7 ? ' · ' + hand7 + ' handoff fix' + (hand7 === 1 ? '' : 'es') : '') + '</div>';
+    if (s.st.oos) h += '<button class="vbtn" onclick="vehSetOos(\'' + esc(s.unit) + '\', false)">Back in service</button>';
+    else h += '<div class="voos"><input class="inp" id="oos-' + esc(s.unit) + '" placeholder="Reason, like brakes at shop" maxlength="140"><button class="vbtn red" style="margin-top:0" onclick="vehSetOos(\'' + esc(s.unit) + '\', true)">Out of service</button></div>';
+    h += '</div>';
+  });
+  h += '<div class="btns"><a class="btn ghost" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="' + esc(CONFIG.checksUrl) + '" target="_blank" rel="noopener">Open EP Checker</a></div>';
+  el.innerHTML = h;
+  Object.keys(keep).forEach(k => { const i = $(k); if (i) i.value = keep[k]; });
+  if (vehOpen) { const u = $('vu-' + vehOpen); if (u) u.scrollIntoView({ block: 'start' }); vehOpen = ''; }
+}
+function vehSetOos(unit, on) {
+  const reason = on ? (($('oos-' + unit) || {}).value || '').trim() : '';
+  if (on && !reason) { toast('Add a reason first', true); const i = $('oos-' + unit); if (i) i.focus(); return; }
+  const rec = on ? { oos: true, reason, by: meName(), at: new Date().toISOString() } : { oos: false, reason: '', by: meName(), at: new Date().toISOString() };
+  vehWrite((F, db) => F.setDoc(F.doc(db, 'vehicleStatus', unit), rec),
+    v => { if (on) v.status[unit] = rec; else delete v.status[unit]; },
+    unit + (on ? ' marked out of service' : ' back in service'));
+}
+let VEH_REFS = [];
+function vehResolve(n) {
+  const r = VEH_REFS[n]; if (!r) return;
+  const rec = { checkId: r.id, label: r.label, by: meName(), at: new Date().toISOString() };
+  vehWrite((F, db) => F.setDoc(F.doc(db, 'vehicleResolved', resKey(r.id, r.label)), rec),
+    v => { v.resolved[r.id + '|' + r.label] = rec; }, 'Marked fixed');
+}
+function demoVeh() {
+  const now = new Date(), start = vehDayStart(now).getTime(), h = n => new Date(start + n * 3600000).toISOString(), y = n => new Date(start - n * 3600000).toISOString();
+  vehUnits = CONFIG.vehUnits.slice();
+  veh = {
+    checks: [
+      { id: 'M25A-y', unit: 'M25A', type: 'ambulance', at: y(16), crew: 'RT + KM', pct: 100, issues: [] },
+      { id: 'M25A-t', unit: 'M25A', type: 'ambulance', at: h(0.7), crew: 'JS + AL', pct: 100, fuel: '3/4', mileage: '84211', issues: [
+        { label: 'Main O2 below minimum PSI', notes: 'Was at 300, swapped tank', state: 'fixed' },
+        { label: 'Drug box: Narcan 4mg', notes: 'Restocked, prior crew used 1', state: 'fixed' } ] },
+      { id: 'M19-y', unit: 'M19', type: 'ambulance', at: y(20), crew: 'BW + TT', pct: 100, issues: [] },
+      { id: 'M19-t', unit: 'M19', type: 'ambulance', at: h(1.2), crew: 'DB + NS', pct: 96, issues: [
+        { label: 'Brake lights', notes: 'Left side out, bulb ordered', state: 'unfixed' },
+        { label: 'Windshield washer fluid', notes: '', state: 'open' } ] },
+      { id: 'M18-y', unit: 'M18', type: 'ambulance', at: y(30), crew: 'RT + KM', pct: 100, issues: [] }
+    ],
+    status: { M14: { oos: true, reason: 'At Freightliner for transmission', by: 'Dennis Madler', at: y(48) } },
+    resolved: {}
+  };
+}
+
 function demoExtras() {
   const day = 86400000, t = Date.now(), d = n => new Date(t + n * day);
   fng = { setup: true,
@@ -1037,6 +1274,7 @@ function demoExtras() {
     svc: [{ title: 'Fire extinguishers: annual inspection and tag', station: 'Station 52', next: d(-12), active: true }, { title: 'HVAC filters: replace', station: 'Station 51', next: d(-3), active: true }, { title: 'Roof and gutters: inspection', station: 'Station 51', next: d(14), active: true }],
     grd: [{ title: 'Mow and edge front lawn', station: 'St 51', due: d(-1), status: 'Done' }, { title: 'Generator monthly run test', station: 'St 52', due: d(-2), status: 'Not Completed' }, { title: 'Blow out bays', station: 'St 51', due: d(-4), status: 'Not Started' },
           { title: 'Weed eat fence line', station: 'St 52', due: d(1), status: 'Not Started' }, { title: 'Empty trash cans', station: 'St 51.5', due: d(0), status: 'In Progress' }] };
+  demoVeh();
   reports = [{ type: 'biological', status: 'new', when: d(-1) }, { type: 'vehicle', status: 'reviewed', when: d(-6) }, { type: 'injury', status: 'closed', when: d(-20) }, { type: 'injury', status: 'reviewed', when: d(-40) }];
 }
 
@@ -1058,6 +1296,8 @@ async function boot() {
   setView(/[?&]view=board/.test(location.search) ? 'board' : lsGet(LS.view, 'home'));
   const fc = lsGet(LS.fng, null);
   if (fc && fc.fng) { fng = fc.fng; ['wo', 'svc', 'grd'].forEach(k => (fng[k] || []).forEach(x => ['created', 'next', 'due'].forEach(f => { if (x[f]) x[f] = new Date(x[f]); }))); }
+  const vc = lsGet(LS.veh, null); if (vc && vc.veh) veh = vc.veh;
+  vehUnits = (lsGet(LS.vunits, null) || {}).units || null;
   if (c && c.items) { items = c.items.map(mapItem); lastSync = new Date(c.at); render(); } else renderHome();
   if (/[?&]view=brief/.test(location.search)) openBrief();
   await refresh(false);
