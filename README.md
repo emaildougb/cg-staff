@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.1**
+**Version 1.2**
 
 ## Links
 
@@ -14,6 +14,7 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 - Repo: [https://github.com/emaildougb/cg-staff](https://github.com/emaildougb/cg-staff)
 - Upload: [https://github.com/emaildougb/cg-staff/upload/main](https://github.com/emaildougb/cg-staff/upload/main)
 - EP Checker (crew vehicle checks): [https://checks.northcountryems.org/](https://checks.northcountryems.org/)
+- Shift Ops list (SharePoint) also has `Triage` (Choice: Red, Yellow, Green) and `Briefing` (Yes/No) columns, added for v1.2. If they're missing the app still works but triage and flags show a note instead of saving.
 - Shift Ops list (SharePoint): [https://northcountryemsorg.sharepoint.com/sites/BattalionChiefLocal/Lists/Shift%20Ops/AllItems.aspx](https://northcountryemsorg.sharepoint.com/sites/BattalionChiefLocal/Lists/Shift%20Ops/AllItems.aspx)
 
 ## Files (upload ALL of these)
@@ -46,6 +47,10 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 
 **Shift Ops tab:** one column per group (Needs Triaged, Training, Logistics, Operations, Chief, plus Fire Dept, Admin, General when used). Drag a card to move it; the owner follows the group's default person (Training Doug, Logistics Dennis, Operations Derek, Chief Bryce). Tap a card for details, status, notes, Take it, and Complete. Done this week, filters (All, Mine, Getting old, Waiting), search, and Add item. On a phone it shows one group at a time with tabs and swipe.
 
+**Triage and briefing flag:** every card has a dot (tap to set Red urgent, Yellow soon, Green routine; white means not triaged yet) and a flag (tap to put it on the shift briefing). The card's left edge shows the triage color. Flagged cards float to the top of their group, then Red, Yellow, not triaged, Green. Filters: Briefing and Not triaged. On a computer the cards are compact and hovering shows the details and last note; click to open. The item sheet has the same Triage buttons and a Mention at shift briefing switch.
+
+**Briefing:** shows only flagged items (and flagged items finished in the time window) by default. Tap Everything for new, being worked, other done, and getting old.
+
 ## Who gets in
 
 Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick. Anyone else who signs in sees "CG Staff only" and a link to the hub. Each person also needs access to the CG Staff and Facilities and Grounds SharePoint sites for numbers to load.
@@ -65,6 +70,14 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick. Anyone else w
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.2
+- Shift Ops cards get a triage dot (Red / Yellow / Green) and a shift briefing flag, both one tap from the card
+- Flagged cards float to the top, then by triage color
+- Briefing view shows only flagged items by default, with an Everything button for the full list
+- Compact cards on desktop, hover to see details and the last note
+- Dashboard Shift Ops card: Open, Briefing, Red, Not triaged, with flagged items listed first
+- New filters: Briefing, Not triaged
 
 ### v1.1
 - New Vehicle Checks section, first on the dashboard: daily check status for every ambulance, 2 ambulance minimum, open issues, handoff problems left by the prior crew

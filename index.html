@@ -117,10 +117,49 @@
   .col-add { margin:0 8px 10px; border:none; background:transparent; color:var(--muted); font-size:12px; font-weight:800; letter-spacing:.8px; text-align:left; padding:8px 6px; border-radius:8px; }
   .col-add:hover { background:rgba(0,0,0,.05); color:var(--g-deep); }
 
-  .card { background:#fff; border-radius:10px; padding:10px 11px 9px; box-shadow:0 1px 3px rgba(0,0,0,.12); border-left:5px solid #cfd8cf; cursor:pointer; user-select:none; -webkit-user-select:none; }
+  .card { background:#fff; border-radius:10px; padding:10px 11px 9px; box-shadow:0 1px 3px rgba(0,0,0,.12); border-left:6px solid var(--tri, #cfd8cf); cursor:pointer; user-select:none; -webkit-user-select:none; position:relative; }
   .card:hover { box-shadow:0 3px 10px rgba(0,0,0,.16); }
-  .card.age-amber { border-left-color:#D9A400; }
-  .card.age-red { border-left-color:var(--bad); }
+  .card.flagged { background:#FFFBEA; box-shadow:0 0 0 2px #E8C64A inset, 0 1px 3px rgba(0,0,0,.12); }
+  .tri { width:16px; height:16px; border-radius:50%; border:none; background:var(--tri); flex-shrink:0; padding:0; box-shadow:0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,.12); }
+  .tri.none { background:#fff; box-shadow:0 0 0 2px #b9c4b9 inset; }
+  .sid { flex:1; }
+  .flag { width:26px; height:24px; border:none; background:transparent; color:#c9d1c9; padding:2px 4px; border-radius:6px; flex-shrink:0; }
+  .flag svg { width:16px; height:16px; fill:none; }
+  .flag:hover { color:#9a7a00; background:#f4f0de; }
+  .flag.on { color:#B8860B; } .flag.on svg { fill:currentColor; }
+  .card-more { display:none; }
+  .seg.tri-seg button { display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; }
+  .seg.tri-seg button small { font-size:9px; letter-spacing:.5px; opacity:.8; margin-top:2px; }
+  .seg.tri-seg button.on[data-t="Red"] { background:#C13E3E; border-color:#C13E3E; color:#fff; }
+  .seg.tri-seg button.on[data-t="Yellow"] { background:#D9A400; border-color:#D9A400; color:#1A1A1A; }
+  .seg.tri-seg button.on[data-t="Green"] { background:#3A8A3A; border-color:#3A8A3A; color:#fff; }
+  .brief-tog { width:100%; margin-top:12px; min-height:50px; display:flex; align-items:center; gap:10px; border:2px solid var(--border); background:#fff; border-radius:10px; padding:0 14px; font-size:13px; font-weight:800; color:var(--g-deep); text-align:left; }
+  .brief-tog svg { width:20px; height:20px; fill:none; stroke:currentColor; color:#b0b8b0; }
+  .brief-tog span { flex:1; } .brief-tog i { font-style:normal; font-size:10px; letter-spacing:1px; color:var(--muted); }
+  .brief-tog.on { background:#FFF6D6; border-color:#E8C64A; } .brief-tog.on svg { fill:#B8860B; color:#B8860B; } .brief-tog.on i { color:#7a5a00; }
+  /* desktop: tighter cards so more fit, hover shows the details */
+  @media (min-width:761px) {
+    .col { flex-basis:262px; }
+    .col-body { gap:6px; }
+    .card { padding:7px 9px 7px; border-radius:8px; }
+    .card-top { font-size:9.5px; }
+    .card-title { font-size:12.5px; margin:4px 0 5px; -webkit-line-clamp:2; }
+    .card-foot .av { width:18px; height:18px; font-size:8px; }
+    .card-foot .who { font-size:10.5px; }
+  }
+  @media (min-width:761px) and (hover:hover) {
+    .card-more { display:block; max-height:0; overflow:hidden; opacity:0; transition:max-height .2s ease .25s, opacity .15s ease .25s, margin .2s ease .25s; font-size:11.5px; line-height:1.4; color:#333; }
+    .card:hover .card-more { max-height:260px; opacity:1; margin-top:7px; }
+    .card:hover .card-title { -webkit-line-clamp:unset; }
+    .card.dragging .card-more { display:none; }
+    .cm-det { white-space:pre-wrap; word-break:break-word; display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden; }
+    .cm-note { margin-top:5px; background:#f3f6f3; border-radius:6px; padding:5px 7px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+    .card.flagged .cm-note { background:#fff3c4; }
+    .cm-meta { margin-top:5px; font-size:10px; color:var(--muted); }
+  }
+  .br-item.tri-Red { border-left-color:#C13E3E; } .br-item.tri-Yellow { border-left-color:#D9A400; } .br-item.tri-Green { border-left-color:#3A8A3A; }
+  .br-flag { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:6px; vertical-align:1px; }
+  .br-sec.hot h3 { color:#7a5a00; border-bottom-color:#E8C64A; }
   .card.dragging { opacity:.4; }
   .card-top { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:10px; color:var(--muted); letter-spacing:.5px; }
   .age { font-weight:800; padding:2px 6px; border-radius:5px; background:#eef2ee; color:#5a635a; }
@@ -321,6 +360,8 @@
   <button class="fchip" data-f="mine" onclick="setFilter('mine')">Mine</button>
   <button class="fchip" data-f="stale" onclick="setFilter('stale')">Getting old</button>
   <button class="fchip" data-f="waiting" onclick="setFilter('waiting')">Waiting</button>
+  <button class="fchip" data-f="brief" onclick="setFilter('brief')">Briefing</button>
+  <button class="fchip" data-f="untriaged" onclick="setFilter('untriaged')">Not triaged</button>
   <span class="spacer"></span>
   <button class="add-btn bar-add" onclick="openAdd()">+ Add item</button>
 </div>
@@ -378,6 +419,8 @@
     <img src="logo.png" alt="">
     <div class="grow"><h2>Shift Briefing</h2><p id="br-date"></p></div>
     <div class="no-print" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="fchip on" data-all="0" onclick="setBriefAll(false)">Briefing items</button>
+      <button class="fchip" data-all="1" onclick="setBriefAll(true)">Everything</button>
       <button class="fchip" data-h="24" onclick="setBriefHours(24)">24 hrs</button>
       <button class="fchip on" data-h="48" onclick="setBriefHours(48)">48 hrs</button>
       <button class="fchip" data-h="168" onclick="setBriefHours(168)">7 days</button>
@@ -411,7 +454,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.1';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.2';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -468,6 +511,9 @@ const EMAIL_TO_PERSON = {
 const STATUS = { OPEN: 'Open', IP: 'In Progress', WAIT: 'Waiting', DONE: 'Completed' };
 const SOURCES = ['Shift Notes', 'Email', 'LP35 Form', 'Add to Trello', 'Manual'];
 const FIELDS = 'Title,ItemID,DateIn,Details,Category,Source,AssignedTo,Status,Notes,CompletedBy,CompletedDate,Link';
+/* Triage (Choice: Red / Yellow / Green) and Briefing (Yes/No) columns on the Shift Ops list */
+const TRIAGE = { Red: { c: '#C13E3E', label: 'Red', sub: 'Urgent' }, Yellow: { c: '#D9A400', label: 'Yellow', sub: 'Soon' }, Green: { c: '#3A8A3A', label: 'Green', sub: 'Routine' } };
+let hasTriageCols = null;   // null = not checked yet
 
 const DEMO = /[?&]demo=1/.test(location.search);
 const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || 'doug';
@@ -593,13 +639,18 @@ function mapItem(it) {
     created: parseDate(it.createdDateTime), modified: parseDate(it.lastModifiedDateTime),
     details: f.Details || '', category: f.Category || 'Needs Triaged', source: f.Source || '', assigned: f.AssignedTo || 'Unassigned',
     status: f.Status || STATUS.OPEN, notes: f.Notes || '', completedBy: f.CompletedBy || '', completedDate: parseDate(f.CompletedDate),
-    link: (f.Link && (f.Link.Url || f.Link.url)) || ''
+    link: (f.Link && (f.Link.Url || f.Link.url)) || '',
+    triage: TRIAGE[f.Triage] ? f.Triage : '', brief: f.Briefing === true
   };
 }
 async function loadItems() {
   if (DEMO) return;
   await getSiteId();
-  let out = [], next = listPath() + '/items?$expand=fields($select=' + FIELDS + ')&$top=500';
+  if (hasTriageCols === null) {
+    try { const cols = (await graph(listPath() + '/columns?$select=name&$top=200')).value || []; const n = cols.map(c => c.name); hasTriageCols = n.indexOf('Triage') >= 0 && n.indexOf('Briefing') >= 0; }
+    catch (e) { hasTriageCols = false; }
+  }
+  let out = [], next = listPath() + '/items?$expand=fields($select=' + FIELDS + (hasTriageCols ? ',Triage,Briefing' : '') + ')&$top=500';
   while (next) { const j = await graph(next); out = out.concat(j.value || []); next = j['@odata.nextLink'] || null; }
   items = out.map(mapItem);
   lsSet(LS.cache, { at: Date.now(), items: out });
@@ -649,26 +700,57 @@ function passes(it) {
   if (filter === 'mine') return it.assigned === mePerson();
   if (filter === 'stale') return daysSince(it.dateIn) >= CONFIG.amberDays;
   if (filter === 'waiting') return it.status === STATUS.WAIT;
+  if (filter === 'brief') return it.brief;
+  if (filter === 'untriaged') return !it.triage;
   return true;
 }
 function setFilter(f) { filter = f; lsSet(LS.filter, f); document.querySelectorAll('.bar .fchip').forEach(b => b.classList.toggle('on', b.dataset.f === f)); render(); }
 function setSearch(v) { search = v.trim(); render(); }
+const TRI_RANK = { Red: 0, Yellow: 1, '': 2, Green: 3 };
 function sortItems(a, b) {
   const rank = s => s === STATUS.IP ? 0 : s === STATUS.OPEN ? 1 : 2;
-  return (a.dateIn || 0) - (b.dateIn || 0) || rank(a.status) - rank(b.status);
+  return (b.brief ? 1 : 0) - (a.brief ? 1 : 0) || TRI_RANK[a.triage || ''] - TRI_RANK[b.triage || ''] ||
+    (a.dateIn || 0) - (b.dateIn || 0) || rank(a.status) - rank(b.status);
 }
 
 /* ---------------- board ---------------- */
+const FLAG_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>';
 function cardHtml(it) {
-  const age = daysSince(it.dateIn), ac = ageClass(age);
+  const age = daysSince(it.dateIn), ac = ageClass(age), t = TRIAGE[it.triage];
   const pill = it.status === STATUS.IP ? '<span class="pill ip">In progress</span>' : it.status === STATUS.WAIT ? '<span class="pill wt">Waiting</span>' : '';
-  const noteCount = it.notes ? it.notes.split(/\n(?=\d{1,2}\/\d{1,2} )/).filter(Boolean).length : 0;
-  return '<div class="card ' + (ac ? 'age-' + ac : '') + '" data-id="' + esc(it.id) + '" draggable="' + (!isPhone()) + '" onclick="openItem(\'' + esc(it.id) + '\')">' +
-    '<div class="card-top"><span>' + esc(soId(it)) + '</span><span class="age ' + ac + '" title="Days on the board">' + ageLabel(age) + '</span></div>' +
+  const notes = parseNotes(it.notes), noteCount = notes.length, id = esc(it.id);
+  const more = (it.details ? '<div class="cm-det">' + esc(it.details) + '</div>' : '') +
+    (notes[0] ? '<div class="cm-note"><b>' + esc(notes[0].when || '') + (notes[0].who ? ' ' + esc(firstName(notes[0].who)) : '') + ':</b> ' + esc(notes[0].text) + '</div>' : '') +
+    '<div class="cm-meta">' + esc(group(it.category).name) + ' · in ' + fmtDate(it.dateIn) + (it.source ? ' · ' + esc(it.source === 'Add to Trello' ? 'Email' : it.source) : '') + ' · click to open</div>';
+  return '<div class="card' + (it.brief ? ' flagged' : '') + '" style="--tri:' + (t ? t.c : '#cfd8cf') + '" data-id="' + id + '" draggable="' + (!isPhone()) + '" onclick="openItem(\'' + id + '\')">' +
+    '<div class="card-top">' +
+      '<button class="tri ' + (t ? '' : 'none') + '" title="' + (t ? t.label + ': ' + t.sub : 'Not triaged') + '. Tap to change" onclick="event.stopPropagation();cycleTriage(\'' + id + '\')"></button>' +
+      '<span class="sid">' + esc(soId(it)) + '</span>' +
+      '<button class="flag ' + (it.brief ? 'on' : '') + '" title="' + (it.brief ? 'On the shift briefing. Tap to remove' : 'Tap to put on the shift briefing') + '" onclick="event.stopPropagation();toggleBrief(\'' + id + '\')">' + FLAG_SVG + '</button>' +
+      '<span class="age ' + ac + '" title="Days on the board">' + ageLabel(age) + '</span></div>' +
     '<div class="card-title">' + esc(it.title) + '</div>' +
     '<div class="card-foot"><span class="who"><span class="av" style="background:' + (PERSON_COLOR[it.assigned] || '#8A918A') + '">' + esc(initials(it.assigned)) + '</span>' + esc(firstName(it.assigned)) + '</span>' +
-    (it.source ? '<span class="tag">' + esc(it.source === 'Add to Trello' ? 'Email' : it.source) + '</span>' : '') + pill +
-    (noteCount ? '<span class="card-note">' + noteCount + ' note' + (noteCount > 1 ? 's' : '') + '</span>' : '') + '</div></div>';
+    pill + (noteCount ? '<span class="card-note">' + noteCount + ' note' + (noteCount > 1 ? 's' : '') + '</span>' : '') + '</div>' +
+    '<div class="card-more">' + more + '</div></div>';
+}
+/* quick triage from the card: none > Red > Yellow > Green > Red ... */
+function needCols() { if (DEMO || hasTriageCols) return false; toast('The Triage and Briefing columns are not on the Shift Ops list yet. See the README.', true); return true; }
+function cycleTriage(id) {
+  if (needCols()) return;
+  const it = items.find(i => i.id === id); if (!it) return;
+  const next = { '': 'Red', Red: 'Yellow', Yellow: 'Green', Green: 'Red' }[it.triage || ''];
+  applyChange(id, { triage: next }, { Triage: next }, next + ': ' + TRIAGE[next].sub).then(() => { if (openId === id) renderItemSheet(); });
+}
+function setTriage(v) {
+  if (needCols()) return;
+  const it = items.find(i => i.id === openId); if (!it || it.triage === v) return;
+  applyChange(it.id, { triage: v }, { Triage: v }, v + ': ' + TRIAGE[v].sub).then(renderItemSheet);
+}
+function toggleBrief(id) {
+  if (needCols()) return;
+  const it = items.find(i => i.id === (id || openId)); if (!it) return;
+  const v = !it.brief;
+  applyChange(it.id, { brief: v }, { Briefing: v }, v ? 'On the shift briefing' : 'Off the shift briefing').then(() => { if (openId === it.id) renderItemSheet(); });
 }
 function render() {
   const open = openItems().filter(passes).sort(sortItems);
@@ -766,6 +848,8 @@ function renderItemSheet() {
   if (!done) {
     h += '<label class="lbl">Status</label><div class="seg">' + [STATUS.OPEN, STATUS.IP, STATUS.WAIT].map(s => '<button data-s="' + s + '" class="' + (it.status === s ? 'on' : '') + '" onclick="setStatus(\'' + s + '\')">' + (s === STATUS.IP ? 'In progress' : s) + '</button>').join('') + '</div>';
   }
+  h += '<label class="lbl">Triage</label><div class="seg tri-seg">' + Object.keys(TRIAGE).map(k => '<button data-t="' + k + '" class="' + (it.triage === k ? 'on' : '') + '" onclick="setTriage(\'' + k + '\')">' + k + '<small>' + TRIAGE[k].sub + '</small></button>').join('') + '</div>';
+  h += '<button class="brief-tog ' + (it.brief ? 'on' : '') + '" onclick="toggleBrief()">' + FLAG_SVG + '<span>' + (it.brief ? 'On the shift briefing' : 'Mention at shift briefing') + '</span><i>' + (it.brief ? 'ON' : 'OFF') + '</i></button>';
   h += '<div class="btns"><button class="btn ghost" onclick="saveItem()">Save changes</button>' +
        (mePerson() && it.assigned !== mePerson() && !done ? '<button class="btn ghost" onclick="takeIt()">Take it</button>' : '') + '</div>';
   h += '<label class="lbl">Notes</label>';
@@ -860,8 +944,10 @@ function renderDone() {
 function openBrief() { $('brief').classList.add('show'); renderBrief(); }
 function closeBrief() { $('brief').classList.remove('show'); }
 function setBriefHours(h) { briefHours = h; lsSet(LS.hours, h); renderBrief(); }
+let briefAll = false;
+function setBriefAll(v) { briefAll = v; renderBrief(); }
 function brItem(i, extra) {
-  return '<div class="br-item" style="--c:' + group(i.category).color + '"><div class="t">' + esc(i.title) + '<span>' + esc(group(i.category).name) + ' · ' + esc(i.assigned) + (extra ? ' · ' + extra : '') + '</span></div></div>';
+  return '<div class="br-item" style="--c:' + (TRIAGE[i.triage] ? TRIAGE[i.triage].c : group(i.category).color) + '"><div class="t">' + esc(i.title) + '<span>' + esc(group(i.category).name) + ' · ' + esc(i.assigned) + (extra ? ' · ' + extra : '') + '</span></div></div>';
 }
 function renderBrief() {
   document.querySelectorAll('#brief .fchip[data-h]').forEach(b => b.classList.toggle('on', +b.dataset.h === briefHours));
@@ -875,11 +961,22 @@ function renderBrief() {
   const old = open.filter(i => daysSince(i.dateIn) >= CONFIG.redDays && !isNew(i)).sort(sortItems);
   let h = '<div class="tiles">' + GROUPS.filter(g => open.some(i => i.category === g.key) || ['Training', 'Logistics', 'Operations', 'Chief'].includes(g.key))
     .map(g => '<div class="tile" style="--c:' + g.color + '"><b>' + open.filter(i => i.category === g.key).length + '</b><span>' + esc(g.name) + ' open</span></div>').join('') + '</div>';
-  const sec = (title, list, fn) => '<div class="br-sec"><h3>' + title + '<small>' + list.length + '</small></h3>' + (list.length ? '<div class="br-list">' + list.map(fn).join('') + '</div>' : '<div class="br-none">None</div>') + '</div>';
-  h += sec('New since last shift', fresh, i => brItem(i, i.source ? 'from ' + esc(i.source) : ''));
-  h += sec('Being worked', moving, i => brItem(i, i.status === STATUS.WAIT ? '<b>waiting</b>' + (parseNotes(i.notes)[0] ? ': ' + esc(parseNotes(i.notes)[0].text.slice(0, 80)) : '') : 'in progress'));
-  h += sec('Done', doneNow, i => brItem(i, 'done by ' + esc(i.completedBy || 'unknown')));
-  h += sec('Getting old (' + CONFIG.redDays + '+ days)', old, i => brItem(i, daysSince(i.dateIn) + ' days'));
+  const sec = (title, list, fn, cls) => '<div class="br-sec ' + (cls || '') + '"><h3>' + title + '<small>' + list.length + '</small></h3>' + (list.length ? '<div class="br-list">' + list.map(fn).join('') + '</div>' : '<div class="br-none">None</div>') + '</div>';
+  const triTxt = i => TRIAGE[i.triage] ? '<b>' + i.triage + '</b>' : 'not triaged';
+  const flagged = open.filter(i => i.brief).sort(sortItems);
+  const flaggedDone = doneNow.filter(i => i.brief);
+  document.querySelectorAll('#brief .fchip[data-all]').forEach(b => b.classList.toggle('on', (b.dataset.all === '1') === briefAll));
+  h += sec('For briefing', flagged, i => brItem(i, triTxt(i) + (i.status === STATUS.WAIT ? ' · waiting' + (parseNotes(i.notes)[0] ? ': ' + esc(parseNotes(i.notes)[0].text.slice(0, 80)) : '') : i.status === STATUS.IP ? ' · in progress' : '')), 'hot');
+  h += sec('Briefing items done', flaggedDone, i => brItem(i, 'done by ' + esc(i.completedBy || 'unknown')));
+  if (briefAll) {
+    h += sec('New since last shift', fresh.filter(i => !i.brief), i => brItem(i, triTxt(i) + (i.source ? ' · from ' + esc(i.source) : '')));
+    h += sec('Being worked', moving.filter(i => !i.brief), i => brItem(i, i.status === STATUS.WAIT ? '<b>waiting</b>' + (parseNotes(i.notes)[0] ? ': ' + esc(parseNotes(i.notes)[0].text.slice(0, 80)) : '') : 'in progress'));
+    h += sec('Other things done', doneNow.filter(i => !i.brief), i => brItem(i, 'done by ' + esc(i.completedBy || 'unknown')));
+    h += sec('Getting old (' + CONFIG.redDays + '+ days)', old.filter(i => !i.brief), i => brItem(i, daysSince(i.dateIn) + ' days'));
+  } else {
+    const rest = open.length - flagged.length, redNot = open.filter(i => !i.brief && i.triage === 'Red').length;
+    h += '<div class="br-none no-print" style="margin-top:14px">' + rest + ' other open item' + (rest === 1 ? '' : 's') + ' not flagged for briefing' + (redNot ? ', ' + redNot + ' of them red' : '') + '. Tap Everything to see them.</div>';
+  }
   $('br-body').innerHTML = h;
 }
 
@@ -891,9 +988,11 @@ function openInfo() {
     '<br><br><b>How it works</b><br>' +
     'Every card is a row in the Shift Ops list in the CG Staff team. The email sweep adds shift notes, equipment issues, LP35 reports and "Add to Trello" emails every 4 hours. Anyone on CG Staff can add, move, note and complete items.<br><br>' +
     '<b>Move a card</b>: drag it to another group (computer), or open it and change Group (phone). If it was with that group\'s default person, it goes to the new group\'s default person.<br>' +
-    '<b>Card colors</b>: the left edge turns amber after ' + CONFIG.amberDays + ' days and red after ' + CONFIG.redDays + '.<br>' +
+    '<b>Triage</b>: tap the dot on a card to set Red (urgent), Yellow (soon) or Green (routine). The left edge shows the color. White dot means nobody has triaged it yet.<br>' +
+    '<b>Briefing flag</b>: tap the flag on a card to put it on the shift briefing. Flagged cards float to the top of their group. The day count turns amber after ' + CONFIG.amberDays + ' days and red after ' + CONFIG.redDays + '.<br>' +
+    '<b>Hover</b> over a card on a computer to see details and the last note. Click to open it.<br>' +
     '<b>Complete</b> records who finished it and when. Find it again under Done this week, where you can reopen it.<br>' +
-    '<b>Briefing</b> is a clean summary for shift change: new, being worked, done, and getting old. Print it or put it on the TV. Direct link: <a href="?view=brief">?view=brief</a><br><br>' +
+    '<b>Briefing</b> shows only flagged items by default. Tap Everything for new, being worked, done and getting old. Print it or put it on the TV. Direct link: <a href="?view=brief">?view=brief</a><br><br>' +
     '<a href="' + esc(CONFIG.listUrl) + '" target="_blank" rel="noopener">Open the SharePoint list</a></div>' +
     '<div class="btns"><button class="btn ghost" onclick="refresh(true)">Refresh</button><button class="btn warn" onclick="signOut()">' + (DEMO ? 'Leave demo' : 'Sign out') + '</button></div>';
   showSheet('sh-info');
@@ -931,6 +1030,8 @@ function demoItems() {
     const dIn = new Date(now - r[2] * day - 3600000);
     const it = { id: String(r[0]), title: r[1], itemId: 'SO-' + String(r[0]).padStart(3, '0'), dateIn: dIn, created: dIn, modified: dIn, details: r[7], category: r[3], source: r[5], assigned: r[4], status: r[6], notes: '', completedBy: '', completedDate: null, link: '' };
     if (r[6] === 'Completed') { it.completedBy = it.assigned; it.completedDate = new Date(now - (r[0] % 5) * day - 7200000); }
+    it.triage = ({ 4: 'Red', 26: 'Red', 5: 'Red', 7: 'Yellow', 14: 'Yellow', 27: 'Yellow', 25: 'Yellow', 16: 'Yellow', 2: 'Green', 12: 'Green', 11: 'Green', 9: 'Green', 21: 'Green' })[r[0]] || '';
+    it.brief = [4, 26, 5, 7, 27, 21].indexOf(r[0]) >= 0;
     if (r[0] === 16) it.notes = '10/2 0915 Doug Boyce: Stryker case open, loaner on the way\n9/30 1440 Dennis Madler: Pulled LP35-3 from M25a';
     if (r[0] === 4) it.notes = '10/8 1100 Dennis Madler: Mechanic says starter, parts ETA Tuesday';
     return it;
@@ -1021,12 +1122,14 @@ function renderHome() {
   const fresh = open.filter(i => Math.max(i.created ? i.created.getTime() : 0, i.dateIn ? i.dateIn.getTime() : 0) >= since48);
   const old = open.filter(i => daysSince(i.dateIn) >= CONFIG.redDays), mine = open.filter(i => i.assigned === mePerson());
   const triage = open.filter(i => i.category === 'Needs Triaged');
+  const flagged = open.filter(i => i.brief).sort(sortItems), reds = open.filter(i => i.triage === 'Red'), untri = open.filter(i => !i.triage);
   const opsRows = [].concat(
-    triage.slice(0, 3).map(i => rowi(i.title, 'Needs a group · ' + ageLabel(daysSince(i.dateIn)), 'warn')),
-    fresh.filter(i => i.category !== 'Needs Triaged').slice(0, 4).map(i => rowi(i.title, 'New · ' + esc(group(i.category).name) + ' · ' + esc(firstName(i.assigned)), 'info'))
+    flagged.slice(0, 4).map(i => rowi(i.title, 'Briefing · ' + (i.triage || 'not triaged') + ' · ' + esc(group(i.category).name) + ' · ' + esc(firstName(i.assigned)), i.triage === 'Red' ? 'bad' : i.triage === 'Green' ? 'info' : 'warn')),
+    reds.filter(i => !i.brief).slice(0, 2).map(i => rowi(i.title, 'Red · ' + esc(group(i.category).name) + ' · ' + esc(firstName(i.assigned)), 'bad')),
+    triage.filter(i => !i.brief).slice(0, 2).map(i => rowi(i.title, 'Needs a group · ' + ageLabel(daysSince(i.dateIn)), 'warn'))
   ).slice(0, 5);
-  h += secHtml('#2E6B2E', ICON.ops, 'Shift Ops', 'Board', '<div class="stats">' + stat(open.length, 'Open') + stat(fresh.length, 'New 48 hrs', fresh.length ? 'good' : '') + stat(mine.length, 'Mine') + stat(old.length, CONFIG.redDays + '+ days', old.length ? 'bad' : '') + '</div>' +
-    rowsHtml(opsRows, 'Nothing new or waiting to be sorted.'),
+  h += secHtml('#2E6B2E', ICON.ops, 'Shift Ops', 'Board', '<div class="stats">' + stat(open.length, 'Open') + stat(flagged.length, 'Briefing', flagged.length ? 'warn' : '') + stat(reds.length, 'Red', reds.length ? 'bad' : '') + stat(untri.length, 'Not triaged') + '</div>' +
+    rowsHtml(opsRows, 'Nothing flagged for briefing.'),
     '<button class="go" onclick="setView(\'board\')">Open board</button><button class="go ghost" onclick="openBrief()">Briefing</button>');
 
   /* Facilities */
