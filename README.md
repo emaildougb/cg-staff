@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.3**
+**Version 1.4**
 
 ## Links
 
@@ -52,7 +52,7 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 
 ## Who gets in
 
-Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick. Anyone else who signs in sees "CG Staff only" and a link to the hub. Each person also needs access to the CG Staff and Facilities and Grounds SharePoint sites for numbers to load.
+Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyone else who signs in sees "CG Staff only" and a link to the hub. Each person also needs access to the CG Staff and Facilities and Grounds SharePoint sites for numbers to load.
 
 ## Where the data lives
 
@@ -69,6 +69,9 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick. Anyone else w
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.4
+- Added k.reid@northcountryems.org to CG Staff access (hub button shows for them too in hub v1.14)
 
 ### v1.3
 - Shift Ops cards on a computer open with a click instead of hover. Second click closes, Open card or double click for the full card
