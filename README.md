@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.4**
+**Version 1.5**
 
 ## Links
 
@@ -33,12 +33,12 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 
 | Section | Live numbers | Button goes to |
 |---|---|---|
-| Vehicle Checks | Ambulances checked today vs the 2 minimum, open issues, problems left by the prior crew, out of service | Open vehicles (detail for every ambulance), [EP Checker](https://checks.northcountryems.org/) |
+| Vehicle Checks | Ambulances checked today vs the 2 minimum, open issues, problems left by the prior crew, out of service. Tap Open issues or Left by prior to jump straight to that ambulance. Tap a unit chip to open it. A camera icon shows on units with a photo today | Open vehicles (detail for every ambulance), [EP Checker](https://checks.northcountryems.org/) |
 | Shift Ops | Open, new in 48 hrs, mine, 14+ days, items needing a group | Shift Ops tab, Briefing |
 | Facilities | Open jobs, critical, waiting, overdue services | [fng.northcountryems.org/?view=dash](https://fng.northcountryems.org/?view=dash), Report a problem |
 | Grounds | This week, done, late, not completed | [fng.northcountryems.org](https://fng.northcountryems.org/) |
 | Incident Reports | New, reviewed, last 30 days (type, date, status only, no names) | [reports.northcountryems.org](https://reports.northcountryems.org/) |
-| Overtime | Link only for now | [overtime.northcountryems.org](https://overtime.northcountryems.org/) |
+| Scheduling | Link only for now (Derek's overtime app) | [overtime.northcountryems.org](https://overtime.northcountryems.org/) |
 
 **Vehicle Checks detail (Open vehicles):** one card per ambulance from the EP Checker's `units.json`. Shows who checked it today and when, percent done, fuel and mileage, open problems (Could not fix in red, Open in yellow) with a Fixed button, and "Left by the prior crew" for anything the crew fixed on the spot at their check, with the crew who had it before. Type a reason and tap Out of service to take a unit out of the count; tap Back in service to put it back. Last 7 days line shows how many days it was checked and how many handoff fixes.
 
@@ -48,7 +48,9 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 
 **Triage and briefing flag:** every card has a dot (tap to set Red urgent, Yellow soon, Green routine; white means not triaged yet) and a flag (tap to put it on the shift briefing). The card's left edge shows the triage color. Flagged cards float to the top of their group, then Red, Yellow, not triaged, Green. Filters: Briefing and Not triaged. On a computer the cards are compact. Click a card to show its details and last note right on the board, click again to close it, and click Open card (or double click) for the full card. On a phone, tap opens it. The item sheet has the same Triage buttons and a Mention at shift briefing switch.
 
-**Briefing:** shows only flagged items (and flagged items finished in the time window) by default. Tap Everything for new, being worked, other done, and getting old.
+**Photos and notes on checks:** in Open vehicles, each check shows its walk-around and fridge photos as thumbnails (tap for full size), anything typed in the Other notes boxes, and narc counts that came in short.
+
+**Briefing:** has a "Rig checks for Logistics (Dennis)" block with everything today's checks turned up: could not fix, open, left by the prior crew, short narcs, notes, and out of service units. It also (and flagged items finished in the time window) by default. Tap Everything for new, being worked, other done, and getting old.
 
 ## Who gets in
 
@@ -60,7 +62,7 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 - **Facilities / Grounds:** Facility Work Orders, Facility Services and Grounds Tracker lists on the Facilities and Grounds site (same data as the F&G app, read only here).
 - **Vehicle Checks:** Firebase project `ncems-hub-9111d` (same one the hub uses). The EP Checker (v2.14.0 and up) writes one doc per submitted check to `vehicleChecks`. Out of service marks go to `vehicleStatus`, Fixed marks go to `vehicleResolved`. The dashboard reads the last 45 days.
 - **Incident Reports:** Cloudflare Worker `ncems-api.d-boyce.workers.dev/bin/incident-reports`, read only. Since v1.3 the dashboard sends the Microsoft sign-in token, and the Worker only answers for chiefs on its ADMINS list.
-- **Overtime:** Derek's Worker (`ncems-ot.d-langdon.workers.dev`) with its own sign-in. Live numbers need a read endpoint shared with this app.
+- **Scheduling:** Derek's Worker (`ncems-ot.d-langdon.workers.dev`) with its own sign-in. Live numbers need a read endpoint shared with this app.
 
 ## Microsoft sign-in setup
 
@@ -69,6 +71,15 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.5
+- Photos from the EP Checker show as thumbnails on each check, with a camera icon on the dashboard chip
+- Other notes, short narc counts, DEF and O2 readings show on each check
+- Tapping Left by prior (or Open issues) jumps right to that ambulance's list
+- Unit chips open that ambulance
+- Shift briefing has a Rig checks block for Dennis with what today's checks turned up
+- Overtime renamed Scheduling
+- Held email note now says 1100 (EP Checker 2.15 rule)
 
 ### v1.4
 - Added k.reid@northcountryems.org to CG Staff access (hub button shows for them too in hub v1.14)
@@ -102,10 +113,18 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 - iOS home-screen caches hard : delete and re-add icon after every deploy
 - Back button goes to `https://hub.northcountryems.org/`
 - Vehicle Checks needs EP Checker v2.14.0 live before any checks show up. Checks submitted before that are email only
-- Firebase rules must allow the three vehicle collections. In the Firebase console > Firestore > Rules, add these inside `match /databases/{database}/documents {`:
+- Firebase rules (Firebase console > Firestore > Rules). The whole thing, as published for EP Checker 2.15 / CG Staff 1.5:
 
 ```
-match /vehicleChecks/{id}   { allow read, create, update: if true; }
-match /vehicleStatus/{unit} { allow read, write: if true; }
-match /vehicleResolved/{id} { allow read, write: if true; }
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /notices/{doc} { allow read: if true; allow write: if false; }
+    match /usage/{doc} { allow read, write: if true; }
+    match /vehicleChecks/{id} { allow read: if true; allow create, update: if request.resource.data.unit is string && request.resource.data.atMs is number && request.resource.data.issues is list; }
+    match /vehicleStatus/{unit} { allow read: if true; allow create, update: if request.resource.data.oos is bool && request.resource.data.by is string; }
+    match /vehicleResolved/{id} { allow read: if true; allow create, update: if request.resource.data.checkId is string && request.resource.data.by is string; }
+    match /liveChecks/{id} { allow read: if true; allow create, update: if request.resource.data.unit is string && request.resource.data.date is string && request.resource.data.updatedAt is number; }
+  }
+}
 ```
