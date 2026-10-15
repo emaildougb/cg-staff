@@ -107,6 +107,8 @@
   .otbars div b { position:absolute; top:-14px; left:0; right:0; text-align:center; font-size:9.5px; font-weight:800; color:var(--muted); }
   .otcap { display:flex; justify-content:space-between; font-size:9.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); padding:0 14px 8px; }
   .otnext { margin:0 14px 10px; padding:7px 9px; border-radius:8px; background:#faf6ea; border:1px solid #ece2c4; font-size:12px; line-height:1.4; }
+  .rowi.go-row { cursor:pointer; } .rowi.go-row:hover { border-color:#bcd3bc; background:#f2f8f2; }
+  .rowi .go-chev { color:var(--muted); font-size:18px; line-height:1; align-self:center; }
   .rowi .tx { flex:1; min-width:0; } .rowi .tx em { display:block; font-style:normal; font-size:10.5px; color:var(--muted); margin-top:1px; }
   .rows .none { font-size:12px; color:var(--muted); padding:4px 2px; }
   .sec-foot { display:flex; gap:8px; padding:10px 14px 14px; flex-wrap:wrap; }
@@ -368,6 +370,8 @@
   .vsub { font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:14px 0 4px; }
 
   /* toast */
+  .setup-note { margin-top:8px; padding:10px 12px; border-radius:10px; background:#FFF6E0; border:1px solid #ecd9a6; font-size:12.5px; line-height:1.4; }
+  .setup-note .btn { margin-top:8px; }
   .save-box { margin-top:16px; padding:14px; border:2px solid #cfe0cf; border-radius:14px; background:#f6faf6; }
   .save-box .save-big { width:100%; padding:15px; font-size:16px; font-weight:800; }
   .save-box .done-box { margin-top:12px; }
@@ -420,6 +424,7 @@
   <button class="fchip" data-f="waiting" onclick="setFilter('waiting')">Waiting</button>
   <button class="fchip" data-f="brief" onclick="setFilter('brief')">Briefing</button>
   <button class="fchip" data-f="untriaged" onclick="setFilter('untriaged')">Not triaged</button>
+  <button class="fchip" data-f="red" onclick="setFilter('red')">Red</button>
   <span class="spacer"></span>
   <button class="add-btn bar-add" onclick="openAdd()">+ Add item</button>
 </div>
@@ -543,7 +548,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.9';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.11';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -561,6 +566,7 @@ const CONFIG = {
   reportsUrl: 'https://reports.northcountryems.org/',
   reportsApi: 'https://ncems-api.d-boyce.workers.dev/bin/incident-reports',
   overtimeUrl:'https://overtime.northcountryems.org/',
+  aladtecUrl: 'https://secure2.aladtec.com/northcountryems/',
   otApi:      'https://ncems-ot.d-langdon.workers.dev/dashboard', // Derek's OT feed, read only, ID token
   /* Vehicle checks: the EP Checker app logs every submitted check here */
   checksUrl:  'https://checks.northcountryems.org/',
@@ -833,6 +839,7 @@ function passes(it) {
   if (filter === 'waiting') return it.status === STATUS.WAIT;
   if (filter === 'brief') return it.brief;
   if (filter === 'untriaged') return !it.triage;
+  if (filter === 'red') return it.triage === 'Red';
   return true;
 }
 function setFilter(f) { filter = f; lsSet(LS.filter, f); document.querySelectorAll('.bar .fchip').forEach(b => b.classList.toggle('on', b.dataset.f === f)); render(); }
@@ -990,7 +997,7 @@ function renderItemSheet() {
   }
   h += '<label class="lbl">Triage</label><div class="seg tri-seg">' + Object.keys(TRIAGE).map(k => '<button data-t="' + k + '" class="' + (it.triage === k ? 'on' : '') + '" onclick="setTriage(\'' + k + '\')">' + k + '<small>' + TRIAGE[k].sub + '</small></button>').join('') + '</div>';
   h += '<button class="brief-tog ' + (it.brief ? 'on' : '') + '" onclick="toggleBrief()">' + FLAG_SVG + '<span>' + (it.brief ? 'On the shift briefing' : 'Mention at shift briefing') + '</span><i>' + (it.brief ? 'ON' : 'OFF') + '</i></button>';
-  if (mePerson() && it.assigned !== mePerson() && !done) h += '<div class="btns"><button class="btn ghost" onclick="takeIt()">Take it</button></div>';
+  if (mePerson() && it.assigned !== mePerson() && !done) h += '<div class="small-row"><button class="btn small ghost" onclick="takeIt()">Take it</button><span>Makes you the chief / owner of this card instead of ' + esc(firstName(it.assigned)) + '. It shows under Mine on the board. Nothing else on the card changes.</span></div>';
   h += '<label class="lbl">Notes</label>';
   h += '<div class="note-add"><input class="inp" id="note-in" placeholder="Add a note, like parts ordered, ETA Friday" onkeydown="if(event.key===\'Enter\')addNote()"><button class="btn" onclick="addNote()">Add</button></div>';
   h += '<div class="notes">' + (notes.length ? notes.map(n => '<div class="note">' + (n.when ? '<small>' + esc(n.when) + ' · ' + esc(n.who) + '</small>' : '') + esc(n.text) + '</div>').join('') : '<div class="meta">No notes yet.</div>') + '</div>';
@@ -1079,8 +1086,52 @@ function assignFieldsHTML(it, pfx) {
   return '<label class="lbl" for="' + pfx + '-also">Also assigned to</label><input class="inp" id="' + pfx + '-also" list="assignee-list" placeholder="Anyone, like Stephen Schutts" value="' + esc(assigneeLabel(it.also)) + '"' + (dis ? ' disabled' : '') + '>' +
     '<label class="lbl" for="' + pfx + '-rem">Email reminder</label><div class="row2"><input class="inp" type="date" id="' + pfx + '-rem" value="' + rd + '"' + (dis ? ' disabled' : '') + '>' +
     '<select class="sel" id="' + pfx + '-every"' + (dis ? ' disabled' : '') + '>' + REMIND_EVERY.map(([n, l]) => '<option value="' + n + '"' + (n === (it.remindEvery || 0) ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></div>' +
-    (dis ? '<div class="meta">To use Also assigned and reminders, add the AlsoAssigned, RemindOn and RemindEvery columns to the Shift Ops list (see the README).</div>'
+    (dis ? '<div class="setup-note">Also assigned and reminders need 3 new columns on the Shift Ops list. One time only. <button type="button" class="btn small" onclick="setupAssignCols(this)">Set them up now</button></div>'
          : '<div class="meta">Reminders email the Also assigned person (or the chief if nobody is) until the card is completed.</div>');
+}
+/* 1.10: Also assigned searches your Microsoft people (anyone you work with at NCEMS), not just a fixed list */
+let peopleTimer = null, peopleBlocked = false;
+document.addEventListener('input', e => {
+  const t = e.target; if (!t || !/-also$/.test(t.id || '')) return;
+  clearTimeout(peopleTimer);
+  const q = t.value.trim(); if (q.length < 2 || /</.test(q) || DEMO || peopleBlocked) return;
+  peopleTimer = setTimeout(() => peopleSearch(q), 300);
+});
+async function peopleToken() {
+  try { return (await msalApp.acquireTokenSilent({ scopes: ['People.Read'], account })).accessToken; }
+  catch (e) {
+    try { return (await msalApp.acquireTokenPopup({ scopes: ['People.Read'], account })).accessToken; }
+    catch (er) { peopleBlocked = true; toast('Directory search needs a one time OK from Microsoft. Typing a name still works.', true); return null; }
+  }
+}
+async function peopleSearch(q) {
+  const tok = await peopleToken(); if (!tok) return;
+  try {
+    const r = await fetch(GRAPH + '/me/people?$search="' + encodeURIComponent(q) + '"&$top=10&$select=displayName,scoredEmailAddresses', { headers: { Authorization: 'Bearer ' + tok } });
+    if (!r.ok) return;
+    const j = await r.json(), seen = {}, opts = [];
+    (j.value || []).forEach(p => { const m = ((p.scoredEmailAddresses || [])[0] || {}).address; if (!m || seen[m.toLowerCase()]) return; seen[m.toLowerCase()] = 1; opts.push(p.displayName + ' <' + m.toLowerCase() + '>'); });
+    ASSIGNEES.forEach(a => { if (!seen[a[1]] && (a[0] + ' ' + a[1]).toLowerCase().indexOf(q.toLowerCase()) >= 0) opts.push(a[0] + ' <' + a[1] + '>'); });
+    $('assignee-list').innerHTML = opts.map(o => '<option value="' + esc(o) + '">').join('');
+  } catch (e) { /* typing still works */ }
+}
+async function setupAssignCols(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Setting up...'; }
+  const want = [
+    { name: 'AlsoAssigned', text: {} },
+    { name: 'RemindOn', dateTime: { format: 'dateOnly' } },
+    { name: 'RemindEvery', number: {} }
+  ];
+  try {
+    await getSiteId();
+    const have = ((await graph(listPath() + '/columns?$select=name&$top=200')).value || []).map(c => c.name);
+    for (const c of want) if (have.indexOf(c.name) < 0) await graph(listPath() + '/columns', { method: 'POST', json: c });
+    hasAssignCols = null; toast('All set. Also assigned and reminders are on.');
+    await loadItems(); render(); if (openId) renderItemSheet(); if ($('sh-viss').classList.contains('show')) renderVehIssue();
+  } catch (e) {
+    toast('Could not add the columns. ' + e.message + ' (Doug can, as the site owner.)', true);
+    if (btn) { btn.disabled = false; btn.textContent = 'Set them up now'; }
+  }
 }
 function readAssignFields(pfx, it, local, fields) {
   const a = $(pfx + '-also'), r = $(pfx + '-rem'), e = $(pfx + '-every');
@@ -1369,17 +1420,39 @@ function otSecBody() {
   /* 1.9: who's next to call, big and first. No weekly chart. */
   const pill = (lbl, name) => '<a class="ot-pill' + (name ? '' : ' none') + '" href="' + esc(CONFIG.overtimeUrl) + '" target="_blank" rel="noopener"><small>' + lbl + '</small><b>' + esc(name || 'Nobody') + '</b></a>';
   let h = '<div class="ot-next">' + pill('Next up · Long list', ot.next.long) + pill('Next up · Short list', ot.next.short) + '</div>';
-  h += '<div class="stats">' + stat(c.openNext7 != null ? c.openNext7 : '?', 'Open 7 days', c.openNext7 ? 'warn' : '') + stat(c.openNext30 != null ? c.openNext30 : '?', 'Open 30 days') +
-    stat(pri.length, 'Min staffing', pri.length ? 'bad' : '') + stat(c.filledThisWeek != null ? c.filledThisWeek : '?', 'Filled this wk', 'good') + '</div>';
+  h += '<div class="stats">' + stat(c.openNext7 != null ? c.openNext7 : '?', 'Open 7 days', c.openNext7 ? 'warn' : '', goUrl(CONFIG.overtimeUrl)) + stat(c.openNext30 != null ? c.openNext30 : '?', 'Open 30 days', '', goUrl(CONFIG.overtimeUrl)) +
+    stat(pri.length, 'Min staffing', pri.length ? 'bad' : '', goUrl(CONFIG.overtimeUrl)) + stat(c.filledThisWeek != null ? c.filledThisWeek : '?', 'Filled this wk', 'good', goUrl(CONFIG.overtimeUrl)) + '</div>';
   h += rowsHtml(up.slice(0, 5).map(x => rowi(
     (x.date ? x.date.toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + fmtDate(x.date) : 'No date') + ' · ' + x.label + (x.unit ? ' · ' + x.unit : ''),
     (x.priority ? '<b>Minimum staffing</b> · ' : '') + (x.interested ? x.interested + ' interested' : 'Nobody interested yet') + (x.posted ? ' · posted ' + fmtDate(x.posted) : ''),
-    x.priority ? (x.interested ? 'warn' : 'bad') : 'info')).concat(up.length > 5 ? ['<div class="none">' + (up.length - 5) + ' more in scheduling</div>'] : []), 'No open shifts. Everybody\'s covered.');
+    x.priority ? (x.interested ? 'warn' : 'bad') : 'info', goUrl(CONFIG.overtimeUrl))).concat(up.length > 5 ? ['<div class="none">' + (up.length - 5) + ' more in scheduling</div>'] : []), 'No open shifts. Everybody\'s covered.');
   return h;
 }
 
-function stat(n, label, cls) { return '<div class="stat ' + (cls || '') + '"><b>' + n + '</b><span>' + label + '</span></div>'; }
-function rowi(text, sub, dot) { return '<div class="rowi"><span class="dot ' + (dot || '') + '"></span><div class="tx">' + esc(text) + (sub ? '<em>' + sub + '</em>' : '') + '</div></div>'; }
+function stat(n, label, cls, go) {
+  if (!go) return '<div class="stat ' + (cls || '') + '"><b>' + n + '</b><span>' + label + '</span></div>';
+  const k = DASH_ACTS.push(go) - 1;   /* 1.11: number tiles click through too */
+  return '<button type="button" class="stat ' + (cls || '') + '" onclick="dashGo(' + k + ')"><b>' + n + '</b><span>' + label + '</span></button>';
+}
+function boardWith(f) { return () => { setView('board'); setFilter(f); }; }
+/* 1.10: every dashboard row opens the thing it's about */
+let DASH_ACTS = [];
+function dashGo(n) { const f = DASH_ACTS[n]; if (f) f(); }
+function goUrl(u) { return () => window.open(u, '_blank', 'noopener'); }
+function rowi(text, sub, dot, go) {
+  const n = go ? DASH_ACTS.push(go) - 1 : -1;
+  return '<div class="rowi' + (go ? ' go-row' : '') + '"' + (go ? ' role="button" tabindex="0" onclick="dashGo(' + n + ')" onkeydown="if(event.key===\'Enter\')dashGo(' + n + ')"' : '') + '><span class="dot ' + (dot || '') + '"></span><div class="tx">' + esc(text) + (sub ? '<em>' + sub + '</em>' : '') + '</div>' + (go ? '<span class="go-chev">›</span>' : '') + '</div>';
+}
+function vehOpenIssueBy(checkId, label) {
+  const S = vehSummary(); let ref = null;
+  S.states.forEach(s => {
+    s.openIss.concat(s.unfixed || []).forEach(o => { if (!ref && o.c.id === checkId && o.i.label === label) ref = { id: o.c.id, label, c: o.c, i: o.i, unit: s.unit, broken: o.broken }; });
+    s.handoff.forEach(x => { if (!ref && x.c.id === checkId && x.i.label === label) ref = { id: x.c.id, label, c: x.c, i: x.i, unit: s.unit, prev: x.prev }; });
+  });
+  if (!ref) { const c = (veh.checks || []).find(x => x.id === checkId), i = c && (c.issues || []).find(x => x.label === label); if (c && i) ref = { id: c.id, label, c, i, unit: c.unit }; }
+  if (!ref) { toast('Could not find that one. Try Refresh.', true); return; }
+  vissRef = ref; vissFromList = false; renderVehIssue(); showSheet('sh-viss');
+}
 function rowsHtml(list, none) { return '<div class="rows">' + (list.length ? list.join('') : '<div class="none">' + none + '</div>') + '</div>'; }
 function secHtml(c, ico, title, small, body, foot) {
   return '<section class="sec" style="--c:' + c + '"><div class="sec-head"><span class="sec-ico">' + ico + '</span><h3>' + title + '</h3><small>' + (small || '') + '</small></div>' + body + '<div class="sec-foot">' + foot + '</div></section>';
@@ -1388,6 +1461,7 @@ function link(url, label, ghost) { return '<a class="go ' + (ghost ? 'ghost' : '
 
 function renderHome() {
   const el = $('home-main'); if (!el) return;
+  DASH_ACTS = [];
   $('gsearch').style.display = (!DEMO && account && !isStaff()) ? 'none' : '';
   if (!DEMO && account && !isStaff()) {
     el.innerHTML = '<div class="gate"><h2>CG Staff only</h2>You are signed in as ' + esc(meEmail()) + '. This dashboard is for the CG Staff. Your crew apps are on the NCEMS hub.<br><br><a class="go" style="--c:#2E6B2E" href="' + esc(CONFIG.hubUrl) + '">Open the NCEMS hub</a></div>';
@@ -1407,11 +1481,11 @@ function renderHome() {
   const triage = open.filter(i => i.category === 'Needs Triaged');
   const flagged = open.filter(i => i.brief).sort(sortItems), reds = open.filter(i => i.triage === 'Red'), untri = open.filter(i => !i.triage);
   const opsRows = [].concat(
-    flagged.slice(0, 4).map(i => rowi(i.title, 'Briefing · ' + (i.triage || 'not triaged') + ' · ' + esc(group(i.category).name) + ' · ' + esc(firstName(i.assigned)), i.triage === 'Red' ? 'bad' : i.triage === 'Green' ? 'info' : 'warn')),
-    reds.filter(i => !i.brief).slice(0, 2).map(i => rowi(i.title, 'Red · ' + esc(group(i.category).name) + ' · ' + esc(firstName(i.assigned)), 'bad')),
-    triage.filter(i => !i.brief).slice(0, 2).map(i => rowi(i.title, 'Needs a group · ' + ageLabel(daysSince(i.dateIn)), 'warn'))
+    flagged.slice(0, 4).map(i => rowi(i.title, 'Briefing · ' + (i.triage || 'not triaged') + ' · ' + esc(group(i.category).name) + ' · ' + esc(firstName(i.assigned)), i.triage === 'Red' ? 'bad' : i.triage === 'Green' ? 'info' : 'warn', () => openItem(i.id))),
+    reds.filter(i => !i.brief).slice(0, 2).map(i => rowi(i.title, 'Red · ' + esc(group(i.category).name) + ' · ' + esc(firstName(i.assigned)), 'bad', () => openItem(i.id))),
+    triage.filter(i => !i.brief).slice(0, 2).map(i => rowi(i.title, 'Needs a group · ' + ageLabel(daysSince(i.dateIn)), 'warn', () => openItem(i.id)))
   ).slice(0, 5);
-  SEC.ops = secHtml('#2E6B2E', ICON.ops, 'Shift Ops', 'Board', '<div class="stats">' + stat(open.length, 'Open') + stat(flagged.length, 'Briefing', flagged.length ? 'warn' : '') + stat(reds.length, 'Red', reds.length ? 'bad' : '') + stat(untri.length, 'Not triaged') + '</div>' +
+  SEC.ops = secHtml('#2E6B2E', ICON.ops, 'Shift Ops', 'Board', '<div class="stats">' + stat(open.length, 'Open', '', boardWith('all')) + stat(flagged.length, 'Briefing', flagged.length ? 'warn' : '', () => openBrief()) + stat(reds.length, 'Red', reds.length ? 'bad' : '', boardWith('red')) + stat(untri.length, 'Not triaged', '', boardWith('untriaged')) + '</div>' +
     rowsHtml(opsRows, 'Nothing flagged for briefing.'),
     '<button class="go" onclick="setView(\'board\')">Open board</button><button class="go ghost" onclick="openBrief()">Briefing</button>');
 
@@ -1425,19 +1499,19 @@ function renderHome() {
     const crit = wOpen.filter(w => w.prio === 'Critical'), wait = wOpen.filter(w => w.status === 'Waiting');
     const sAct = fng.svc.filter(s => s.active), over = sAct.filter(s => s.next && s.next < today), soon = sAct.filter(s => s.next && s.next >= today && s.next < new Date(today.getTime() + 30 * day));
     const fRows = [].concat(
-      crit.map(w => rowi(w.title, 'Critical · ' + esc(w.station) + ' · ' + esc(w.status), 'bad')),
-      over.sort((a, b) => a.next - b.next).slice(0, 4).map(s => rowi(s.title, 'Service overdue since ' + fmtDate(s.next) + ' · ' + esc(s.station), 'warn')),
-      wOpen.filter(w => w.prio === 'Urgent').slice(0, 2).map(w => rowi(w.title, 'Urgent · ' + esc(w.station) + ' · ' + esc(w.status), 'warn'))
+      crit.map(w => rowi(w.title, 'Critical · ' + esc(w.station) + ' · ' + esc(w.status), 'bad', goUrl(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl))),
+      over.sort((a, b) => a.next - b.next).slice(0, 4).map(s => rowi(s.title, 'Service overdue since ' + fmtDate(s.next) + ' · ' + esc(s.station), 'warn', goUrl(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl))),
+      wOpen.filter(w => w.prio === 'Urgent').slice(0, 2).map(w => rowi(w.title, 'Urgent · ' + esc(w.station) + ' · ' + esc(w.status), 'warn', goUrl(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl)))
     ).slice(0, 5);
     facBody = (fng.setup ? '' : '<div class="sec-msg">Facilities lists are not set up yet. Open Facilities and tap Set up Facilities.</div>') +
-      '<div class="stats">' + stat(wOpen.length, 'Open jobs') + stat(crit.length, 'Critical', crit.length ? 'bad' : '') + stat(wait.length, 'Waiting') + stat(over.length, 'Svc overdue', over.length ? 'warn' : '') + '</div>' +
+      '<div class="stats">' + stat(wOpen.length, 'Open jobs', '', goUrl(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl)) + stat(crit.length, 'Critical', crit.length ? 'bad' : '', goUrl(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl)) + stat(wait.length, 'Waiting', '', goUrl(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl)) + stat(over.length, 'Svc overdue', over.length ? 'warn' : '', goUrl(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl)) + '</div>' +
       rowsHtml(fRows, 'No critical jobs or overdue services. ' + (soon.length ? soon.length + ' services due in 30 days.' : ''));
     const [wa, wb] = weekBounds();
     const wk = fng.grd.filter(t => t.due && t.due >= wa && t.due < wb), wkDone = wk.filter(t => t.status === 'Done');
     const late = fng.grd.filter(t => t.due && t.due < today && t.due >= new Date(today.getTime() - 21 * day) && t.status !== 'Done');
     const nc = late.filter(t => t.status === 'Not Completed');
-    grdBody = '<div class="stats">' + stat(wk.length, 'This week') + stat(wkDone.length, 'Done', 'good') + stat(late.length, 'Late', late.length ? 'bad' : '') + stat(nc.length, 'Not done') + '</div>' +
-      rowsHtml(late.sort((a, b) => a.due - b.due).slice(0, 5).map(t => rowi(t.title, (t.status === 'Not Completed' ? 'Marked not completed' : 'Due ' + fmtDate(t.due)) + ' · ' + esc(t.station), t.status === 'Not Completed' ? 'bad' : 'warn')), 'Grounds is caught up.');
+    grdBody = '<div class="stats">' + stat(wk.length, 'This week', '', goUrl(CONFIG.fngUrl)) + stat(wkDone.length, 'Done', 'good', goUrl(CONFIG.fngUrl)) + stat(late.length, 'Late', late.length ? 'bad' : '', goUrl(CONFIG.fngUrl)) + stat(nc.length, 'Not done', '', goUrl(CONFIG.fngUrl)) + '</div>' +
+      rowsHtml(late.sort((a, b) => a.due - b.due).slice(0, 5).map(t => rowi(t.title, (t.status === 'Not Completed' ? 'Marked not completed' : 'Due ' + fmtDate(t.due)) + ' · ' + esc(t.station), t.status === 'Not Completed' ? 'bad' : 'warn', goUrl(CONFIG.fngUrl))), 'Grounds is caught up.');
   }
   SEC.fac = secHtml('#1F5C8B', ICON.fac, 'Facilities', 'Buildings · Nick', facBody, link(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl, 'Facilities admin') + link(CONFIG.fngUrl, 'Report a problem', true));
   SEC.grd = secHtml('#5f7d2a', ICON.grd, 'Grounds', 'Tyler', grdBody, link(CONFIG.fngUrl, 'Grounds admin'));
@@ -1448,14 +1522,14 @@ function renderHome() {
   else {
     const newR = reports.filter(r => r.status === 'new'), rev = reports.filter(r => r.status === 'reviewed'), d30 = reports.filter(r => r.when && r.when.getTime() >= now.getTime() - 30 * day);
     const recent = reports.slice().sort((a, b) => (b.when || 0) - (a.when || 0)).filter(r => r.status !== 'closed').slice(0, 4);
-    repBody = '<div class="stats">' + stat(newR.length, 'New', newR.length ? 'bad' : '') + stat(rev.length, 'Reviewed') + stat(d30.length, 'Last 30 days') + stat(reports.length, 'All time') + '</div>' +
-      rowsHtml(recent.map(r => rowi(REP_TYPE[r.type] || r.type || 'Report', (r.when ? fmtDate(r.when) : '') + ' · ' + esc(r.status === 'new' ? 'New, needs review' : r.status) + (r.agency ? ' · ' + esc(r.agency) : ''), r.status === 'new' ? 'bad' : 'info')), 'No open incident reports.');
+    repBody = '<div class="stats">' + stat(newR.length, 'New', newR.length ? 'bad' : '', goUrl(CONFIG.reportsUrl)) + stat(rev.length, 'Reviewed', '', goUrl(CONFIG.reportsUrl)) + stat(d30.length, 'Last 30 days', '', goUrl(CONFIG.reportsUrl)) + stat(reports.length, 'All time', '', goUrl(CONFIG.reportsUrl)) + '</div>' +
+      rowsHtml(recent.map(r => rowi(REP_TYPE[r.type] || r.type || 'Report', (r.when ? fmtDate(r.when) : '') + ' · ' + esc(r.status === 'new' ? 'New, needs review' : r.status) + (r.agency ? ' · ' + esc(r.agency) : ''), r.status === 'new' ? 'bad' : 'info', goUrl(CONFIG.reportsUrl))), 'No open incident reports.');
   }
   SEC.rep = secHtml('#b91c1c', ICON.rep, 'Incident Reports', 'On-duty', repBody, link(CONFIG.reportsUrl, 'Open reports'));
 
   /* Scheduling (Derek's overtime app) */
   SEC.ot = secHtml('#8a6a1f', ICON.ot, 'Scheduling', 'Open shifts · OT' + (ot && ot.updated ? ' · as of ' + fmtDT(ot.updated).split(' ')[1] : ''), otSecBody(),
-    link(CONFIG.overtimeUrl, 'Open scheduling'));
+    link(CONFIG.overtimeUrl, 'Open OT') + link(CONFIG.aladtecUrl, 'Open Aladtec', true));
 
   /* 1.9 order: Scheduling, Shift Ops, Incident Reports on top; Vehicle Checks, Grounds, Facilities below */
   h += ['ot', 'ops', 'rep', 'veh', 'grd', 'fac'].map(k => SEC[k]).join('');
@@ -1600,18 +1674,18 @@ function vehSecBody() {
   S.states.forEach(s => {
     const last = s.today[s.today.length - 1]; if (!last) return;
     (Array.isArray(last.narcs) ? last.narcs : []).filter(n => n.count != null && n.count < n.par)
-      .forEach(n => rows.push(rowi(s.unit + ': ' + n.name + ' below par', n.count + ' of ' + n.par + ' · ' + vehCrew(last) + ' ' + fmtDT(new Date(last.at)), n.count <= n.par / 2 ? 'bad' : 'warn')));
+      .forEach(n => rows.push(rowi(s.unit + ': ' + n.name + ' below par', n.count + ' of ' + n.par + ' · ' + vehCrew(last) + ' ' + fmtDT(new Date(last.at)), n.count <= n.par / 2 ? 'bad' : 'warn', () => openVeh(s.unit))));
   });
   S.states.forEach(s => {
     if (s.st.oos) return;
-    s.unfixed.forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Could not fix · ' + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)), 'bad')));
+    s.unfixed.forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Could not fix · ' + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)), 'bad', () => vehOpenIssueBy(o.c.id, o.i.label))));
   });
-  S.states.forEach(s => s.handoff.forEach(h => rows.push(rowi(s.unit + ': ' + h.i.label, 'Fixed at check by ' + vehCrew(h.c) + ', left by ' + (h.prev ? vehCrew(h.prev) + ' ' + fmtDate(new Date(h.prev.at)) : 'prior crew'), 'info'))));
-  S.states.forEach(s => { if (!s.st.oos) s.openIss.filter(o => o.i.state === 'open').forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Open · ' + vehCrew(o.c), 'warn'))); });
-  return banner + '<div class="stats">' + stat(S.checked.length + '/' + S.inSvc.length, 'Checked') +
-    (openN ? statBtn(openN, 'Open issues', 'warn', 'openVehIssues(\'open\')') : stat(openN, 'Open issues')) +
-    (handN ? statBtn(handN, 'Left by prior', 'bad', 'openVehIssues(\'hand\')') : stat(handN, 'Left by prior')) +
-    stat(oosN, 'Out of svc') + '</div>' +
+  S.states.forEach(s => s.handoff.forEach(h => rows.push(rowi(s.unit + ': ' + h.i.label, 'Fixed at check by ' + vehCrew(h.c) + ', left by ' + (h.prev ? vehCrew(h.prev) + ' ' + fmtDate(new Date(h.prev.at)) : 'prior crew'), 'info', () => vehOpenIssueBy(h.c.id, h.i.label)))));
+  S.states.forEach(s => { if (!s.st.oos) s.openIss.filter(o => o.i.state === 'open').forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Open · ' + vehCrew(o.c), 'warn', () => vehOpenIssueBy(o.c.id, o.i.label)))); });
+  return banner + '<div class="stats">' + stat(S.checked.length + '/' + S.inSvc.length, 'Checked', '', () => openVeh()) +
+    (openN ? statBtn(openN, 'Open issues', 'warn', 'openVehIssues(\'open\')') : stat(openN, 'Open issues', '', () => openVeh())) +
+    (handN ? statBtn(handN, 'Left by prior', 'bad', 'openVehIssues(\'hand\')') : stat(handN, 'Left by prior', '', () => openVeh())) +
+    stat(oosN, 'Out of svc', '', () => openVeh()) + '</div>' +
     chips + rowsHtml(rows.slice(0, 6), 'No problems reported on the ambulances.');
 }
 let vehFocus = '';

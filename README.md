@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.9**
+**Version 1.11**
 
 ## Links
 
@@ -98,6 +98,17 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.11
+- The number tiles click through too: Shift Ops Open (board), Briefing (opens the Briefing), Red (board showing Red only), Not triaged (board filtered); Vehicle Checks tiles open the vehicles screen or the issue list; Scheduling tiles open OT; Facilities, Grounds and Incident Reports tiles open their apps
+- New Red filter on the board
+
+### v1.10
+- Every row on the dashboard opens what it's about: Shift Ops rows open the card, vehicle rows open that issue (like M19 Compartment 2: Hurst battery), short narcs open the rig, Facilities, Grounds, Incident Reports and open shifts open their apps
+- Scheduling card has two buttons: Open OT and Open Aladtec (secure2.aladtec.com/northcountryems)
+- Also assigned searches your Microsoft people as you type (needs People.Read, Microsoft asks once). The fixed list still works without it
+- If the Shift Ops list doesn't have the AlsoAssigned, RemindOn and RemindEvery columns yet, the card shows a "Set them up now" button that adds them (site owner, so Doug)
+- Take it now says what it does: makes you the chief / owner of the card
 
 ### v1.9
 - Dashboard order: Scheduling, Shift Ops, Incident Reports on top; Vehicle Checks, Grounds, Facilities below (3 across on a computer, 2 on a tablet, 1 on a phone)
