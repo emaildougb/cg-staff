@@ -312,6 +312,26 @@
   .vunit-head .st { flex:1; font-size:11px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
   .vunit-head .st.bad { color:var(--bad); } .vunit-head .st.ok { color:var(--g-accent); } .vunit-head .st.iss { color:#9a6b00; }
   .vline { font-size:12.5px; line-height:1.45; color:#333; margin-top:6px; }
+  .gsearch { max-width:1300px; margin:22px auto 0; background:#fff; border:2px solid #dfe8df; border-radius:14px; padding:14px; }
+  .gs-head { display:flex; align-items:center; gap:10px; color:var(--muted); }
+  .gs-head .inp { flex:1; }
+  .gs-chips { display:flex; gap:6px; margin:10px 0 4px; }
+  .gs-row { display:flex; gap:10px; align-items:flex-start; width:100%; text-align:left; background:#f7f9f7; border:none; border-left:5px solid var(--c,#8A918A); border-radius:10px; padding:9px 11px; margin-top:6px; cursor:pointer; font:inherit; color:inherit; }
+  .gs-row:hover { background:#eef3ee; }
+  .gs-row .t { flex:1; min-width:0; font-size:13px; font-weight:700; color:var(--g-deep); line-height:1.35; }
+  .gs-row .t em { display:block; font-style:normal; font-weight:500; font-size:11px; color:var(--muted); margin-top:2px; }
+  .gs-row .st { flex-shrink:0; font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase; padding:3px 7px; border-radius:6px; background:#e3e9e3; color:#555; }
+  .gs-row .st.open { background:#FFF3C4; color:#7a5a00; } .gs-row .st.done { background:#DFF0DF; color:#24622a; }
+  .gs-row mark { background:#FFE58A; color:inherit; padding:0 1px; border-radius:2px; }
+  .viss { cursor:pointer; }
+  .viss:hover { filter:brightness(.97); }
+  .vops { display:inline-block; margin-left:6px; font-size:9px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; padding:2px 6px; border-radius:5px; background:#E4EEF8; color:var(--info); vertical-align:middle; }
+  .vfull-btn { margin-left:8px; border:1.5px solid var(--border); background:#fff; border-radius:7px; padding:3px 8px; font-size:10px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--g-deep); cursor:pointer; }
+  .vi-box { border:2px solid #dfe8df; border-radius:12px; padding:12px; margin-top:12px; }
+  .vi-box h4 { font-size:10px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .vi-title { font-size:18px; font-weight:800; color:var(--g-deep); line-height:1.3; }
+  .vi-line { font-size:13px; line-height:1.5; color:#333; margin-top:4px; }
+  .vfull-pre { white-space:pre-wrap; font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; background:#f7f9f7; border-radius:10px; padding:12px; margin-top:10px; overflow-x:auto; }
   .vflash { animation: vflash 1.8s ease-out; }
   @keyframes vflash { 0% { background:#FFF3C4; } 100% { background:transparent; } }
   .vphotos { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
@@ -382,7 +402,21 @@
 </div>
 
 <main class="main">
-  <div class="home" id="home"></div>
+  <div class="home" id="home">
+    <div id="home-main"></div>
+    <div class="gsearch" id="gsearch">
+      <div class="gs-head">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input class="inp" id="gs-in" type="search" placeholder="Search everything ever put on Shift Ops, open or done, plus vehicle check issues" oninput="gSearch(this.value)" autocomplete="off">
+      </div>
+      <div class="gs-chips">
+        <button class="fchip on" data-gf="all" onclick="setGf('all')">All</button>
+        <button class="fchip" data-gf="open" onclick="setGf('open')">Open</button>
+        <button class="fchip" data-gf="done" onclick="setGf('done')">Done</button>
+      </div>
+      <div id="gs-res"></div>
+    </div>
+  </div>
   <div class="board" id="board"></div>
 </main>
 
@@ -422,6 +456,21 @@
 <div class="sheet" id="sh-veh">
   <div class="sh-head"><h2>Vehicle Checks</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
   <div class="sh-body" id="veh-body"></div>
+</div>
+
+<div class="sheet" id="sh-vlist">
+  <div class="sh-head"><h2 id="vlist-head">Issues</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-body" id="vlist-body"></div>
+</div>
+
+<div class="sheet" id="sh-viss">
+  <div class="sh-head"><button class="icon-btn" id="viss-back" onclick="vissBack()" aria-label="Back" style="display:none">&#8592;</button><h2 id="viss-head">Vehicle issue</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-body" id="viss-body"></div>
+</div>
+
+<div class="sheet" id="sh-vfull">
+  <div class="sh-head"><button class="icon-btn" onclick="vfullBack()" aria-label="Back">&#8592;</button><h2 id="vfull-head">Full check</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-body" id="vfull-body"></div>
 </div>
 
 <div class="sheet" id="sh-info">
@@ -469,7 +518,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.5';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.6';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -693,7 +742,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadVeh().catch(e => { vehErr = e.message; })]); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -888,7 +937,7 @@ function renderItemSheet() {
 }
 function setStatus(s) {
   const it = items.find(i => i.id === openId); if (!it || it.status === s) return;
-  applyChange(it.id, { status: s }, { Status: s }, s === STATUS.WAIT ? 'Marked waiting. Add a note saying on what.' : 'Status: ' + s).then(renderItemSheet);
+  applyChange(it.id, { status: s }, { Status: s }, s === STATUS.WAIT ? 'Marked waiting. Add a note saying on what.' : 'Status: ' + s).then(() => { renderItemSheet(); vehAfterCardChange(it.id); });
 }
 async function saveItem() {
   const it = items.find(i => i.id === openId); if (!it) return;
@@ -912,13 +961,13 @@ async function addNote() {
   const text = inp.value.trim(); if (!text) return;
   const notes = noteStamp() + ': ' + text + (it.notes ? '\n' + it.notes : '');
   inp.value = '';
-  if (await applyChange(it.id, { notes }, { Notes: notes }, 'Note added')) renderItemSheet();
+  if (await applyChange(it.id, { notes }, { Notes: notes }, 'Note added')) { renderItemSheet(); vehAfterCardChange(it.id); }
 }
 async function complete() {
   const it = items.find(i => i.id === openId); if (!it) return;
   const now = new Date();
   const ok = await applyChange(it.id, { status: STATUS.DONE, completedBy: meName(), completedDate: now }, { Status: STATUS.DONE, CompletedBy: meName(), CompletedDate: now.toISOString() }, 'Completed. Nice work.');
-  if (ok) closeSheets();
+  if (ok) { closeSheets(); vehAfterCardChange(it.id); }
 }
 async function reopen() {
   const it = items.find(i => i.id === openId); if (!it) return;
@@ -1011,8 +1060,10 @@ function briefRigChecks() {
   const it = (c, title, sub) => '<div class="br-item" style="--c:' + c + '"><div class="t">' + title + '<span>' + sub + '</span></div></div>';
   S.states.forEach(s => {
     if (s.st.oos) { list.push(it('#555', esc(s.unit) + ': out of service', esc(s.st.reason || 'no reason given') + ' · marked by ' + esc(s.st.by || ''))); return; }
-    s.unfixed.forEach(o => list.push(it('#C0392B', esc(s.unit) + ': ' + esc(o.i.label), '<b>Could not fix</b>' + (o.i.notes ? ' · ' + esc(o.i.notes) : '') + ' · ' + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)))));
-    s.openIss.filter(o => o.i.state === 'open').forEach(o => list.push(it('#E0A800', esc(s.unit) + ': ' + esc(o.i.label), 'Open' + (o.i.notes ? ' · ' + esc(o.i.notes) : '') + ' · ' + vehCrew(o.c))));
+    const opsTxt = o => { const card = vehCardFor(resKey(o.c.id, o.i.label)); if (!card) return ' · not on Shift Ops yet'; const n = parseNotes(card.notes)[0]; return ' · Shift Ops ' + esc(card.status === STATUS.IP ? 'in progress' : card.status.toLowerCase()) + (n ? ': ' + esc(n.text.slice(0, 80)) : ''); };
+    const ageTxt = o => vehDaysOpen(o.c) ? ' · open ' + vehDaysOpen(o.c) + ' days' : '';
+    s.unfixed.forEach(o => list.push(it('#C0392B', esc(s.unit) + ': ' + esc(o.i.label), '<b>Could not fix</b>' + (o.i.notes ? ' · ' + esc(o.i.notes) : '') + ' · ' + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)) + ageTxt(o) + opsTxt(o))));
+    s.openIss.filter(o => o.i.state === 'open').forEach(o => list.push(it('#E0A800', esc(s.unit) + ': ' + esc(o.i.label), 'Open' + (o.i.notes ? ' · ' + esc(o.i.notes) : '') + ' · ' + vehCrew(o.c) + ageTxt(o) + opsTxt(o))));
     s.handoff.forEach(x => list.push(it('#1F5C8B', esc(s.unit) + ': ' + esc(x.i.label), 'Left by prior crew, fixed at check by ' + vehCrew(x.c) + (x.prev ? ' · last checked ' + fmtDT(new Date(x.prev.at)) + ' by ' + vehCrew(x.prev) : ''))));
     s.today.forEach(c => (Array.isArray(c.notes) ? c.notes : []).filter(n => n && n.text && n.section !== 'Engine oil' && n.section !== 'Transmission fluid').forEach(n => list.push(it('#7a8a7a', esc(s.unit) + ' note: ' + esc(n.section), esc(n.text) + ' · ' + vehCrew(c)))));
     s.today.forEach(c => (Array.isArray(c.narcs) ? c.narcs : []).filter(n => n.count != null && n.count < n.par).forEach(n => list.push(it(n.count <= n.par / 2 ? '#C0392B' : '#E0A800', esc(s.unit) + ': ' + esc(n.name) + ' short', n.count + ' of ' + n.par + ' · ' + vehCrew(c)))));
@@ -1152,7 +1203,8 @@ function secHtml(c, ico, title, small, body, foot) {
 function link(url, label, ghost) { return '<a class="go ' + (ghost ? 'ghost' : '') + '" href="' + esc(url) + '" target="_blank" rel="noopener">' + label + '</a>'; }
 
 function renderHome() {
-  const el = $('home'); if (!el) return;
+  const el = $('home-main'); if (!el) return;
+  $('gsearch').style.display = (!DEMO && account && !isStaff()) ? 'none' : '';
   if (!DEMO && account && !isStaff()) {
     el.innerHTML = '<div class="gate"><h2>CG Staff only</h2>You are signed in as ' + esc(meEmail()) + '. This dashboard is for the CG Staff. Your crew apps are on the NCEMS hub.<br><br><a class="go" style="--c:#2E6B2E" href="' + esc(CONFIG.hubUrl) + '">Open the NCEMS hub</a></div>';
     return;
@@ -1222,6 +1274,7 @@ function renderHome() {
 
   h += '</div>';
   el.innerHTML = h;
+  renderGSearch();
 }
 
 /* ---------- Vehicle checks (EP Checker logs every check to Firebase) ----------
@@ -1261,16 +1314,18 @@ async function loadVeh() {
   try { db = await fbReady(); } catch (e) { throw new Error('Could not load Firebase from here.'); }
   const F = fbFs, since = Date.now() - CONFIG.vehKeepDays * 86400000;
   try {
-    const [cs, ss, rs] = await Promise.all([
+    const [cs, ss, rs, ls] = await Promise.all([
       F.getDocs(F.query(F.collection(db, 'vehicleChecks'), F.where('atMs', '>=', since))),
       F.getDocs(F.collection(db, 'vehicleStatus')),
-      F.getDocs(F.collection(db, 'vehicleResolved'))
+      F.getDocs(F.collection(db, 'vehicleResolved')),
+      F.getDocs(F.collection(db, 'vehicleLinks')).catch(() => ({ forEach() {} }))
     ]);
-    const checks = [], status = {}, resolved = {};
+    const checks = [], status = {}, resolved = {}, links = {};
     cs.forEach(d => checks.push(d.data()));
     ss.forEach(d => { const v = d.data(); if (v && v.oos) status[d.id] = v; });
     rs.forEach(d => { const v = d.data(); if (v) resolved[v.checkId + '|' + v.label] = v; });
-    veh = { checks, status, resolved };
+    ls.forEach(d => { const v = d.data(); if (v && v.checkId) links[d.id] = v; });
+    veh = { checks, status, resolved, links };
   } catch (e) {
     throw new Error(/permission/i.test(e && (e.code || e.message) || '') ? 'Firebase rules are blocking vehicle checks. See the README.' : 'Could not read vehicle checks from Firebase.');
   }
@@ -1295,15 +1350,28 @@ function vehUnitState(unit) {
   const st = (veh && veh.status[unit]) || {};
   const prevOf = c => { const i = all.indexOf(c); return i > 0 ? all[i - 1] : null; };
   const res = (veh && veh.resolved) || {};
-  /* open problems: unfixed/open items from the latest check, plus older unfixed ones nobody has resolved */
+  /* open problems carry over until someone marks them fixed (CG Staff Fixed button, the linked Shift Ops card
+     being completed, or a crew tapping Now fixed on the EP Checker). Checks from before EP Checker 2.16 keep
+     the old rule: open items only from the latest check, could-not-fix from the last 6 checks. */
   const latest = all[all.length - 1] || null;
+  const recent6 = all.slice(-6);
+  const crewFixed = {}, crewBroken = {};
+  all.forEach(c => (c.knownChecked || []).forEach(k => {
+    const rk = k.checkId + '|' + k.label;
+    if (k.result === 'fixed') crewFixed[rk] = { c, k };
+    else (crewBroken[rk] = crewBroken[rk] || []).push({ c, k });
+  }));
   const openIss = [];
-  all.slice(-6).forEach(c => (c.issues || []).forEach(i => {
-    if (i.state === 'fixed') return;
-    if (res[issueKey(c, i)]) return;
-    if (i.state === 'open' && c !== latest) return; // open items only count from the latest check
-    if (openIss.some(o => o.i.label === i.label)) return;
-    openIss.push({ c, i });
+  all.forEach(c => (c.issues || []).forEach(i => {
+    if (i.state === 'fixed' || i.known) return;
+    if (res[issueKey(c, i)] || crewFixed[issueKey(c, i)]) return;
+    if (vehTransient(i) && c !== latest) return;          // low fuel / DEF only matters on the latest check
+    if (vehAppVer(c) < 216) {
+      if (i.state === 'open' && c !== latest) return;
+      if (i.state === 'unfixed' && recent6.indexOf(c) < 0) return;
+    }
+    if (openIss.some(o => vehIssId(o.i) === vehIssId(i))) return;
+    openIss.push({ c, i, broken: crewBroken[issueKey(c, i)] || [] });
   }));
   const handoff = [];
   today.forEach(c => (c.issues || []).filter(i => i.state === 'fixed').forEach(i => handoff.push({ c, i, prev: prevOf(c) })));
@@ -1322,6 +1390,9 @@ function vehSummary() {
   return { states, inSvc, checked, need, late, short: checked.length < need };
 }
 function vehCrew(c) { return c && c.crew ? esc(c.crew) : 'crew'; }
+function vehAppVer(c) { const m = String((c && c.app) || '').match(/^(\d+)\.(\d+)/); return m ? (+m[1]) * 100 + (+m[2]) : 0; }
+function vehTransient(i) { return /^(Fuel |DEF at )/i.test(i.label || ''); }
+function vehIssId(i) { return i.key || i.label; }
 function vehPhotos(c) { return (c && Array.isArray(c.photos) ? c.photos : []).filter(p => p && /^(https:\/\/|data:image\/)/.test(p.url || '')); }
 function vehThumb(url) { return /res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url) ? url.replace('/image/upload/', '/image/upload/c_fill,w_240,h_180,q_auto/') : url; }
 function vehHasPhotoToday(s) { return s.today.some(c => vehPhotos(c).length); }
@@ -1345,8 +1416,8 @@ function vehSecBody() {
   S.states.forEach(s => s.handoff.forEach(h => rows.push(rowi(s.unit + ': ' + h.i.label, 'Fixed at check by ' + vehCrew(h.c) + ', left by ' + (h.prev ? vehCrew(h.prev) + ' ' + fmtDate(new Date(h.prev.at)) : 'prior crew'), 'info'))));
   S.states.forEach(s => { if (!s.st.oos) s.openIss.filter(o => o.i.state === 'open').forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Open · ' + vehCrew(o.c), 'warn'))); });
   return banner + '<div class="stats">' + stat(S.checked.length + '/' + S.inSvc.length, 'Checked') +
-    (openN ? statBtn(openN, 'Open issues', 'warn', 'openVeh(\'' + esc(firstOpen.unit) + '\', \'open\')') : stat(openN, 'Open issues')) +
-    (handN ? statBtn(handN, 'Left by prior', 'bad', 'openVeh(\'' + esc(firstHand.unit) + '\', \'hand\')') : stat(handN, 'Left by prior')) +
+    (openN ? statBtn(openN, 'Open issues', 'warn', 'openVehIssues(\'open\')') : stat(openN, 'Open issues')) +
+    (handN ? statBtn(handN, 'Left by prior', 'bad', 'openVehIssues(\'hand\')') : stat(handN, 'Left by prior')) +
     stat(oosN, 'Out of svc') + '</div>' +
     chips + rowsHtml(rows.slice(0, 6), 'No problems reported on the ambulances.');
 }
@@ -1364,16 +1435,17 @@ function renderVehSheet() {
     const stTxt = s.st.oos ? 'Out of service' : !s.today.length ? 'Not checked today' : s.cls === 'bad' ? 'Checked, could not fix something' : s.cls === 'iss' ? 'Checked, open issues' : 'Checked, all good';
     h += '<div class="vunit ' + s.cls + '" id="vu-' + esc(s.unit) + '"><div class="vunit-head"><h4>' + esc(s.unit) + '</h4><span class="st ' + (s.cls === 'oos' ? '' : s.cls) + '">' + stTxt + '</span></div>';
     if (s.st.oos) h += '<div class="vline"><b>Out of service:</b> ' + esc(s.st.reason || 'no reason given') + '<br>Marked by ' + esc(s.st.by || '') + (s.st.at ? ' ' + fmtDT(new Date(s.st.at)) : '') + '</div>';
-    if (s.today.length) h += s.today.map(c => '<div class="vline"><b>' + hhmm(new Date(c.at)) + '</b> checked by <b>' + vehCrew(c) + '</b>' + (c.pct != null ? ' · ' + c.pct + '% done' : '') + (c.held ? ' (email held till 1100)' : '') + (c.fuel && c.fuel !== 'Full' ? ' · fuel ' + esc(c.fuel) : '') + (c.def ? ' · DEF ' + esc(c.def) + '%' : '') + (c.o2psi ? ' · O2 ' + esc(c.o2psi) + ' psi' : '') + (c.mileage ? ' · ' + esc(c.mileage) + ' mi' : '') + '</div>' + vehCheckExtras(c)).join('');
-    else if (s.latest) h += '<div class="vline">Last check: ' + fmtDT(new Date(s.latest.at)) + ' by ' + vehCrew(s.latest) + '</div>';
+    if (s.today.length) h += s.today.map(c => '<div class="vline"><b>' + hhmm(new Date(c.at)) + '</b> checked by <b>' + vehCrew(c) + '</b>' + '<button class="vfull-btn" onclick="openVehFull(\'' + esc(c.id) + '\')">Full check</button>' + (c.pct != null ? ' · ' + c.pct + '% done' : '') + (c.held ? ' (email held till 1100)' : '') + (c.fuel && c.fuel !== 'Full' ? ' · fuel ' + esc(c.fuel) : '') + (c.def ? ' · DEF ' + esc(c.def) + '%' : '') + (c.o2psi ? ' · O2 ' + esc(c.o2psi) + ' psi' : '') + (c.mileage ? ' · ' + esc(c.mileage) + ' mi' : '') + '</div>' + vehCheckExtras(c)).join('');
+    else if (s.latest) h += '<div class="vline">Last check: ' + fmtDT(new Date(s.latest.at)) + ' by ' + vehCrew(s.latest) + '<button class="vfull-btn" onclick="openVehFull(\'' + esc(s.latest.id) + '\')">Full check</button></div>';
     else h += '<div class="vline">No checks logged yet.</div>';
     if (s.openIss.length) {
       h += '<div class="vsub" id="vopen-' + esc(s.unit) + '">Open problems</div>';
-      h += s.openIss.map(o => '<div class="viss ' + o.i.state + '"><div class="t"><span class="vtag ' + o.i.state + '">' + (o.i.state === 'unfixed' ? 'Could not fix' : 'Open') + '</span>' + esc(o.i.label) + '<em>' + (o.i.notes ? esc(o.i.notes) + ' · ' : '') + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)) + '</em></div><button onclick="vehResolve(' + (VEH_REFS.push({ id: o.c.id, label: o.i.label }) - 1) + ')">Fixed</button></div>').join('');
+      h += s.openIss.map(o => { const n = VEH_REFS.push({ id: o.c.id, label: o.i.label, c: o.c, i: o.i, unit: s.unit, broken: o.broken }) - 1;
+        return '<div class="viss ' + o.i.state + '" onclick="openVehIssue(' + n + ')"><div class="t"><span class="vtag ' + o.i.state + '">' + (o.i.state === 'unfixed' ? 'Could not fix' : 'Open') + '</span>' + esc(o.i.label) + vehOpsChip(o.c, o.i) + '<em>' + (o.i.notes ? esc(o.i.notes) + ' · ' : '') + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)) + (vehDaysOpen(o.c) ? ' · open ' + vehDaysOpen(o.c) + ' days' : '') + (o.broken && o.broken.length ? ' · crew confirmed still broken ' + fmtDT(new Date(o.broken[o.broken.length - 1].c.at)) : '') + '</em></div><button onclick="event.stopPropagation();vehResolve(' + n + ')">Fixed</button></div>'; }).join('');
     }
     if (s.handoff.length) {
       h += '<div class="vsub" id="vhand-' + esc(s.unit) + '">Left by the prior crew (fixed at check)</div>';
-      h += s.handoff.map(x => '<div class="viss fixed"><div class="t"><span class="vtag fixed">Handoff</span>' + esc(x.i.label) + '<em>' + (x.i.notes ? esc(x.i.notes) + ' · ' : '') + 'Fixed by ' + vehCrew(x.c) + ' at ' + hhmm(new Date(x.c.at)) + ' · ' + (x.prev ? 'last checked ' + fmtDT(new Date(x.prev.at)) + ' by ' + vehCrew(x.prev) : 'no earlier check on file') + '</em></div></div>').join('');
+      h += s.handoff.map(x => '<div class="viss fixed" onclick="openVehIssue(' + (VEH_REFS.push({ id: x.c.id, label: x.i.label, c: x.c, i: x.i, unit: s.unit, prev: x.prev }) - 1) + ')"><div class="t"><span class="vtag fixed">Handoff</span>' + esc(x.i.label) + '<em>' + (x.i.notes ? esc(x.i.notes) + ' · ' : '') + 'Fixed by ' + vehCrew(x.c) + ' at ' + hhmm(new Date(x.c.at)) + ' · ' + (x.prev ? 'last checked ' + fmtDT(new Date(x.prev.at)) + ' by ' + vehCrew(x.prev) : 'no earlier check on file') + '</em></div></div>').join('');
     }
     /* 7 day look back */
     const wk = s.all.filter(c => new Date(c.at).getTime() >= vehDayStart().getTime() - 6 * 86400000);
@@ -1393,6 +1465,215 @@ function renderVehSheet() {
     vehOpen = ''; vehFocus = '';
   }
 }
+/* ---------- 1.6: issue popups, issue detail, Shift Ops link, Full check ---------- */
+function vehDaysOpen(c) { const d = Math.floor((Date.now() - new Date(c.at).getTime()) / 86400000); return d >= 1 ? d : 0; }
+function vehLinkFor(c, i) { return ((veh && veh.links) || {})[resKey(c.id, i.label)] || null; }
+function vehCardFor(rk) {
+  const L = ((veh && veh.links) || {})[rk];
+  return items.find(it => (it.details || '').indexOf('Vehicle check ref: ' + rk) >= 0) || (L && L.spId ? items.find(it => it.id === String(L.spId)) : null) || null;
+}
+function vehOpsChip(c, i) {
+  const card = vehCardFor(resKey(c.id, i.label));
+  if (!card) return '';
+  return '<span class="vops">Shift Ops · ' + esc(card.status === STATUS.DONE ? 'done' : card.status === STATUS.IP ? 'in progress' : card.status.toLowerCase()) + '</span>';
+}
+let vissRef = null, vissFromList = false, vfullFrom = '';
+function openVehIssues(kind) {
+  const S = vehSummary(), list = [];
+  S.states.forEach(s => {
+    if (kind === 'hand') s.handoff.forEach(x => list.push({ id: x.c.id, label: x.i.label, c: x.c, i: x.i, unit: s.unit, prev: x.prev }));
+    else if (!s.st.oos) s.openIss.forEach(o => list.push({ id: o.c.id, label: o.i.label, c: o.c, i: o.i, unit: s.unit, broken: o.broken }));
+  });
+  if (!list.length) { toast('Nothing there right now'); return; }
+  if (list.length === 1) { vissFromList = false; vissRef = list[0]; renderVehIssue(); showSheet('sh-viss'); return; }
+  VLIST = list;
+  $('vlist-head').textContent = kind === 'hand' ? 'Left by the prior crew' : 'Open issues';
+  $('vlist-body').innerHTML = '<div class="meta" style="margin-bottom:6px">' + list.length + (kind === 'hand' ? ' things crews fixed at their check that the crew before left that way.' : ' problems still open on the ambulances. They stay here until someone marks them fixed.') + ' Tap one for details.</div>' +
+    list.map((r, n) => '<div class="viss ' + r.i.state + '" onclick="openVehIssueFromList(' + n + ')"><div class="t"><span class="vtag ' + r.i.state + '">' + (r.i.state === 'unfixed' ? 'Could not fix' : r.i.state === 'fixed' ? 'Handoff' : 'Open') + '</span><b>' + esc(r.unit) + ':</b> ' + esc(r.i.label) + vehOpsChip(r.c, r.i) +
+      '<em>' + (r.i.notes ? esc(r.i.notes) + ' · ' : '') + vehCrew(r.c) + ' ' + fmtDT(new Date(r.c.at)) + '</em></div></div>').join('');
+  showSheet('sh-vlist');
+}
+let VLIST = [];
+function openVehIssueFromList(n) { vissRef = VLIST[n]; vissFromList = true; renderVehIssue(); showSheet('sh-viss'); }
+function openVehIssue(n) { vissRef = VEH_REFS[n]; vissFromList = false; if (!vissRef) return; renderVehIssue(); showSheet('sh-viss'); }
+function vissBack() { if (vissFromList) showSheet('sh-vlist'); else openVeh(vissRef && vissRef.unit); }
+function renderVehIssue() {
+  const r = vissRef; if (!r) return;
+  const c = r.c, i = r.i, rk = resKey(c.id, i.label), card = vehCardFor(rk), resd = veh && veh.resolved[c.id + '|' + i.label];
+  $('viss-back').style.display = '';
+  $('viss-head').textContent = r.unit + ' issue';
+  const tag = resd ? '<span class="vtag fixed">Fixed</span>' : i.state === 'unfixed' ? '<span class="vtag unfixed">Could not fix</span>' : i.state === 'fixed' ? '<span class="vtag fixed">Handoff</span>' : '<span class="vtag open">Open</span>';
+  let h = '<div class="vi-title">' + tag + ' ' + esc(r.unit) + ': ' + esc(i.label) + '</div>';
+  if (i.notes) h += '<div class="vi-line"><b>Crew notes:</b> ' + esc(i.notes) + '</div>';
+  h += '<div class="vi-line">Reported by <b>' + vehCrew(c) + '</b> on the ' + fmtDT(new Date(c.at)) + ' check' + (vehDaysOpen(c) && !resd && i.state !== 'fixed' ? ', open ' + vehDaysOpen(c) + ' days' : '') + '</div>';
+  if (i.state === 'fixed') h += '<div class="vi-line">Crew fixed it on the spot. ' + (r.prev ? 'Last checked before that ' + fmtDT(new Date(r.prev.at)) + ' by ' + vehCrew(r.prev) + '.' : 'No earlier check on file.') + '</div>';
+  (r.broken || []).forEach(b => { h += '<div class="vi-line" style="color:var(--bad)">Crew confirmed still broken at the ' + fmtDT(new Date(b.c.at)) + ' check (' + vehCrew(b.c) + ')</div>'; });
+  if (resd) h += '<div class="vi-line" style="color:var(--g-mid)"><b>Marked fixed</b> by ' + esc(resd.by || '') + (resd.at ? ' ' + fmtDT(new Date(resd.at)) : '') + (resd.note ? ' · ' + esc(resd.note) : '') + '</div>';
+  const ph = vehPhotos(c);
+  if (ph.length) h += '<div class="vphotos">' + ph.map(p => '<a href="' + esc(p.url) + '" target="_blank" rel="noopener"><img loading="lazy" src="' + esc(vehThumb(p.url)) + '" alt="' + esc(p.label || 'Photo') + '">' + esc(p.label || 'Photo') + '</a>').join('') + '</div>';
+  /* Shift Ops */
+  h += '<div class="vi-box"><h4>Shift Ops</h4>';
+  if (card) {
+    const notes = parseNotes(card.notes);
+    h += '<div class="vi-line"><b>' + esc(soId(card)) + '</b> · ' + esc(group(card.category).name) + ' · ' + esc(card.assigned) + ' · <b>' + esc(card.status === STATUS.IP ? 'In progress' : card.status) + '</b>' + (card.status === STATUS.DONE && card.completedBy ? ' by ' + esc(card.completedBy) : '') + '</div>';
+    if (card.status !== STATUS.DONE) h += '<div class="note-add" style="margin-top:8px"><input class="inp" id="viss-note" placeholder="Add a note, like part ordered or called the shop" onkeydown="if(event.key===\'Enter\')vehIssueNote()"><button class="btn" onclick="vehIssueNote()">Add</button></div>';
+    h += '<div class="notes">' + (notes.length ? notes.slice(0, 6).map(n => '<div class="note">' + (n.when ? '<small>' + esc(n.when) + ' · ' + esc(n.who) + '</small>' : '') + esc(n.text) + '</div>').join('') : '<div class="meta">No notes on the card yet.</div>') + '</div>';
+    h += '<div class="btns"><button class="btn ghost" onclick="openItem(\'' + esc(card.id) + '\')">Open card</button></div>';
+  } else {
+    h += '<div class="vi-line">Not on Shift Ops yet. Adding it makes a Logistics card for ' + esc(group('Logistics').owner) + ' with this issue filled in. Notes on the card show up here and on the next crew\'s check.</div>';
+    h += '<div class="btns"><button class="btn" id="viss-add" onclick="vehAddToOps()">+ Add to Shift Ops</button></div>';
+  }
+  h += '</div>';
+  h += '<div class="btns">' + (!resd && i.state !== 'fixed' ? '<button class="btn done" onclick="vehResolveRef(vissRef)">&#10003; Fixed</button>' : '') + '<button class="btn ghost" onclick="openVehFull(\'' + esc(c.id) + '\', true)">Full check</button></div>';
+  $('viss-body').innerHTML = h;
+}
+async function vehLinkWrite(rk, data) {
+  veh.links = veh.links || {};
+  veh.links[rk] = Object.assign({}, veh.links[rk] || {}, data);
+  if (DEMO) return;
+  try { const db = await fbReady(); await fbFs.setDoc(fbFs.doc(db, 'vehicleLinks', rk), data, { merge: true }); }
+  catch (e) { console.warn('vehicle link not saved', e); }
+}
+async function vehAddToOps() {
+  const r = vissRef; if (!r) return;
+  const c = r.c, i = r.i, rk = resKey(c.id, i.label);
+  if (vehCardFor(rk)) { renderVehIssue(); return; }
+  const btn = $('viss-add'); if (btn) btn.disabled = true;
+  const today = new Date(), dateIn = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0') + 'T19:00:00Z';
+  const details = [
+    (i.state === 'unfixed' ? 'Crew could not fix it.' : i.state === 'fixed' ? 'Crew fixed it on the spot, the crew before left it that way.' : 'Left open at the check.'),
+    i.notes ? 'Crew notes: ' + i.notes : '',
+    'Reported by ' + (c.crew || 'crew') + ' on the ' + fmtDT(new Date(c.at)) + ' ' + r.unit + ' check.',
+    'From CG Staff Vehicle Checks.',
+    '', 'Vehicle check ref: ' + rk
+  ].filter((x, n) => x || n === 4).join('\n');
+  const fields = { Title: r.unit + ': ' + i.label, Details: details, Category: 'Logistics', AssignedTo: group('Logistics').owner, Status: STATUS.OPEN, Source: 'Manual', DateIn: dateIn };
+  try {
+    const res = await createItem(fields);
+    const it = mapItem({ id: res.id, fields: Object.assign({}, fields, res.fields || {}), createdDateTime: res.createdDateTime, lastModifiedDateTime: res.lastModifiedDateTime });
+    it.itemId = 'SO-' + String(res.id).padStart(3, '0');
+    items.push(it);
+    patchFields(it.id, { ItemID: it.itemId }).catch(() => {});
+    await vehLinkWrite(rk, { checkId: c.id, label: i.label, unit: r.unit, key: i.key || '', spId: String(it.id), itemId: it.itemId, status: STATUS.OPEN, lastNote: '', lastNoteBy: '', lastNoteAt: 0, by: meName(), at: new Date().toISOString() });
+    toast('Added to Shift Ops for ' + firstName(it.assigned));
+    render(); renderVehIssue();
+  } catch (e) { toast('Did not save. ' + e.message, true); if (btn) btn.disabled = false; }
+}
+async function vehIssueNote() {
+  const r = vissRef; if (!r) return;
+  const rk = resKey(r.c.id, r.i.label), card = vehCardFor(rk), inp = $('viss-note');
+  if (!card || !inp) return;
+  const text = inp.value.trim(); if (!text) return;
+  const notes = noteStamp() + ': ' + text + (card.notes ? '\n' + card.notes : '');
+  inp.value = '';
+  if (await applyChange(card.id, { notes }, { Notes: notes }, 'Note added')) { vehMirrorCard(card); renderVehIssue(); }
+}
+/* keep the Firestore copy (read by the EP Checker) in step with the card */
+function vehRkFromCard(card) { const m = (card && card.details || '').match(/Vehicle check ref: (.+)$/m); return m ? m[1] : null; }
+function vehMirrorCard(card) {
+  const rk = vehRkFromCard(card); if (!rk || !veh) return;
+  const L = (veh.links || {})[rk] || {}, n = parseNotes(card.notes)[0] || null;
+  const upd = {};
+  if (L.status !== card.status) upd.status = card.status;
+  if (n && n.text !== L.lastNote) { upd.lastNote = n.text; upd.lastNoteBy = n.who || ''; upd.lastNoteAt = Date.now(); }
+  if (!L.spId) upd.spId = String(card.id);
+  if (Object.keys(upd).length) vehLinkWrite(rk, upd);
+}
+async function vehCompleteCard(card, why) {
+  const now = new Date(), notes = noteStamp() + ': ' + why + (card.notes ? '\n' + card.notes : '');
+  const ok = await applyChange(card.id, { status: STATUS.DONE, completedBy: meName(), completedDate: now, notes }, { Status: STATUS.DONE, CompletedBy: meName(), CompletedDate: now.toISOString(), Notes: notes });
+  if (ok) vehMirrorCard(card);
+  return ok;
+}
+/* both directions: card completed -> issue fixed, issue fixed (CG Staff or crew) -> card completed, notes mirrored */
+let vehSyncing = false;
+async function vehSyncLinks() {
+  if (vehSyncing || !veh || !items.length) return;
+  vehSyncing = true;
+  try {
+    for (const [rk, L] of Object.entries(veh.links || {})) {
+      const card = vehCardFor(rk); if (!card) continue;
+      const rkey = L.checkId + '|' + L.label, resd = veh.resolved[rkey];
+      if (card.status === STATUS.DONE && !resd) {
+        const rec = { checkId: L.checkId, label: L.label, by: card.completedBy || 'Shift Ops', at: (card.completedDate || new Date()).toISOString(), note: 'Shift Ops card completed' };
+        veh.resolved[rkey] = rec;
+        if (!DEMO) { try { const db = await fbReady(); await fbFs.setDoc(fbFs.doc(db, 'vehicleResolved', rk), rec); } catch (e) {} }
+      } else if (resd && card.status !== STATUS.DONE && new Date(resd.at).getTime() > (card.modified ? card.modified.getTime() : 0)) {
+        await vehCompleteCard(card, (resd.note && /crew/i.test(resd.note) ? 'Crew found it fixed at their check (' + (resd.by || 'crew') + ')' : 'Marked fixed in Vehicle Checks by ' + (resd.by || 'someone')));
+      }
+      vehMirrorCard(card);
+    }
+  } finally { vehSyncing = false; }
+}
+/* hook the board's own note / complete buttons */
+function vehAfterCardChange(id) { const card = items.find(i => i.id === id); if (!card || !vehRkFromCard(card)) return; vehMirrorCard(card); if (card.status === STATUS.DONE) vehSyncLinks().then(() => renderHome()); }
+
+/* Full check: everything the crew saw, from EP Checker 2.16 on */
+function openVehFull(id, fromIssue) {
+  const c = ((veh && veh.checks) || []).find(x => x.id === id); if (!c) return;
+  vfullFrom = fromIssue ? 'issue' : 'veh';
+  $('vfull-head').textContent = (c.unitName || c.unit) + ' check ' + fmtDT(new Date(c.at));
+  let h = '<div class="vi-line"><b>' + vehCrew(c) + '</b>' + (c.pct != null ? ' · ' + c.pct + '% done' : '') + (c.mileage ? ' · ' + esc(c.mileage) + ' mi' : '') + (c.fuel ? ' · fuel ' + esc(c.fuel) : '') + (c.def ? ' · DEF ' + esc(c.def) + '%' : '') + (c.o2psi ? ' · O2 ' + esc(c.o2psi) + ' psi' : '') + (c.app ? ' · app ' + esc(c.app) : '') + '</div>';
+  h += vehCheckExtras(c);
+  if (c.detail) h += '<div class="vfull-pre">' + esc(c.detail) + '</div>';
+  else {
+    h += '<div class="vi-line" style="margin-top:10px">This check came from an EP Checker older than 2.16, so only the problems were saved:</div>';
+    h += (c.issues || []).length ? (c.issues || []).map(i => '<div class="viss ' + i.state + '" style="cursor:default"><div class="t"><span class="vtag ' + i.state + '">' + (i.state === 'unfixed' ? 'Could not fix' : i.state === 'fixed' ? 'Fixed' : 'Open') + '</span>' + esc(i.label) + (i.notes ? '<em>' + esc(i.notes) + '</em>' : '') + '</div></div>').join('') : '<div class="meta">No problems reported.</div>';
+  }
+  $('vfull-body').innerHTML = h;
+  showSheet('sh-vfull');
+}
+function vfullBack() { if (vfullFrom === 'issue' && vissRef) { renderVehIssue(); showSheet('sh-viss'); } else showSheet('sh-veh'); }
+
+/* ---------- search: every Shift Ops item ever put on, plus vehicle check issues ---------- */
+let gq = '', gf = 'all', GS = [];
+function gSearch(v) { gq = v; renderGSearch(); }
+function setGf(f) { gf = f; document.querySelectorAll('#gsearch .fchip').forEach(b => b.classList.toggle('on', b.dataset.gf === f)); renderGSearch(); }
+function gsMark(text, words) {
+  let out = esc(text);
+  words.forEach(w => { if (w.length < 2) return; const re = new RegExp('(' + esc(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'); out = out.replace(re, '<mark>$1</mark>'); });
+  return out;
+}
+function renderGSearch() {
+  const el = $('gs-res'); if (!el) return;
+  const q = gq.trim().toLowerCase();
+  if (q.length < 2) { el.innerHTML = '<div class="meta" style="margin-top:6px">Type at least 2 letters. Searches all ' + items.length + ' Shift Ops items (titles, details, notes, who it was assigned to, who finished it) and every vehicle check issue from the last ' + CONFIG.vehKeepDays + ' days.</div>'; return; }
+  const words = q.split(/\s+/).filter(Boolean), hit = t => words.every(w => t.indexOf(w) >= 0);
+  const out = [];
+  items.forEach(it => {
+    const done = it.status === STATUS.DONE;
+    if ((gf === 'open' && done) || (gf === 'done' && !done)) return;
+    const txt = [it.title, it.details, it.notes, it.assigned, it.completedBy, group(it.category).name, it.source, soId(it)].join(' ').toLowerCase();
+    if (!hit(txt)) return;
+    const when = done && it.completedDate ? it.completedDate : it.dateIn;
+    out.push({ kind: 'so', it, done, when: when ? when.getTime() : 0 });
+  });
+  ((veh && veh.checks) || []).forEach(c => (c.issues || []).forEach(i => {
+    if (i.known) return;
+    const resd = veh.resolved[c.id + '|' + i.label], done = !!resd || i.state === 'fixed';
+    if ((gf === 'open' && done) || (gf === 'done' && !done)) return;
+    const txt = [c.unit, c.unitName, i.label, i.notes, c.crew, 'vehicle check'].join(' ').toLowerCase();
+    if (!hit(txt)) return;
+    out.push({ kind: 'veh', c, i, done, resd, when: new Date(c.at).getTime() });
+  }));
+  out.sort((a, b) => (a.done - b.done) || (b.when - a.when));
+  GS = out.slice(0, 40);
+  if (!out.length) { el.innerHTML = '<div class="meta" style="margin-top:6px">Nothing matches "' + esc(gq.trim()) + '"' + (gf !== 'all' ? ' in ' + gf : '') + '.</div>'; return; }
+  el.innerHTML = '<div class="meta" style="margin-top:6px">' + out.length + ' match' + (out.length === 1 ? '' : 'es') + (out.length > 40 ? ', showing the first 40. Add another word to narrow it down.' : '') + '</div>' + GS.map((r, n) => {
+    if (r.kind === 'so') {
+      const it = r.it, g = group(it.category);
+      return '<button class="gs-row" style="--c:' + g.color + '" onclick="gsOpen(' + n + ')"><div class="t">' + gsMark(it.title, words) + '<em>' + esc(soId(it)) + ' · ' + esc(g.name) + ' · ' + esc(it.assigned) + ' · in ' + fmtDate(it.dateIn) + (r.done ? ' · done ' + (it.completedDate ? fmtDate(it.completedDate) : '') + (it.completedBy ? ' by ' + esc(it.completedBy) : '') : '') + '</em></div><span class="st ' + (r.done ? 'done' : 'open') + '">' + (r.done ? 'Done' : esc(it.status === STATUS.IP ? 'In progress' : it.status)) + '</span></button>';
+    }
+    return '<button class="gs-row" style="--c:#1C3A55" onclick="gsOpen(' + n + ')"><div class="t">' + gsMark(r.c.unit + ': ' + r.i.label, words) + '<em>Vehicle check · ' + vehCrew(r.c) + ' ' + fmtDT(new Date(r.c.at)) + (r.i.notes ? ' · ' + gsMark(r.i.notes, words) : '') + (r.resd ? ' · fixed by ' + esc(r.resd.by || '') : '') + '</em></div><span class="st ' + (r.done ? 'done' : 'open') + '">' + (r.i.state === 'fixed' ? 'Handoff' : r.done ? 'Fixed' : 'Open') + '</span></button>';
+  }).join('');
+}
+function gsOpen(n) {
+  const r = GS[n]; if (!r) return;
+  if (r.kind === 'so') { openItem(r.it.id); return; }
+  vissRef = { id: r.c.id, label: r.i.label, c: r.c, i: r.i, unit: r.c.unit }; vissFromList = false;
+  renderVehIssue(); showSheet('sh-viss');
+}
+
 /* photos, section notes and short narc counts under a check line */
 function vehCheckExtras(c) {
   let h = '';
@@ -1416,11 +1697,16 @@ function vehSetOos(unit, on) {
     unit + (on ? ' marked out of service' : ' back in service'));
 }
 let VEH_REFS = [];
-function vehResolve(n) {
-  const r = VEH_REFS[n]; if (!r) return;
+function vehResolve(n) { const r = VEH_REFS[n]; if (r) vehResolveRef(r); }
+function vehResolveRef(r, note) {
   const rec = { checkId: r.id, label: r.label, by: meName(), at: new Date().toISOString() };
-  vehWrite((F, db) => F.setDoc(F.doc(db, 'vehicleResolved', resKey(r.id, r.label)), rec),
-    v => { v.resolved[r.id + '|' + r.label] = rec; }, 'Marked fixed');
+  if (note) rec.note = note;
+  const rk = resKey(r.id, r.label), card = vehCardFor(rk);
+  return vehWrite((F, db) => F.setDoc(F.doc(db, 'vehicleResolved', rk), rec),
+    v => { v.resolved[r.id + '|' + r.label] = rec; }, card && card.status !== STATUS.DONE ? 'Marked fixed, Shift Ops card completed' : 'Marked fixed').then(() => {
+      if (card && card.status !== STATUS.DONE) vehCompleteCard(card, 'Marked fixed in Vehicle Checks');
+      if ($('sh-viss').classList.contains('show')) renderVehIssue();
+    });
 }
 function demoVeh() {
   const now = new Date(), start = vehDayStart(now).getTime(), h = n => new Date(start + n * 3600000).toISOString(), y = n => new Date(start - n * 3600000).toISOString();
@@ -1434,17 +1720,28 @@ function demoVeh() {
         narcs: [{ name: 'Fentanyl', par: 8, count: 8 }, { name: 'Midazolam (Versed)', par: 5, count: 4 }, { name: 'Ketamine', par: 2, count: 2 }], issues: [
         { label: 'Main O2 at 300 PSI (below 500, exchange)', notes: 'Swapped tank', state: 'fixed' },
         { label: 'Drug box: Narcan 4mg', notes: 'Restocked, prior crew used 1', state: 'fixed' } ] },
-      { id: 'M19-y', unit: 'M19', type: 'ambulance', at: y(20), crew: 'BW + TT', pct: 100, issues: [] },
-      { id: 'M19-t', unit: 'M19', type: 'ambulance', at: h(1.2), crew: 'DB + NS', pct: 96, issues: [
+      { id: 'M19-y', unit: 'M19', type: 'ambulance', at: y(20), crew: 'BW + TT', pct: 100, app: '2.16', issues: [{ label: 'Compartment E: BP Cuff Child', key: 'i|Compartment E||BP Cuff Child', notes: 'Velcro worn out', state: 'unfixed' }] },
+      { id: 'M19-t', unit: 'M19', type: 'ambulance', at: h(1.2), crew: 'DB + NS', pct: 96, app: '2.16',
+        knownChecked: [{ checkId: 'M19-y', label: 'Compartment E: BP Cuff Child', key: 'i|Compartment E||BP Cuff Child', result: 'broken' }],
+        detail: 'APPARATUS CHECK, M19\nDate: today   Crew: DB + NS   Type: Ambulance\n\nFULL CHECK DETAIL\nMechanical & Lights:\n  Brake lights: ABNORMAL (UNABLE TO FIX), Left side out, bulb ordered\n  Horn: Normal\nUnder the Hood:\n  Engine oil: Normal (honey colored, clean)\nFuel: Full\nDEF: 75%\nMain O2: 1800 PSI\nNarcotic counts (count / par):\n  Fentanyl: 8 / 8\n  Midazolam (Versed): 5 / 5\n  Ketamine: 2 / 2', issues: [
         { label: 'Brake lights', notes: 'Left side out, bulb ordered', state: 'unfixed' },
         { label: 'Windshield washer fluid', notes: '', state: 'open' } ] },
       { id: 'M18-y', unit: 'M18', type: 'ambulance', at: y(30), crew: 'RT + KM', pct: 100, issues: [] }
     ],
     status: { M14: { oos: true, reason: 'At Freightliner for transmission', by: 'Dennis Madler', at: y(48) } },
-    resolved: {}
+    resolved: {},
+    links: { [resKey('M19-y', 'Compartment E: BP Cuff Child')]: { checkId: 'M19-y', label: 'Compartment E: BP Cuff Child', unit: 'M19', spId: '901', status: 'Waiting', lastNote: 'New child cuff ordered from Bound Tree', lastNoteBy: 'Dennis Madler' } }
   };
 }
 
+function demoVehCard() {
+  if (items.some(i => i.id === '901')) return;
+  const t = new Date();
+  items.push(mapItem({ id: '901', createdDateTime: new Date(t - 20 * 3600000).toISOString(), lastModifiedDateTime: new Date(t - 3600000).toISOString(),
+    fields: { Title: 'M19: Compartment E: BP Cuff Child', ItemID: 'SO-901', Category: 'Logistics', AssignedTo: 'Dennis Madler', Status: 'Waiting', Source: 'Manual', DateIn: new Date(t - 20 * 3600000).toISOString(),
+      Details: 'Crew could not fix it.\nCrew notes: Velcro worn out\nFrom CG Staff Vehicle Checks.\n\nVehicle check ref: ' + resKey('M19-y', 'Compartment E: BP Cuff Child'),
+      Notes: (t.getMonth() + 1) + '/' + t.getDate() + ' 0915 Dennis Madler: New child cuff ordered from Bound Tree' } }));
+}
 function demoExtras() {
   const day = 86400000, t = Date.now(), d = n => new Date(t + n * day);
   fng = { setup: true,
@@ -1453,8 +1750,16 @@ function demoExtras() {
     svc: [{ title: 'Fire extinguishers: annual inspection and tag', station: 'Station 52', next: d(-12), active: true }, { title: 'HVAC filters: replace', station: 'Station 51', next: d(-3), active: true }, { title: 'Roof and gutters: inspection', station: 'Station 51', next: d(14), active: true }],
     grd: [{ title: 'Mow and edge front lawn', station: 'St 51', due: d(-1), status: 'Done' }, { title: 'Generator monthly run test', station: 'St 52', due: d(-2), status: 'Not Completed' }, { title: 'Blow out bays', station: 'St 51', due: d(-4), status: 'Not Started' },
           { title: 'Weed eat fence line', station: 'St 52', due: d(1), status: 'Not Started' }, { title: 'Empty trash cans', station: 'St 51.5', due: d(0), status: 'In Progress' }] };
-  demoVeh();
+  demoVeh(); demoVehCard();
   reports = [{ type: 'biological', status: 'new', when: d(-1) }, { type: 'vehicle', status: 'reviewed', when: d(-6) }, { type: 'injury', status: 'closed', when: d(-20) }, { type: 'injury', status: 'reviewed', when: d(-40) }];
+}
+
+function vehDeepLink() {
+  const m = location.search.match(/[?&]veh=([^&]+)/); if (!m || !veh) return;
+  const rk = decodeURIComponent(m[1]), L = (veh.links || {})[rk];
+  for (const c of veh.checks || []) for (const i of c.issues || []) {
+    if (resKey(c.id, i.label) === rk || (L && L.checkId === c.id && L.label === i.label)) { vissRef = { id: c.id, label: i.label, c, i, unit: c.unit }; vissFromList = false; renderVehIssue(); showSheet('sh-viss'); return; }
+  }
 }
 
 /* ---------------- boot ---------------- */
@@ -1481,6 +1786,7 @@ async function boot() {
   if (/[?&]view=brief/.test(location.search)) openBrief();
   await refresh(false);
   if (/[?&]view=brief/.test(location.search)) renderBrief();
+  vehDeepLink();
   timer = setInterval(() => { if (!document.hidden) refresh(false).then(() => { if ($('brief').classList.contains('show')) renderBrief(); }); }, CONFIG.refreshSeconds * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(false); });
 }

@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.5**
+**Version 1.6**
 
 ## Links
 
@@ -48,6 +48,14 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 
 **Triage and briefing flag:** every card has a dot (tap to set Red urgent, Yellow soon, Green routine; white means not triaged yet) and a flag (tap to put it on the shift briefing). The card's left edge shows the triage color. Flagged cards float to the top of their group, then Red, Yellow, not triaged, Green. Filters: Briefing and Not triaged. On a computer the cards are compact. Click a card to show its details and last note right on the board, click again to close it, and click Open card (or double click) for the full card. On a phone, tap opens it. The item sheet has the same Triage buttons and a Mention at shift briefing switch.
 
+**Vehicle issues (1.6):** tap Open issues or Left by prior on the dashboard. One issue opens straight to it, several open a list. Tapping any issue (dashboard list, Open vehicles, or search) opens its detail: crew notes, who reported it and when, how many days it's been open, crew confirmations from later checks, photos, a Fixed button and Full check. **Add to Shift Ops** makes a Logistics card for Dennis with everything filled in and a "Vehicle check ref" line at the bottom of the details that links the two. Notes added on the card (from the issue screen or the board) show on the issue and on the next crew's EP Checker. Completing the card marks the issue fixed; tapping Fixed on the issue completes the card; a crew tapping Now fixed on the next check does both.
+
+**Carry over:** open problems stay open every day until someone marks them fixed. Checks from before EP Checker 2.16 keep the old rule (open items from the latest check only, could not fix from the last 6 checks). Low fuel and DEF only count from the latest check.
+
+**Full check:** each check line in Open vehicles has a Full check button with the whole check as the crew saw it (EP Checker 2.16 and up). Older checks show just the problems.
+
+**Search:** at the bottom of the dashboard. Searches every Shift Ops item ever put on (title, details, notes, assigned, completed by, group, SO number) and every vehicle check issue from the last 45 days. All, Open and Done chips. Every word you type has to match. Tap a result to open it.
+
 **Photos and notes on checks:** in Open vehicles, each check shows its walk-around and fridge photos as thumbnails (tap for full size), anything typed in the Other notes boxes, and narc counts that came in short.
 
 **Briefing:** has a "Rig checks for Logistics (Dennis)" block with everything today's checks turned up: could not fix, open, left by the prior crew, short narcs, notes, and out of service units. It also (and flagged items finished in the time window) by default. Tap Everything for new, being worked, other done, and getting old.
@@ -60,7 +68,7 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 
 - **Shift Ops:** "Shift Ops" SharePoint list in the CG Staff team. Fed by the Claude email sweep (every 4 hours) through the "Shift Ops Drop (do not delete)" folder and the Power Automate flows "Shift Ops: drop folder to list" and "Shift Ops: completed stamp". The list also has `Triage` (Choice: Red, Yellow, Green) and `Briefing` (Yes/No) columns, added for v1.2. If they're ever missing, the app still works but triage and flags show a note instead of saving.
 - **Facilities / Grounds:** Facility Work Orders, Facility Services and Grounds Tracker lists on the Facilities and Grounds site (same data as the F&G app, read only here).
-- **Vehicle Checks:** Firebase project `ncems-hub-9111d` (same one the hub uses). The EP Checker (v2.14.0 and up) writes one doc per submitted check to `vehicleChecks`. Out of service marks go to `vehicleStatus`, Fixed marks go to `vehicleResolved`. The dashboard reads the last 45 days.
+- **Vehicle Checks:** Firebase project `ncems-hub-9111d` (same one the hub uses). Since 1.6, `vehicleLinks/{check ref}` holds the link between a vehicle issue and its Shift Ops card (card id, status, latest note) so the EP Checker can show the chiefs' latest note to crews. The EP Checker (v2.14.0 and up) writes one doc per submitted check to `vehicleChecks`. Out of service marks go to `vehicleStatus`, Fixed marks go to `vehicleResolved`. The dashboard reads the last 45 days.
 - **Incident Reports:** Cloudflare Worker `ncems-api.d-boyce.workers.dev/bin/incident-reports`, read only. Since v1.3 the dashboard sends the Microsoft sign-in token, and the Worker only answers for chiefs on its ADMINS list.
 - **Scheduling:** Derek's Worker (`ncems-ot.d-langdon.workers.dev`) with its own sign-in. Live numbers need a read endpoint shared with this app.
 
@@ -71,6 +79,16 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.6
+- Open issues and Left by prior open the issues: straight to it if there's one, a list if there are more
+- Issue detail screen with crew notes, days open, crew confirmations, photos, Fixed and Full check
+- Add to Shift Ops on any vehicle issue (Logistics, Dennis). The card and the issue stay linked both ways: notes, completing and Fixed
+- Open problems carry over until fixed (2.16 checks)
+- Full check button on every check
+- Search bar at the bottom of the dashboard for every Shift Ops item, open or done, plus vehicle check issues
+- Briefing shows how long a rig problem has been open and its Shift Ops status and latest note
+- Link straight to an issue with ?veh= plus the check ref
 
 ### v1.5
 - Photos from the EP Checker show as thumbnails on each check, with a camera icon on the dashboard chip
@@ -113,7 +131,7 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 - iOS home-screen caches hard : delete and re-add icon after every deploy
 - Back button goes to `https://hub.northcountryems.org/`
 - Vehicle Checks needs EP Checker v2.14.0 live before any checks show up. Checks submitted before that are email only
-- Firebase rules (Firebase console > Firestore > Rules). The whole thing, as published for EP Checker 2.15 / CG Staff 1.5:
+- Firebase rules (Firebase console > Firestore > Rules). The whole thing, as published for EP Checker 2.16 / CG Staff 1.6:
 
 ```
 rules_version = '2';
@@ -125,6 +143,7 @@ service cloud.firestore {
     match /vehicleStatus/{unit} { allow read: if true; allow create, update: if request.resource.data.oos is bool && request.resource.data.by is string; }
     match /vehicleResolved/{id} { allow read: if true; allow create, update: if request.resource.data.checkId is string && request.resource.data.by is string; }
     match /liveChecks/{id} { allow read: if true; allow create, update: if request.resource.data.unit is string && request.resource.data.date is string && request.resource.data.updatedAt is number; }
+    match /vehicleLinks/{id} { allow read: if true; allow create, update: if request.resource.data.checkId is string && request.resource.data.label is string; }
   }
 }
 ```
