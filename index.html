@@ -78,7 +78,8 @@
   .hello { max-width:1300px; margin:0 auto 12px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
   .hello h2 { font-size:18px; font-weight:800; color:var(--g-deep); letter-spacing:.5px; }
   .hello span { font-size:11px; color:var(--muted); letter-spacing:.4px; }
-  .grid { max-width:1300px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:14px; }
+  .grid { max-width:1300px; margin:0 auto; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  @media (max-width:1180px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media (max-width:760px) { .grid { grid-template-columns:1fr; } .home { padding:10px 10px 40px; } }
   .sec { background:#fff; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.08); overflow:hidden; display:flex; flex-direction:column; border-top:6px solid var(--c); }
   .sec-head { display:flex; align-items:center; gap:10px; padding:12px 14px 8px; }
@@ -95,6 +96,11 @@
   .rowi { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; line-height:1.35; padding:7px 9px; border-radius:8px; background:#fafcfa; border:1px solid #e6ede6; }
   .rowi .dot { width:9px; height:9px; border-radius:50%; margin-top:4px; flex-shrink:0; background:#8A918A; }
   .rowi .dot.bad { background:var(--bad); } .rowi .dot.warn { background:#D9A400; } .rowi .dot.info { background:var(--info); }
+  .ot-next { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:2px 14px 10px; }
+  .ot-pill { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:2px; padding:10px 8px; border-radius:999px; background:#8a6a1f; color:#fff; text-decoration:none; box-shadow:0 2px 6px rgba(138,106,31,.35); min-height:54px; }
+  .ot-pill small { font-size:9.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; opacity:.85; }
+  .ot-pill b { font-size:16px; font-weight:800; line-height:1.15; }
+  .ot-pill.none { background:#cdbf9b; box-shadow:none; }
   .otbars { display:flex; align-items:flex-end; gap:4px; height:46px; padding:0 14px; margin:18px 0 4px; }
   .otbars div { flex:1; background:#d9c79a; border-radius:3px 3px 0 0; min-height:2px; position:relative; }
   .otbars div.now { background:#8a6a1f; }
@@ -362,6 +368,17 @@
   .vsub { font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:14px 0 4px; }
 
   /* toast */
+  .save-box { margin-top:16px; padding:14px; border:2px solid #cfe0cf; border-radius:14px; background:#f6faf6; }
+  .save-box .save-big { width:100%; padding:15px; font-size:16px; font-weight:800; }
+  .save-box .done-box { margin-top:12px; }
+  .small-row { display:flex; align-items:center; gap:10px; margin-top:12px; }
+  .small-row span { font-size:11.5px; color:var(--muted); line-height:1.35; }
+  .btn.small { padding:7px 12px; font-size:13px; flex-shrink:0; width:auto; white-space:nowrap; }
+  .btn.armed { background:var(--bad) !important; border-color:var(--bad) !important; color:#fff !important; }
+  .rem-row { display:flex; gap:6px; } .rem-row .inp { flex:1.2; min-width:0; } .rem-row .sel { flex:1; min-width:0; }
+  .undo-bar { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(140%); background:#1C3A1C; color:#fff; border-radius:12px; padding:10px 10px 10px 16px; display:flex; align-items:center; gap:14px; z-index:400; box-shadow:0 8px 24px rgba(0,0,0,.3); transition:transform .2s; max-width:92vw; font-size:14px; }
+  .undo-bar.show { transform:translateX(-50%) translateY(0); }
+  .undo-bar button { background:#fff; color:#1C3A1C; border:0; border-radius:8px; padding:8px 14px; font-weight:800; font-size:14px; cursor:pointer; }
   .toast { position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px); background:#1C3A1C; color:#fff;
     padding:12px 16px; border-radius:12px; font-size:13px; font-weight:700; z-index:60; opacity:0; pointer-events:none; transition:all .2s; max-width:92%; text-align:center; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
@@ -515,6 +532,8 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="undo-bar" id="undo-bar"><span></span><button type="button" onclick="undoPending()">Undo</button></div>
+<datalist id="assignee-list"></datalist>
 
 <script>
 /* ============================================================
@@ -524,7 +543,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.8';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.9';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -585,6 +604,22 @@ const FIELDS = 'Title,ItemID,DateIn,Details,Category,Source,AssignedTo,Status,No
 /* Triage (Choice: Red / Yellow / Green) and Briefing (Yes/No) columns on the Shift Ops list */
 const TRIAGE = { Red: { c: '#C13E3E', label: 'Red', sub: 'Urgent' }, Yellow: { c: '#D9A400', label: 'Yellow', sub: 'Soon' }, Green: { c: '#3A8A3A', label: 'Green', sub: 'Routine' } };
 let hasTriageCols = null;   // null = not checked yet
+let hasAssignCols = null;   // 1.9: AlsoAssigned (text), RemindOn (date), RemindEvery (number) on the Shift Ops list
+/* people you can hand a card to (free typing works too: "Name" or "Name <email>") */
+const ASSIGNEES = [
+  ['Doug Boyce', 'd.boyce@northcountryems.org'], ['Dennis Madler', 'd.madler@northcountryems.org'], ['Derek Langdon', 'd.langdon@northcountryems.org'],
+  ['Bryce Shirley', 'b.shirley@northcountryems.org'], ['Chuck Andrus', 'c.andrus@northcountryems.org'], ['Stephen Schutts', 's.schutts@northcountryems.org'],
+  ['Nick Stafford', 'n.stafford@northcountryems.org'], ['Tyler Komm', 't.komm@northcountryems.org']
+];
+function assigneeLabel(v) { const m = String(v || '').match(/^(.*?)\s*<([^>]+)>$/); return m ? m[1] : String(v || ''); }
+function assigneeValue(typed) {   // "Steve" or "Stephen Schutts" -> "Stephen Schutts <s.schutts@...>"
+  const t = String(typed || '').trim(); if (!t) return '';
+  if (/<[^>]+@[^>]+>$/.test(t)) return t;
+  if (/^[^\s@]+@[^\s@]+$/.test(t)) { const hit = ASSIGNEES.find(a => a[1] === t.toLowerCase()); return hit ? hit[0] + ' <' + hit[1] + '>' : t; }
+  const hit = ASSIGNEES.find(a => a[0].toLowerCase() === t.toLowerCase());
+  return hit ? hit[0] + ' <' + hit[1] + '>' : t;
+}
+const REMIND_EVERY = [[0, 'Once'], [1, 'Every day'], [3, 'Every 3 days'], [7, 'Every week']];
 
 const DEMO = /[?&]demo=1/.test(location.search);
 const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || 'doug';
@@ -638,21 +673,45 @@ async function initAuth() {
   const res = await msalApp.handleRedirectPromise();
   if (res && res.account) account = res.account;
   else account = msalApp.getActiveAccount() || msalApp.getAllAccounts()[0] || null;
-  if (account) msalApp.setActiveAccount(account);
+  /* Sign in once: the hub passes ?login_hint=you@northcountryems.org. Try a quiet sign in first,
+     then one quick hop through Microsoft (no typing if you're already signed in there). */
+  const urlHint = new URLSearchParams(location.search).get('login_hint');
+  if (urlHint) {
+    saveLoginHint(urlHint);
+    try { history.replaceState(history.state, '', location.pathname + location.search.replace(/([?&])login_hint=[^&]*(&|$)/, '$1').replace(/[?&]$/, '') + location.hash); } catch (e) {}
+  }
+  if (!account && loginHint() && !IN_FRAME) {
+    try { const r = await msalApp.ssoSilent({ scopes: SCOPES, loginHint: loginHint() }); if (r && r.account) account = r.account; }
+    catch (e) {
+      let hopped = false; try { hopped = sessionStorage.getItem('ncems_sso_hop') === '1'; sessionStorage.setItem('ncems_sso_hop', '1'); } catch (er) {}
+      if (urlHint && !hopped) { await msalApp.loginRedirect({ scopes: SCOPES, loginHint: loginHint() }); return; }
+    }
+  }
+  if (account) { msalApp.setActiveAccount(account); saveLoginHint(account.username); try { sessionStorage.removeItem('ncems_sso_hop'); } catch (e) {} }
 }
+/* pass who you are along to the other NCEMS apps (Facilities and Grounds, Overtime, the hub) */
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]'); if (!a || !account) return;
+  let u; try { u = new URL(a.href, location.href); } catch (er) { return; }
+  if (u.host === location.host || !/(^|\.)northcountryems\.org$/i.test(u.hostname)) return;
+  if (!u.searchParams.has('login_hint')) { u.searchParams.set('login_hint', (account.username || '').toLowerCase()); a.href = u.toString(); }
+}, true);
+function loginHint() { try { return localStorage.getItem('ncems_login_hint') || ''; } catch (e) { return ''; } }
+function saveLoginHint(u) { try { if (u) localStorage.setItem('ncems_login_hint', String(u).toLowerCase()); } catch (e) {} }
 function signIn() {
   $('signin-err').classList.remove('show');
   if (IN_FRAME) {
-    msalApp.loginPopup({ scopes: SCOPES, prompt: 'select_account' }).then(r => { account = r.account; msalApp.setActiveAccount(account); location.reload(); })
+    msalApp.loginPopup(loginHint() ? { scopes: SCOPES, loginHint: loginHint() } : { scopes: SCOPES, prompt: 'select_account' }).then(r => { account = r.account; msalApp.setActiveAccount(account); location.reload(); })
       .catch(e => showSigninErr({ message: (e && (e.errorMessage || e.message) || String(e)) + ' If the sign-in window was blocked, use "Open in browser" below.' }));
     return;
   }
-  msalApp.loginRedirect({ scopes: SCOPES, prompt: 'select_account' }).catch(showSigninErr);
+  msalApp.loginRedirect(loginHint() ? { scopes: SCOPES, loginHint: loginHint() } : { scopes: SCOPES, prompt: 'select_account' }).catch(showSigninErr);
 }
 function showSigninErr(e) { const b = $('signin-err'); b.textContent = (e && (e.errorMessage || e.message)) || String(e); b.classList.add('show'); }
 function signOut() {
   if (DEMO) { location.href = location.pathname; return; }
   [LS.cache, LS.site].forEach(lsDel);
+  try { localStorage.removeItem('ncems_login_hint'); } catch (e) {}
   msalApp.logoutRedirect({ account, postLogoutRedirectUri: redirectUri() });
 }
 async function getToken() {
@@ -711,17 +770,18 @@ function mapItem(it) {
     details: f.Details || '', category: f.Category || 'Needs Triaged', source: f.Source || '', assigned: f.AssignedTo || 'Unassigned',
     status: f.Status || STATUS.OPEN, notes: f.Notes || '', completedBy: f.CompletedBy || '', completedDate: parseDate(f.CompletedDate),
     link: (f.Link && (f.Link.Url || f.Link.url)) || '',
-    triage: TRIAGE[f.Triage] ? f.Triage : '', brief: f.Briefing === true
+    triage: TRIAGE[f.Triage] ? f.Triage : '', brief: f.Briefing === true,
+    also: f.AlsoAssigned || '', remindOn: parseDate(f.RemindOn), remindEvery: Number(f.RemindEvery) || 0
   };
 }
 async function loadItems() {
   if (DEMO) return;
   await getSiteId();
   if (hasTriageCols === null) {
-    try { const cols = (await graph(listPath() + '/columns?$select=name&$top=200')).value || []; const n = cols.map(c => c.name); hasTriageCols = n.indexOf('Triage') >= 0 && n.indexOf('Briefing') >= 0; }
-    catch (e) { hasTriageCols = false; }
+    try { const cols = (await graph(listPath() + '/columns?$select=name&$top=200')).value || []; const n = cols.map(c => c.name); hasTriageCols = n.indexOf('Triage') >= 0 && n.indexOf('Briefing') >= 0; hasAssignCols = n.indexOf('AlsoAssigned') >= 0 && n.indexOf('RemindOn') >= 0 && n.indexOf('RemindEvery') >= 0; }
+    catch (e) { hasTriageCols = false; hasAssignCols = false; }
   }
-  let out = [], next = listPath() + '/items?$expand=fields($select=' + FIELDS + (hasTriageCols ? ',Triage,Briefing' : '') + ')&$top=500';
+  let out = [], next = listPath() + '/items?$expand=fields($select=' + FIELDS + (hasTriageCols ? ',Triage,Briefing' : '') + (hasAssignCols ? ',AlsoAssigned,RemindOn,RemindEvery' : '') + ')&$top=500';
   while (next) { const j = await graph(next); out = out.concat(j.value || []); next = j['@odata.nextLink'] || null; }
   items = out.map(mapItem);
   lsSet(LS.cache, { at: Date.now(), items: out });
@@ -923,23 +983,25 @@ function renderItemSheet() {
   h += '<label class="lbl" for="it-details">Details</label><textarea class="ta" id="it-details">' + esc(it.details) + '</textarea>';
   if (it.link) h += '<div class="link" style="margin-top:6px"><a href="' + esc(it.link) + '" target="_blank" rel="noopener">' + esc(it.link) + '</a></div>';
   h += '<div class="row2"><div><label class="lbl" for="it-cat">Group</label><select class="sel" id="it-cat">' + groupOptions(it.category) + '</select></div>' +
-       '<div><label class="lbl" for="it-who">Assigned to</label><select class="sel" id="it-who">' + personOptions(it.assigned) + '</select></div></div>';
+       '<div><label class="lbl" for="it-who">Chief / owner</label><select class="sel" id="it-who">' + personOptions(it.assigned) + '</select></div></div>';
+  h += assignFieldsHTML(it, 'it');
   if (!done) {
     h += '<label class="lbl">Status</label><div class="seg">' + [STATUS.OPEN, STATUS.IP, STATUS.WAIT].map(s => '<button data-s="' + s + '" class="' + (it.status === s ? 'on' : '') + '" onclick="setStatus(\'' + s + '\')">' + (s === STATUS.IP ? 'In progress' : s) + '</button>').join('') + '</div>';
   }
   h += '<label class="lbl">Triage</label><div class="seg tri-seg">' + Object.keys(TRIAGE).map(k => '<button data-t="' + k + '" class="' + (it.triage === k ? 'on' : '') + '" onclick="setTriage(\'' + k + '\')">' + k + '<small>' + TRIAGE[k].sub + '</small></button>').join('') + '</div>';
   h += '<button class="brief-tog ' + (it.brief ? 'on' : '') + '" onclick="toggleBrief()">' + FLAG_SVG + '<span>' + (it.brief ? 'On the shift briefing' : 'Mention at shift briefing') + '</span><i>' + (it.brief ? 'ON' : 'OFF') + '</i></button>';
-  h += '<div class="btns"><button class="btn ghost" onclick="saveItem()">Save changes</button>' +
-       (mePerson() && it.assigned !== mePerson() && !done ? '<button class="btn ghost" onclick="takeIt()">Take it</button>' : '') + '</div>';
+  if (mePerson() && it.assigned !== mePerson() && !done) h += '<div class="btns"><button class="btn ghost" onclick="takeIt()">Take it</button></div>';
   h += '<label class="lbl">Notes</label>';
   h += '<div class="note-add"><input class="inp" id="note-in" placeholder="Add a note, like parts ordered, ETA Friday" onkeydown="if(event.key===\'Enter\')addNote()"><button class="btn" onclick="addNote()">Add</button></div>';
   h += '<div class="notes">' + (notes.length ? notes.map(n => '<div class="note">' + (n.when ? '<small>' + esc(n.when) + ' · ' + esc(n.who) + '</small>' : '') + esc(n.text) + '</div>').join('') : '<div class="meta">No notes yet.</div>') + '</div>';
+  h += '<div class="save-box"><button class="btn save-big" onclick="saveItem()">Yes, save changes</button>';
   if (done) {
     h += '<div class="done-box">Completed' + (it.completedBy ? ' by ' + esc(it.completedBy) : '') + (it.completedDate ? ' on ' + fmtDate(it.completedDate) : '') + '. Assigned to ' + esc(it.assigned) + '.</div>';
-    h += '<div class="btns"><button class="btn warn" onclick="reopen()">Reopen</button></div>';
+    h += '<div class="small-row"><button class="btn small warn" onclick="reopen()">Reopen</button></div>';
   } else {
-    h += '<div class="btns"><button class="btn done" onclick="complete()">&#10003; Complete</button></div>';
+    h += '<div class="small-row"><button class="btn small done" onclick="armTap(this, complete, \'Tap again to complete\')">&#10003; Complete</button><span>Only when it\'s finished. Tap twice. It moves to Done this week, where you can reopen it.</span></div>';
   }
+  h += '</div>';
   $('it-body').innerHTML = h;
 }
 function setStatus(s) {
@@ -955,6 +1017,7 @@ async function saveItem() {
   if (d !== it.details) { local.details = d; fields.Details = d; }
   if (c !== it.category) { local.category = c; fields.Category = c; }
   if (w !== it.assigned) { local.assigned = w; fields.AssignedTo = w; }
+  readAssignFields('it', it, local, fields);
   if (!Object.keys(fields).length) { toast('No changes'); return; }
   if (await applyChange(it.id, local, fields, 'Saved')) renderItemSheet();
 }
@@ -970,11 +1033,67 @@ async function addNote() {
   inp.value = '';
   if (await applyChange(it.id, { notes }, { Notes: notes }, 'Note added')) { renderItemSheet(); vehAfterCardChange(it.id); }
 }
-async function complete() {
+function complete() {
   const it = items.find(i => i.id === openId); if (!it) return;
-  const now = new Date();
-  const ok = await applyChange(it.id, { status: STATUS.DONE, completedBy: meName(), completedDate: now }, { Status: STATUS.DONE, CompletedBy: meName(), CompletedDate: now.toISOString() }, 'Completed. Nice work.');
-  if (ok) { closeSheets(); vehAfterCardChange(it.id); }
+  const now = new Date(), before = { status: it.status, completedBy: it.completedBy, completedDate: it.completedDate };
+  closeSheets();
+  deferAction('Completed: ' + it.title.slice(0, 40) + '. It\'s under Done this week.',
+    () => Object.assign(it, { status: STATUS.DONE, completedBy: meName(), completedDate: now }),
+    () => Object.assign(it, before),
+    async () => {
+      try { await patchFields(it.id, { Status: STATUS.DONE, CompletedBy: meName(), CompletedDate: now.toISOString() }); vehAfterCardChange(it.id); }
+      catch (e) { Object.assign(it, before); render(); toast('Did not save. ' + e.message, true); }
+    });
+}
+/* ---------- 1.9: tap twice, then a few seconds to undo before anything saves ---------- */
+function armTap(btn, fn, armedText) {
+  if (btn.dataset.armed === '1') { btn.dataset.armed = ''; clearTimeout(btn._t); btn.innerHTML = btn.dataset.orig; fn(); return; }
+  btn.dataset.armed = '1'; btn.dataset.orig = btn.innerHTML; btn.textContent = armedText; btn.classList.add('armed');
+  btn._t = setTimeout(() => { btn.dataset.armed = ''; btn.innerHTML = btn.dataset.orig; btn.classList.remove('armed'); }, 3500);
+}
+let pendingAct = null;
+function deferAction(msg, doLocal, undoLocal, commit) {
+  flushPending();
+  doLocal(); render();
+  const bar = $('undo-bar'); bar.querySelector('span').textContent = msg; bar.classList.add('show');
+  pendingAct = { undoLocal, commit, t: setTimeout(flushPending, 6000) };
+}
+function flushPending() {
+  const p = pendingAct; if (!p) return;
+  pendingAct = null; clearTimeout(p.t); $('undo-bar').classList.remove('show');
+  p.commit();
+}
+function undoPending() {
+  const p = pendingAct; if (!p) return;
+  pendingAct = null; clearTimeout(p.t); $('undo-bar').classList.remove('show');
+  p.undoLocal(); render(); if ($('sh-viss').classList.contains('show')) renderVehIssue();
+  toast('Undone');
+}
+window.addEventListener('pagehide', flushPending);
+try { $('assignee-list').innerHTML = ASSIGNEES.map(a => '<option value="' + a[0] + '">').join(''); } catch (e) {}
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushPending(); });
+/* ---------- 1.9: hand a card to someone, and email reminders ---------- */
+function assignFieldsHTML(it, pfx) {
+  const dis = hasAssignCols === false && !DEMO;
+  const rd = it.remindOn ? it.remindOn.getFullYear() + '-' + String(it.remindOn.getMonth() + 1).padStart(2, '0') + '-' + String(it.remindOn.getDate()).padStart(2, '0') : '';
+  return '<label class="lbl" for="' + pfx + '-also">Also assigned to</label><input class="inp" id="' + pfx + '-also" list="assignee-list" placeholder="Anyone, like Stephen Schutts" value="' + esc(assigneeLabel(it.also)) + '"' + (dis ? ' disabled' : '') + '>' +
+    '<label class="lbl" for="' + pfx + '-rem">Email reminder</label><div class="row2"><input class="inp" type="date" id="' + pfx + '-rem" value="' + rd + '"' + (dis ? ' disabled' : '') + '>' +
+    '<select class="sel" id="' + pfx + '-every"' + (dis ? ' disabled' : '') + '>' + REMIND_EVERY.map(([n, l]) => '<option value="' + n + '"' + (n === (it.remindEvery || 0) ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></div>' +
+    (dis ? '<div class="meta">To use Also assigned and reminders, add the AlsoAssigned, RemindOn and RemindEvery columns to the Shift Ops list (see the README).</div>'
+         : '<div class="meta">Reminders email the Also assigned person (or the chief if nobody is) until the card is completed.</div>');
+}
+function readAssignFields(pfx, it, local, fields) {
+  const a = $(pfx + '-also'), r = $(pfx + '-rem'), e = $(pfx + '-every');
+  if (!a || a.disabled) return;
+  const also = assigneeValue(a.value);
+  if (also !== (it.also || '')) { local.also = also; fields.AlsoAssigned = also; }
+  const rv = r.value ? new Date(r.value + 'T15:00:00Z') : null;
+  if ((rv ? rv.getTime() : 0) !== (it.remindOn ? it.remindOn.getTime() : 0) && (r.value || it.remindOn)) {
+    const same = it.remindOn && rv && it.remindOn.toISOString().slice(0, 10) === r.value;
+    if (!same) { local.remindOn = rv; fields.RemindOn = rv ? rv.toISOString() : null; }
+  }
+  const ev = Number(e.value) || 0;
+  if (ev !== (it.remindEvery || 0)) { local.remindEvery = ev; fields.RemindEvery = ev; }
 }
 async function reopen() {
   const it = items.find(i => i.id === openId); if (!it) return;
@@ -1020,8 +1139,21 @@ function renderDone() {
 }
 
 /* ---------------- briefing ---------------- */
-function openBrief() { $('brief').classList.add('show'); renderBrief(); }
-function closeBrief() { $('brief').classList.remove('show'); }
+/* 1.9: Briefing (and the board) sit on the browser history, so Back returns to the dashboard instead of leaving the app */
+function openBrief() {
+  $('brief').classList.add('show'); renderBrief();
+  try { if (!(history.state && history.state.cg === 'brief')) history.pushState({ cg: 'brief' }, '', location.pathname + location.search.replace(/([?&])view=brief(&|$)/, '$1').replace(/[?&]$/, '')); } catch (e) {}
+}
+function closeBrief(fromPop) {
+  $('brief').classList.remove('show');
+  if (!fromPop && history.state && history.state.cg === 'brief') { try { history.back(); } catch (e) {} }
+}
+window.addEventListener('popstate', e => {
+  const st = e.state || {};
+  if ($('brief').classList.contains('show') && st.cg !== 'brief') { closeBrief(true); return; }
+  if (view === 'board' && st.cg !== 'board') { setView('home', true); return; }
+  if (st.cg === 'board' && view !== 'board') setView('board', true);
+});
 function setBriefHours(h) { briefHours = h; lsSet(LS.hours, h); renderBrief(); }
 let briefAll = false;
 function setBriefAll(v) { briefAll = v; renderBrief(); }
@@ -1152,7 +1284,9 @@ const ICON = {
 const GSTATION = { 'Station 1 (404 S Parcel)': 'St 51', 'Station 1.5 Admin (300 W Hoag)': 'St 51.5', 'Station 2 (15413 NE Fargher Lake Hwy)': 'St 52' };
 const REP_TYPE = { injury: 'Injury / illness', biological: 'Biological exposure', chemical: 'Chemical exposure', vehicle: 'Vehicle incident' };
 
-function setView(v) {
+function setView(v, fromPop) {
+  if (!fromPop && v === 'board' && view !== 'board') { try { history.pushState({ cg: 'board' }, ''); } catch (e) {} }
+  if (!fromPop && v === 'home' && view === 'board' && history.state && history.state.cg === 'board') { try { history.back(); } catch (e) {} return; }
   view = v; lsSet(LS.view, v);
   document.body.classList.toggle('v-home', v === 'home'); document.body.classList.toggle('v-board', v === 'board');
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
@@ -1232,18 +1366,15 @@ function otSecBody() {
   const up = ot.shifts.filter(x => !x.date || x.date >= today).sort((a, b) => (b.priority - a.priority) || ((a.date || 0) - (b.date || 0)));
   const pri = up.filter(x => x.priority);
   const c = ot.counts;
-  let h = '<div class="stats">' + stat(c.openNext7 != null ? c.openNext7 : '?', 'Open 7 days', c.openNext7 ? 'warn' : '') + stat(c.openNext30 != null ? c.openNext30 : '?', 'Open 30 days') +
+  /* 1.9: who's next to call, big and first. No weekly chart. */
+  const pill = (lbl, name) => '<a class="ot-pill' + (name ? '' : ' none') + '" href="' + esc(CONFIG.overtimeUrl) + '" target="_blank" rel="noopener"><small>' + lbl + '</small><b>' + esc(name || 'Nobody') + '</b></a>';
+  let h = '<div class="ot-next">' + pill('Next up · Long list', ot.next.long) + pill('Next up · Short list', ot.next.short) + '</div>';
+  h += '<div class="stats">' + stat(c.openNext7 != null ? c.openNext7 : '?', 'Open 7 days', c.openNext7 ? 'warn' : '') + stat(c.openNext30 != null ? c.openNext30 : '?', 'Open 30 days') +
     stat(pri.length, 'Min staffing', pri.length ? 'bad' : '') + stat(c.filledThisWeek != null ? c.filledThisWeek : '?', 'Filled this wk', 'good') + '</div>';
   h += rowsHtml(up.slice(0, 5).map(x => rowi(
     (x.date ? x.date.toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + fmtDate(x.date) : 'No date') + ' · ' + x.label + (x.unit ? ' · ' + x.unit : ''),
     (x.priority ? '<b>Minimum staffing</b> · ' : '') + (x.interested ? x.interested + ' interested' : 'Nobody interested yet') + (x.posted ? ' · posted ' + fmtDate(x.posted) : ''),
     x.priority ? (x.interested ? 'warn' : 'bad') : 'info')).concat(up.length > 5 ? ['<div class="none">' + (up.length - 5) + ' more in scheduling</div>'] : []), 'No open shifts. Everybody\'s covered.');
-  if (ot.weeks.length) {
-    const max = Math.max(1, ...ot.weeks.map(w => w.filled));
-    h += '<div class="otbars" title="Shifts filled per week, Sunday to Saturday">' + ot.weeks.map((w, i) => '<div class="' + (i === ot.weeks.length - 1 ? 'now' : '') + '" style="height:' + Math.round(w.filled / max * 100) + '%"><b>' + w.filled + '</b></div>').join('') + '</div>' +
-      '<div class="otcap"><span>Filled per week' + (ot.weeks[0].start ? ' from ' + fmtDate(ot.weeks[0].start) : '') + '</span><span>This week</span></div>';
-  }
-  if (ot.next.long || ot.next.short) h += '<div class="otnext"><b>Next up</b> · Long list: ' + esc(ot.next.long || 'nobody') + ' · Short list: ' + esc(ot.next.short || 'nobody') + '</div>';
   return h;
 }
 
@@ -1266,7 +1397,8 @@ function renderHome() {
   let h = '<div class="hello"><h2>' + (now.getHours() < 12 ? 'Morning' : now.getHours() < 17 ? 'Afternoon' : 'Evening') + ', ' + esc(firstName(meName())) + '</h2><span>' + now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) + (lastSync ? ' · updated ' + fmtDT(lastSync).split(' ')[1] : '') + '</span></div><div class="grid">';
 
   /* Vehicle checks (first: daily operations) */
-  h += secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', 'Ambulances today', vehSecBody(), '<button class="go" onclick="openVeh()">Open vehicles</button>' + link(CONFIG.checksUrl, 'EP Checker', true));
+  const SEC = {};
+  SEC.veh = secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', 'Ambulances today', vehSecBody(), '<button class="go" onclick="openVeh()">Open vehicles</button>' + link(CONFIG.checksUrl, 'EP Checker', true));
 
   /* Shift Ops */
   const open = openItems(), since48 = now.getTime() - 48 * 3600000;
@@ -1279,7 +1411,7 @@ function renderHome() {
     reds.filter(i => !i.brief).slice(0, 2).map(i => rowi(i.title, 'Red · ' + esc(group(i.category).name) + ' · ' + esc(firstName(i.assigned)), 'bad')),
     triage.filter(i => !i.brief).slice(0, 2).map(i => rowi(i.title, 'Needs a group · ' + ageLabel(daysSince(i.dateIn)), 'warn'))
   ).slice(0, 5);
-  h += secHtml('#2E6B2E', ICON.ops, 'Shift Ops', 'Board', '<div class="stats">' + stat(open.length, 'Open') + stat(flagged.length, 'Briefing', flagged.length ? 'warn' : '') + stat(reds.length, 'Red', reds.length ? 'bad' : '') + stat(untri.length, 'Not triaged') + '</div>' +
+  SEC.ops = secHtml('#2E6B2E', ICON.ops, 'Shift Ops', 'Board', '<div class="stats">' + stat(open.length, 'Open') + stat(flagged.length, 'Briefing', flagged.length ? 'warn' : '') + stat(reds.length, 'Red', reds.length ? 'bad' : '') + stat(untri.length, 'Not triaged') + '</div>' +
     rowsHtml(opsRows, 'Nothing flagged for briefing.'),
     '<button class="go" onclick="setView(\'board\')">Open board</button><button class="go ghost" onclick="openBrief()">Briefing</button>');
 
@@ -1307,8 +1439,8 @@ function renderHome() {
     grdBody = '<div class="stats">' + stat(wk.length, 'This week') + stat(wkDone.length, 'Done', 'good') + stat(late.length, 'Late', late.length ? 'bad' : '') + stat(nc.length, 'Not done') + '</div>' +
       rowsHtml(late.sort((a, b) => a.due - b.due).slice(0, 5).map(t => rowi(t.title, (t.status === 'Not Completed' ? 'Marked not completed' : 'Due ' + fmtDate(t.due)) + ' · ' + esc(t.station), t.status === 'Not Completed' ? 'bad' : 'warn')), 'Grounds is caught up.');
   }
-  h += secHtml('#1F5C8B', ICON.fac, 'Facilities', 'Buildings · Nick', facBody, link(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl, 'Facilities admin') + link(CONFIG.fngUrl, 'Report a problem', true));
-  h += secHtml('#5f7d2a', ICON.grd, 'Grounds', 'Tyler', grdBody, link(CONFIG.fngUrl, 'Grounds admin'));
+  SEC.fac = secHtml('#1F5C8B', ICON.fac, 'Facilities', 'Buildings · Nick', facBody, link(isPhone() ? CONFIG.fngUrl : CONFIG.fngDashUrl, 'Facilities admin') + link(CONFIG.fngUrl, 'Report a problem', true));
+  SEC.grd = secHtml('#5f7d2a', ICON.grd, 'Grounds', 'Tyler', grdBody, link(CONFIG.fngUrl, 'Grounds admin'));
 
   /* Incident reports */
   let repBody;
@@ -1319,12 +1451,14 @@ function renderHome() {
     repBody = '<div class="stats">' + stat(newR.length, 'New', newR.length ? 'bad' : '') + stat(rev.length, 'Reviewed') + stat(d30.length, 'Last 30 days') + stat(reports.length, 'All time') + '</div>' +
       rowsHtml(recent.map(r => rowi(REP_TYPE[r.type] || r.type || 'Report', (r.when ? fmtDate(r.when) : '') + ' · ' + esc(r.status === 'new' ? 'New, needs review' : r.status) + (r.agency ? ' · ' + esc(r.agency) : ''), r.status === 'new' ? 'bad' : 'info')), 'No open incident reports.');
   }
-  h += secHtml('#b91c1c', ICON.rep, 'Incident Reports', 'On-duty', repBody, link(CONFIG.reportsUrl, 'Open reports'));
+  SEC.rep = secHtml('#b91c1c', ICON.rep, 'Incident Reports', 'On-duty', repBody, link(CONFIG.reportsUrl, 'Open reports'));
 
   /* Scheduling (Derek's overtime app) */
-  h += secHtml('#8a6a1f', ICON.ot, 'Scheduling', 'Open shifts · OT' + (ot && ot.updated ? ' · as of ' + fmtDT(ot.updated).split(' ')[1] : ''), otSecBody(),
+  SEC.ot = secHtml('#8a6a1f', ICON.ot, 'Scheduling', 'Open shifts · OT' + (ot && ot.updated ? ' · as of ' + fmtDT(ot.updated).split(' ')[1] : ''), otSecBody(),
     link(CONFIG.overtimeUrl, 'Open scheduling'));
 
+  /* 1.9 order: Scheduling, Shift Ops, Incident Reports on top; Vehicle Checks, Grounds, Facilities below */
+  h += ['ot', 'ops', 'rep', 'veh', 'grd', 'fac'].map(k => SEC[k]).join('');
   h += '</div>';
   el.innerHTML = h;
   renderGSearch();
@@ -1574,17 +1708,41 @@ function renderVehIssue() {
   h += '<div class="vi-box"><h4>Shift Ops</h4>';
   if (card) {
     const notes = parseNotes(card.notes);
-    h += '<div class="vi-line"><b>' + esc(soId(card)) + '</b> · ' + esc(group(card.category).name) + ' · ' + esc(card.assigned) + ' · <b>' + esc(card.status === STATUS.IP ? 'In progress' : card.status) + '</b>' + (card.status === STATUS.DONE && card.completedBy ? ' by ' + esc(card.completedBy) : '') + '</div>';
+    h += '<div class="vi-line"><b>' + esc(soId(card)) + '</b> · ' + esc(group(card.category).name) + ' · ' + esc(card.assigned) + (card.also ? ' + ' + esc(assigneeLabel(card.also)) : '') + ' · <b>' + esc(card.status === STATUS.IP ? 'In progress' : card.status) + '</b>' + (card.status === STATUS.DONE && card.completedBy ? ' by ' + esc(card.completedBy) : '') + '</div>';
+    if (card.status !== STATUS.DONE) h += assignFieldsHTML(card, 'viss');
     if (card.status !== STATUS.DONE) h += '<div class="note-add" style="margin-top:8px"><input class="inp" id="viss-note" placeholder="Add a note, like part ordered or called the shop" onkeydown="if(event.key===\'Enter\')vehIssueNote()"><button class="btn" onclick="vehIssueNote()">Add</button></div>';
     h += '<div class="notes">' + (notes.length ? notes.slice(0, 6).map(n => '<div class="note">' + (n.when ? '<small>' + esc(n.when) + ' · ' + esc(n.who) + '</small>' : '') + esc(n.text) + '</div>').join('') : '<div class="meta">No notes on the card yet.</div>') + '</div>';
     h += '<div class="btns"><button class="btn ghost" onclick="openItem(\'' + esc(card.id) + '\')">Open card</button></div>';
   } else {
     h += '<div class="vi-line">Not on Shift Ops yet. Adding it makes a Logistics card for ' + esc(group('Logistics').owner) + ' with this issue filled in. Notes on the card show up here and on the next crew\'s check.</div>';
+    h += assignFieldsHTML({ also: '', remindOn: null, remindEvery: 0 }, 'viss');
     h += '<div class="btns"><button class="btn" id="viss-add" onclick="vehAddToOps()">+ Add to Shift Ops</button></div>';
   }
   h += '</div>';
-  h += '<div class="btns">' + (!resd && i.state !== 'fixed' ? '<button class="btn done" onclick="vehResolveRef(vissRef)">&#10003; Fixed</button>' : '') + '<button class="btn ghost" onclick="openVehFull(\'' + esc(c.id) + '\', true)">Full check</button></div>';
+  h += '<div class="save-box">' + (card && card.status !== STATUS.DONE ? '<button class="btn save-big" onclick="vehIssueSave()">Yes, save changes</button>' : '') +
+    '<div class="small-row">' + (!resd && i.state !== 'fixed' ? '<button class="btn small done" onclick="armTap(this, vehFixedNow, \'Tap again: fixed\')">&#10003; Fixed</button>' : '') +
+    '<button class="btn small ghost" onclick="openVehFull(\'' + esc(c.id) + '\', true)">Full check</button>' +
+    (!resd && i.state !== 'fixed' ? '<span>Fixed only when it\'s really fixed. Tap twice.' + (card && card.status !== STATUS.DONE ? ' Completes the Shift Ops card too.' : '') + '</span>' : '') + '</div></div>';
   $('viss-body').innerHTML = h;
+}
+function vehFixedNow() {
+  const r = vissRef; if (!r) return;
+  const key = r.c.id + '|' + r.i.label, rec = { checkId: r.c.id, label: r.i.label, by: meName(), at: new Date().toISOString() };
+  const ref = { id: r.c.id, label: r.i.label };
+  deferAction(r.unit + ': ' + r.i.label.slice(0, 40) + ' marked fixed.',
+    () => { veh.resolved[key] = rec; renderVehIssue(); },
+    () => { delete veh.resolved[key]; },
+    () => { delete veh.resolved[key]; vehResolveRef(ref); });
+}
+async function vehIssueSave() {
+  const r = vissRef; if (!r) return;
+  const card = vehCardFor(resKey(r.c.id, r.i.label)); if (!card) return;
+  const local = {}, fields = {};
+  readAssignFields('viss', card, local, fields);
+  const inp = $('viss-note');
+  if (inp && inp.value.trim()) { await vehIssueNote(); }
+  if (!Object.keys(fields).length) { if (!inp || !inp.value) toast('Saved'); return; }
+  if (await applyChange(card.id, local, fields, 'Saved')) renderVehIssue();
 }
 async function vehLinkWrite(rk, data) {
   veh.links = veh.links || {};
@@ -1607,6 +1765,9 @@ async function vehAddToOps() {
     '', 'Vehicle check ref: ' + rk
   ].filter((x, n) => x || n === 4).join('\n');
   const fields = { Title: r.unit + ': ' + i.label, Details: details, Category: 'Logistics', AssignedTo: group('Logistics').owner, Status: STATUS.OPEN, Source: 'Manual', DateIn: dateIn };
+  const extra = {}, xl = {};
+  readAssignFields('viss', { also: '', remindOn: null, remindEvery: 0 }, xl, extra);
+  if (hasAssignCols || DEMO) Object.assign(fields, extra);
   try {
     const res = await createItem(fields);
     const it = mapItem({ id: res.id, fields: Object.assign({}, fields, res.fields || {}), createdDateTime: res.createdDateTime, lastModifiedDateTime: res.lastModifiedDateTime });

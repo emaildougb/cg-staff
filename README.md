@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.8**
+**Version 1.9**
 
 ## Links
 
@@ -72,6 +72,25 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 - **Incident Reports:** Cloudflare Worker `ncems-api.d-boyce.workers.dev/bin/incident-reports`, read only. Since v1.3 the dashboard sends the Microsoft sign-in token, and the Worker only answers for chiefs on its ADMINS list.
 - **Scheduling:** Derek's Worker feed, `GET https://ncems-ot.d-langdon.workers.dev/dashboard`, read only. CG Staff sends the Microsoft ID token (`Authorization: Bearer <idToken>`), the same way it reads incident reports. Derek's Worker only answers the cgstaff site, NCEMS staff only, no guests. The feed has no start time or position, so shift rows show date, type, unit and how many people are interested.
 
+## Also assigned and reminders (1.9)
+
+Add three columns to the **Shift Ops** list (List settings, Create column). The names must match exactly:
+
+| Column | Type |
+|---|---|
+| `AlsoAssigned` | Single line of text |
+| `RemindOn` | Date and time (date only) |
+| `RemindEvery` | Number, 0 decimal places, default 0 |
+
+Until they exist, the card shows the fields greyed out with a note, and everything else works.
+
+**Power Automate flow "Shift Ops: reminders"** (Scheduled cloud flow, every day at 0700 Pacific):
+1. SharePoint **Get items**: site BattalionChiefLocal, list Shift Ops, Filter Query `Status ne 'Completed' and RemindOn le '@{utcNow()}'`
+2. **Apply to each** item:
+   - Compose **To**: `if(contains(coalesce(item()?['AlsoAssigned'],''),'<'), first(split(last(split(item()?['AlsoAssigned'],'<')),'>')), '')`. If that's empty, use the chief: Office 365 Users **Search for users** with `item()?['AssignedTo']`, take the first Mail
+   - Outlook **Send an email (V2)**: To = that address, CC = the chief's address, Subject `Reminder: @{item()?['ItemID']} @{item()?['Title']}`, Body: the Details, the newest Notes line, and the link https://cgstaff.northcountryems.org/?view=board
+   - SharePoint **Update item**: RemindOn = `if(greater(int(coalesce(item()?['RemindEvery'],0)),0), addDays(utcNow(), int(item()?['RemindEvery'])), null)`. Once clears the date after one email; the others move it forward until the card is completed
+
 ## Microsoft sign-in setup
 
 1. Uses the existing Entra app "NCEMS Grounds Tracker" (client id `254c214f-bfe2-4ebb-9294-99815e167ab0`), Sites.ReadWrite.All already consented
@@ -79,6 +98,15 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.9
+- Dashboard order: Scheduling, Shift Ops, Incident Reports on top; Vehicle Checks, Grounds, Facilities below (3 across on a computer, 2 on a tablet, 1 on a phone)
+- Scheduling card: who's next on the long list and short list sits at the top as big name pills (tap opens scheduling). The 8 week chart is gone
+- Shift Ops cards and vehicle issues: big "Yes, save changes" box at the bottom. Complete and Fixed are smaller, need two taps, and give 6 seconds to Undo before anything saves. Completed cards are still under Done this week with Reopen
+- Also assigned to: hand any card or vehicle issue to someone besides the group's chief (type a name, like Stephen Schutts; the chiefs, Chuck, Stephen, Nick and Tyler are suggested)
+- Email reminders: pick a date and Once, Every day, Every 3 days or Every week. A Power Automate flow sends them (setup below)
+- Back button from the Briefing or the board goes to the dashboard, not out of the app
+- Sign in once: the hub passes who you are, CG Staff tries a quiet sign in, then one hop through Microsoft without typing if you're already signed in. Links from CG Staff to Facilities and Grounds, Overtime and the hub pass it along too
 
 ### v1.8
 - Vehicle Checks card flags any narc below par on today's latest check (red at half par or less, amber otherwise). Before, short narcs only showed in the Briefing and the rig detail
