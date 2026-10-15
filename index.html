@@ -524,7 +524,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.7';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.8';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -1462,6 +1462,12 @@ function vehSecBody() {
   const chips = '<div class="vchips">' + S.states.map(s => '<button type="button" class="vchip ' + (s.cls === 'none' ? '' : s.cls) + '" onclick="openVeh(\'' + esc(s.unit) + '\')" title="Open ' + esc(s.unit) + '"><i></i>' + esc(s.unit) + (s.today.length ? ' ' + hhmm(new Date(s.today[s.today.length - 1].at)) : '') + (vehHasPhotoToday(s) ? '<span class="vcam" title="Photo on today\'s check">&#128247;</span>' : '') + '</button>').join('') + '</div>';
   const firstHand = S.states.find(s => s.handoff.length), firstOpen = S.states.find(s => !s.st.oos && s.openIss.length);
   const rows = [];
+  /* 1.8: narcs below par on the latest check today go on the dashboard (red at half par or less) */
+  S.states.forEach(s => {
+    const last = s.today[s.today.length - 1]; if (!last) return;
+    (Array.isArray(last.narcs) ? last.narcs : []).filter(n => n.count != null && n.count < n.par)
+      .forEach(n => rows.push(rowi(s.unit + ': ' + n.name + ' below par', n.count + ' of ' + n.par + ' · ' + vehCrew(last) + ' ' + fmtDT(new Date(last.at)), n.count <= n.par / 2 ? 'bad' : 'warn')));
+  });
   S.states.forEach(s => {
     if (s.st.oos) return;
     s.unfixed.forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Could not fix · ' + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)), 'bad')));

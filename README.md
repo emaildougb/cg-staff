@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.7**
+**Version 1.8**
 
 ## Links
 
@@ -79,6 +79,9 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.8
+- Vehicle Checks card flags any narc below par on today's latest check (red at half par or less, amber otherwise). Before, short narcs only showed in the Briefing and the rig detail
 
 ### v1.7
 - Scheduling section now shows live numbers from Derek's overtime app: open shifts, minimum staffing, filled this week, 8 week chart, next up
