@@ -95,6 +95,12 @@
   .rowi { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; line-height:1.35; padding:7px 9px; border-radius:8px; background:#fafcfa; border:1px solid #e6ede6; }
   .rowi .dot { width:9px; height:9px; border-radius:50%; margin-top:4px; flex-shrink:0; background:#8A918A; }
   .rowi .dot.bad { background:var(--bad); } .rowi .dot.warn { background:#D9A400; } .rowi .dot.info { background:var(--info); }
+  .otbars { display:flex; align-items:flex-end; gap:4px; height:46px; padding:0 14px; margin:18px 0 4px; }
+  .otbars div { flex:1; background:#d9c79a; border-radius:3px 3px 0 0; min-height:2px; position:relative; }
+  .otbars div.now { background:#8a6a1f; }
+  .otbars div b { position:absolute; top:-14px; left:0; right:0; text-align:center; font-size:9.5px; font-weight:800; color:var(--muted); }
+  .otcap { display:flex; justify-content:space-between; font-size:9.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); padding:0 14px 8px; }
+  .otnext { margin:0 14px 10px; padding:7px 9px; border-radius:8px; background:#faf6ea; border:1px solid #ece2c4; font-size:12px; line-height:1.4; }
   .rowi .tx { flex:1; min-width:0; } .rowi .tx em { display:block; font-style:normal; font-size:10.5px; color:var(--muted); margin-top:1px; }
   .rows .none { font-size:12px; color:var(--muted); padding:4px 2px; }
   .sec-foot { display:flex; gap:8px; padding:10px 14px 14px; flex-wrap:wrap; }
@@ -518,7 +524,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.6';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.7';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -536,6 +542,7 @@ const CONFIG = {
   reportsUrl: 'https://reports.northcountryems.org/',
   reportsApi: 'https://ncems-api.d-boyce.workers.dev/bin/incident-reports',
   overtimeUrl:'https://overtime.northcountryems.org/',
+  otApi:      'https://ncems-ot.d-langdon.workers.dev/dashboard', // Derek's OT feed, read only, ID token
   /* Vehicle checks: the EP Checker app logs every submitted check here */
   checksUrl:  'https://checks.northcountryems.org/',
   checksUnits:'https://checks.northcountryems.org/units.json',
@@ -588,7 +595,7 @@ let items = [];
 let filter = 'all', search = '', phoneTab = '', briefHours = 48, doneDays = 7;
 let openId = null, refreshing = false, lastSync = null, timer = null, dragId = null;
 let veh = null, vehErr = '', vehUnits = null, vehOpen = null;
-let view = 'home', fng = null, fngErr = '', reports = null, repErr = '', fngSiteId = null;
+let view = 'home', fng = null, fngErr = '', reports = null, repErr = '', fngSiteId = null, ot = null, otErr = '';
 
 /* ---------------- small helpers ---------------- */
 const $ = id => document.getElementById(id);
@@ -742,7 +749,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT().catch(e => { otErr = e.message; }), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -1087,6 +1094,7 @@ function openInfo() {
     '<b>Click</b> a card on a computer to see its details and last note right on the board. Click Open card (or double click) for the full card. On a phone, tap to open.<br>' +
     '<b>Complete</b> records who finished it and when. Find it again under Done this week, where you can reopen it.<br>' +
     '<b>Briefing</b> shows only flagged items by default. Tap Everything for new, being worked, done and getting old. Print it or put it on the TV. Direct link: <a href="?view=brief">?view=brief</a><br><br>' +
+    '<b>Scheduling</b> numbers come from Derek\'s overtime app and refresh with everything else. Minimum staffing shifts sort to the top and go red when nobody is interested yet.<br><br>' +
     '<a href="' + esc(CONFIG.listUrl) + '" target="_blank" rel="noopener">Open the SharePoint list</a></div>' +
     '<div class="btns"><button class="btn ghost" onclick="refresh(true)">Refresh</button><button class="btn warn" onclick="signOut()">' + (DEMO ? 'Leave demo' : 'Sign out') + '</button></div>';
   showSheet('sh-info');
@@ -1194,6 +1202,51 @@ async function loadReports() {
   repErr = '';
 }
 
+/* ---------- Scheduling (Derek's OT feed, read only) ----------
+   GET CONFIG.otApi with the Microsoft ID token. Only the cgstaff site can read it, NCEMS staff only.
+   { updated, openShifts:[{date, type, label, hours, unit, priority, postedAt, interested}],
+     counts:{openNext7, openNext30, filledThisWeek}, filledPerWeek:[{weekStart, filled}] (8, oldest first),
+     nextUp:{long, short} }
+   type is 24hr, 12am or 12pm. priority = minimum staffing shift. No start time or position.   */
+function localDay(s) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : parseDate(s); }
+async function loadOT() {
+  if (DEMO) return;
+  let tok = '', res;
+  try { const r = await msalApp.acquireTokenSilent({ scopes: SCOPES, account }); tok = r.idToken; } catch (e) { throw new Error('Sign in again to see open shifts.'); }
+  try { res = await fetch(CONFIG.otApi, { cache: 'no-store', headers: { Authorization: 'Bearer ' + tok } }); } catch (e) { throw new Error('Could not reach the scheduling data from here.'); }
+  if (res.status === 401 || res.status === 403) throw new Error('Your account can not read the scheduling data.');
+  if (!res.ok) throw new Error('Scheduling data said ' + res.status + '.');
+  const j = await res.json() || {};
+  ot = {
+    updated: parseDate(j.updated),
+    shifts: (j.openShifts || []).map(x => ({ date: localDay(x.date), label: x.label || x.type || 'Shift', hours: x.hours, unit: x.unit || '', priority: !!x.priority, posted: parseDate(x.postedAt), interested: +x.interested || 0 })),
+    counts: j.counts || {},
+    weeks: (j.filledPerWeek || []).map(w => ({ start: localDay(w.weekStart), filled: +w.filled || 0 })),
+    next: j.nextUp || {}
+  };
+  otErr = '';
+}
+function otSecBody() {
+  if (!ot) return otErr ? '<div class="sec-msg err">' + esc(otErr) + ' Open scheduling to see shifts.</div>' : '<div class="sec-msg">Loading...</div>';
+  const today = startOfDay();
+  const up = ot.shifts.filter(x => !x.date || x.date >= today).sort((a, b) => (b.priority - a.priority) || ((a.date || 0) - (b.date || 0)));
+  const pri = up.filter(x => x.priority);
+  const c = ot.counts;
+  let h = '<div class="stats">' + stat(c.openNext7 != null ? c.openNext7 : '?', 'Open 7 days', c.openNext7 ? 'warn' : '') + stat(c.openNext30 != null ? c.openNext30 : '?', 'Open 30 days') +
+    stat(pri.length, 'Min staffing', pri.length ? 'bad' : '') + stat(c.filledThisWeek != null ? c.filledThisWeek : '?', 'Filled this wk', 'good') + '</div>';
+  h += rowsHtml(up.slice(0, 5).map(x => rowi(
+    (x.date ? x.date.toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + fmtDate(x.date) : 'No date') + ' · ' + x.label + (x.unit ? ' · ' + x.unit : ''),
+    (x.priority ? '<b>Minimum staffing</b> · ' : '') + (x.interested ? x.interested + ' interested' : 'Nobody interested yet') + (x.posted ? ' · posted ' + fmtDate(x.posted) : ''),
+    x.priority ? (x.interested ? 'warn' : 'bad') : 'info')).concat(up.length > 5 ? ['<div class="none">' + (up.length - 5) + ' more in scheduling</div>'] : []), 'No open shifts. Everybody\'s covered.');
+  if (ot.weeks.length) {
+    const max = Math.max(1, ...ot.weeks.map(w => w.filled));
+    h += '<div class="otbars" title="Shifts filled per week, Sunday to Saturday">' + ot.weeks.map((w, i) => '<div class="' + (i === ot.weeks.length - 1 ? 'now' : '') + '" style="height:' + Math.round(w.filled / max * 100) + '%"><b>' + w.filled + '</b></div>').join('') + '</div>' +
+      '<div class="otcap"><span>Filled per week' + (ot.weeks[0].start ? ' from ' + fmtDate(ot.weeks[0].start) : '') + '</span><span>This week</span></div>';
+  }
+  if (ot.next.long || ot.next.short) h += '<div class="otnext"><b>Next up</b> · Long list: ' + esc(ot.next.long || 'nobody') + ' · Short list: ' + esc(ot.next.short || 'nobody') + '</div>';
+  return h;
+}
+
 function stat(n, label, cls) { return '<div class="stat ' + (cls || '') + '"><b>' + n + '</b><span>' + label + '</span></div>'; }
 function rowi(text, sub, dot) { return '<div class="rowi"><span class="dot ' + (dot || '') + '"></span><div class="tx">' + esc(text) + (sub ? '<em>' + sub + '</em>' : '') + '</div></div>'; }
 function rowsHtml(list, none) { return '<div class="rows">' + (list.length ? list.join('') : '<div class="none">' + none + '</div>') + '</div>'; }
@@ -1269,7 +1322,7 @@ function renderHome() {
   h += secHtml('#b91c1c', ICON.rep, 'Incident Reports', 'On-duty', repBody, link(CONFIG.reportsUrl, 'Open reports'));
 
   /* Scheduling (Derek's overtime app) */
-  h += secHtml('#8a6a1f', ICON.ot, 'Scheduling', 'Open shifts · OT', '<div class="rows"><div class="none">Open shifts, OT list, log, stats and admin. Live numbers here are coming once the scheduling data is shared with this dashboard.</div></div>',
+  h += secHtml('#8a6a1f', ICON.ot, 'Scheduling', 'Open shifts · OT' + (ot && ot.updated ? ' · as of ' + fmtDT(ot.updated).split(' ')[1] : ''), otSecBody(),
     link(CONFIG.overtimeUrl, 'Open scheduling'));
 
   h += '</div>';
@@ -1751,6 +1804,13 @@ function demoExtras() {
     grd: [{ title: 'Mow and edge front lawn', station: 'St 51', due: d(-1), status: 'Done' }, { title: 'Generator monthly run test', station: 'St 52', due: d(-2), status: 'Not Completed' }, { title: 'Blow out bays', station: 'St 51', due: d(-4), status: 'Not Started' },
           { title: 'Weed eat fence line', station: 'St 52', due: d(1), status: 'Not Started' }, { title: 'Empty trash cans', station: 'St 51.5', due: d(0), status: 'In Progress' }] };
   demoVeh(); demoVehCard();
+  const sd = n => { const x = startOfDay(); x.setDate(x.getDate() + n); return x; };
+  ot = { updated: new Date(t - 9 * 60000),
+    shifts: [{ date: sd(1), label: '24 hour', unit: 'M51', priority: true, posted: d(-3), interested: 1 }, { date: sd(3), label: '12 hour, nights', unit: 'M52', priority: true, posted: d(-1), interested: 0 },
+             { date: sd(5), label: '12 hour, days', unit: 'M51', priority: false, posted: d(-2), interested: 2 }, { date: sd(12), label: '24 hour', unit: 'M52', priority: false, posted: d(-1), interested: 0 }],
+    counts: { openNext7: 3, openNext30: 6, filledThisWeek: 3 },
+    weeks: [4, 6, 3, 5, 7, 2, 5, 3].map((f, i) => ({ start: sd(-(7 - i) * 7 - startOfDay().getDay()), filled: f })),
+    next: { long: 'Sam Rivera', short: 'Jordan Lee' } };
   reports = [{ type: 'biological', status: 'new', when: d(-1) }, { type: 'vehicle', status: 'reviewed', when: d(-6) }, { type: 'injury', status: 'closed', when: d(-20) }, { type: 'injury', status: 'reviewed', when: d(-40) }];
 }
 

@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.6**
+**Version 1.7**
 
 ## Links
 
@@ -38,7 +38,7 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 | Facilities | Open jobs, critical, waiting, overdue services | [fng.northcountryems.org/?view=dash](https://fng.northcountryems.org/?view=dash), Report a problem |
 | Grounds | This week, done, late, not completed | [fng.northcountryems.org](https://fng.northcountryems.org/) |
 | Incident Reports | New, reviewed, last 30 days (type, date, status only, no names) | [reports.northcountryems.org](https://reports.northcountryems.org/) |
-| Scheduling | Link only for now (Derek's overtime app) | [overtime.northcountryems.org](https://overtime.northcountryems.org/) |
+| Scheduling | Open shifts in the next 7 and 30 days, minimum staffing shifts (sorted to the top, red when nobody is interested), filled this week, an 8 week filled chart, and who's next up on the long and short lists | [overtime.northcountryems.org](https://overtime.northcountryems.org/) |
 
 **Vehicle Checks detail (Open vehicles):** one card per ambulance from the EP Checker's `units.json`. Shows who checked it today and when, percent done, fuel and mileage, open problems (Could not fix in red, Open in yellow) with a Fixed button, and "Left by the prior crew" for anything the crew fixed on the spot at their check, with the crew who had it before. Type a reason and tap Out of service to take a unit out of the count; tap Back in service to put it back. Last 7 days line shows how many days it was checked and how many handoff fixes.
 
@@ -70,7 +70,7 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 - **Facilities / Grounds:** Facility Work Orders, Facility Services and Grounds Tracker lists on the Facilities and Grounds site (same data as the F&G app, read only here).
 - **Vehicle Checks:** Firebase project `ncems-hub-9111d` (same one the hub uses). Since 1.6, `vehicleLinks/{check ref}` holds the link between a vehicle issue and its Shift Ops card (card id, status, latest note) so the EP Checker can show the chiefs' latest note to crews. The EP Checker (v2.14.0 and up) writes one doc per submitted check to `vehicleChecks`. Out of service marks go to `vehicleStatus`, Fixed marks go to `vehicleResolved`. The dashboard reads the last 45 days.
 - **Incident Reports:** Cloudflare Worker `ncems-api.d-boyce.workers.dev/bin/incident-reports`, read only. Since v1.3 the dashboard sends the Microsoft sign-in token, and the Worker only answers for chiefs on its ADMINS list.
-- **Scheduling:** Derek's Worker (`ncems-ot.d-langdon.workers.dev`) with its own sign-in. Live numbers need a read endpoint shared with this app.
+- **Scheduling:** Derek's Worker feed, `GET https://ncems-ot.d-langdon.workers.dev/dashboard`, read only. CG Staff sends the Microsoft ID token (`Authorization: Bearer <idToken>`), the same way it reads incident reports. Derek's Worker only answers the cgstaff site, NCEMS staff only, no guests. The feed has no start time or position, so shift rows show date, type, unit and how many people are interested.
 
 ## Microsoft sign-in setup
 
@@ -79,6 +79,10 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.7
+- Scheduling section now shows live numbers from Derek's overtime app: open shifts, minimum staffing, filled this week, 8 week chart, next up
+- Demo has sample scheduling data
 
 ### v1.6
 - Open issues and Left by prior open the issues: straight to it if there's one, a list if there are more
