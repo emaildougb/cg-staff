@@ -101,6 +101,26 @@
   .ot-pill small { font-size:9.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; opacity:.85; }
   .ot-pill b { font-size:16px; font-weight:800; line-height:1.15; }
   .ot-pill.none { background:#cdbf9b; box-shadow:none; }
+  .ot-hero { text-align:center; padding:2px 14px 8px; }
+  .ot-hero b { display:block; font-size:40px; font-weight:800; line-height:1; color:var(--g-deep); }
+  .ot-hero span { display:block; font-size:12px; font-weight:700; color:var(--muted); margin-top:3px; }
+  .ot-hero em { display:block; font-style:normal; font-size:12.5px; font-weight:800; margin-top:4px; }
+  .ot-hero i.c1 { color:#2d6a2d; font-style:normal; } .ot-hero i.c2 { color:#1a5a8a; font-style:normal; }
+  .ot-warn { margin:0 14px 8px; padding:7px 9px; border-radius:8px; background:#FFF6E0; border:1px solid #ecd9a6; font-size:11.5px; line-height:1.35; }
+  .stats.three { grid-template-columns:repeat(3,1fr); }
+  .stat.ot-min { border:2px solid var(--bad); }
+  .ot-strip { display:flex; gap:2px; align-items:flex-end; padding:4px 14px 8px; overflow-x:auto; }
+  .ot-day { flex:1 0 12px; min-width:12px; max-width:26px; border:0; background:none; padding:0; display:flex; flex-direction:column; align-items:center; cursor:pointer; font:inherit; }
+  .ot-day .otmk { color:var(--bad); font-size:8px; line-height:10px; font-style:normal; } .ot-day .otmk.off { visibility:hidden; }
+  .ot-day .otbar { width:100%; height:44px; display:flex; flex-direction:column; justify-content:flex-end; background:#f1f4f1; border-radius:3px; overflow:hidden; }
+  .ot-day .b1 { background:#2d6a2d; display:block; } .ot-day .b2 { background:#1a5a8a; display:block; }
+  .ot-day small { font-size:9px; color:var(--muted); margin-top:2px; font-weight:700; }
+  .ot-lbl { padding:2px 14px 4px; font-size:10px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
+  .ot-row { align-items:center; } .ot-row.min { border-left:4px solid var(--bad); }
+  .ot-row .crew { flex-shrink:0; font-size:10px; font-weight:800; color:#fff; border-radius:6px; padding:3px 6px; } .ot-row .crew.c1 { background:#2d6a2d; } .ot-row .crew.c2 { background:#1a5a8a; }
+  .ot-row .minlbl { color:var(--bad); font-weight:800; }
+  .ot-row .when { flex-shrink:0; font-size:11px; font-weight:700; color:var(--muted); }
+  .ot-more { display:block; margin:6px 14px 0; border:0; background:none; color:var(--g-mid); font:inherit; font-size:12.5px; font-weight:800; cursor:pointer; padding:4px 0; }
   .otbars { display:flex; align-items:flex-end; gap:4px; height:46px; padding:0 14px; margin:18px 0 4px; }
   .otbars div { flex:1; background:#d9c79a; border-radius:3px 3px 0 0; min-height:2px; position:relative; }
   .otbars div.now { background:#8a6a1f; }
@@ -548,7 +568,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.11';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.12';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -565,9 +585,10 @@ const CONFIG = {
   fngDashUrl: 'https://fng.northcountryems.org/?view=dash',
   reportsUrl: 'https://reports.northcountryems.org/',
   reportsApi: 'https://ncems-api.d-boyce.workers.dev/bin/incident-reports',
-  overtimeUrl:'https://overtime.northcountryems.org/',
+  shiftsUrl:  'https://shifts.northcountryems.org/',      // NCEMS Open Shifts (Derek's; was Overtime)
   aladtecUrl: 'https://secure2.aladtec.com/northcountryems/',
-  otApi:      'https://ncems-ot.d-langdon.workers.dev/dashboard', // Derek's OT feed, read only, ID token
+  otApi:      'https://ncems-ot.d-langdon.workers.dev/dashboard', // Crew 1 (paramedic overtime) feed, read only, ID token
+  c2Api:      'https://ncems-c2.d-langdon.workers.dev/dashboard', // Crew 2 (EMT open shifts) feed, read only, ID token
   /* Vehicle checks: the EP Checker app logs every submitted check here */
   checksUrl:  'https://checks.northcountryems.org/',
   checksUnits:'https://checks.northcountryems.org/units.json',
@@ -636,7 +657,7 @@ let items = [];
 let filter = 'all', search = '', phoneTab = '', briefHours = 48, doneDays = 7;
 let openId = null, refreshing = false, lastSync = null, timer = null, dragId = null;
 let veh = null, vehErr = '', vehUnits = null, vehOpen = null;
-let view = 'home', fng = null, fngErr = '', reports = null, repErr = '', fngSiteId = null, ot = null, otErr = '';
+let view = 'home', fng = null, fngErr = '', reports = null, repErr = '', fngSiteId = null;
 
 /* ---------------- small helpers ---------------- */
 const $ = id => document.getElementById(id);
@@ -695,7 +716,7 @@ async function initAuth() {
   }
   if (account) { msalApp.setActiveAccount(account); saveLoginHint(account.username); try { sessionStorage.removeItem('ncems_sso_hop'); } catch (e) {} }
 }
-/* pass who you are along to the other NCEMS apps (Facilities and Grounds, Overtime, the hub) */
+/* pass who you are along to the other NCEMS apps (Facilities and Grounds, Open Shifts, the hub) */
 document.addEventListener('click', e => {
   const a = e.target.closest && e.target.closest('a[href]'); if (!a || !account) return;
   let u; try { u = new URL(a.href, location.href); } catch (er) { return; }
@@ -815,7 +836,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT().catch(e => { otErr = e.message; }), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -1277,7 +1298,7 @@ function openInfo() {
     '<b>Click</b> a card on a computer to see its details and last note right on the board. Click Open card (or double click) for the full card. On a phone, tap to open.<br>' +
     '<b>Complete</b> records who finished it and when. Find it again under Done this week, where you can reopen it.<br>' +
     '<b>Briefing</b> shows only flagged items by default. Tap Everything for new, being worked, done and getting old. Print it or put it on the TV. Direct link: <a href="?view=brief">?view=brief</a><br><br>' +
-    '<b>Scheduling</b> numbers come from Derek\'s overtime app and refresh with everything else. Minimum staffing shifts sort to the top and go red when nobody is interested yet.<br><br>' +
+    '<b>Scheduling</b> comes from Derek\'s Open Shifts app: Crew 1 (paramedic overtime) and Crew 2 (EMT open shifts), refreshed every 5 minutes. Tap a next up name to open that list. Minimum staffing shifts sort to the top with a red edge.<br><br>' +
     '<a href="' + esc(CONFIG.listUrl) + '" target="_blank" rel="noopener">Open the SharePoint list</a></div>' +
     '<div class="btns"><button class="btn ghost" onclick="refresh(true)">Refresh</button><button class="btn warn" onclick="signOut()">' + (DEMO ? 'Leave demo' : 'Sign out') + '</button></div>';
   showSheet('sh-info');
@@ -1387,45 +1408,123 @@ async function loadReports() {
   repErr = '';
 }
 
-/* ---------- Scheduling (Derek's OT feed, read only) ----------
-   GET CONFIG.otApi with the Microsoft ID token. Only the cgstaff site can read it, NCEMS staff only.
-   { updated, openShifts:[{date, type, label, hours, unit, priority, postedAt, interested}],
-     counts:{openNext7, openNext30, filledThisWeek}, filledPerWeek:[{weekStart, filled}] (8, oldest first),
-     nextUp:{long, short} }
-   type is 24hr, 12am or 12pm. priority = minimum staffing shift. No start time or position.   */
-function localDay(s) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : parseDate(s); }
-async function loadOT() {
-  if (DEMO) return;
-  let tok = '', res;
-  try { const r = await msalApp.acquireTokenSilent({ scopes: SCOPES, account }); tok = r.idToken; } catch (e) { throw new Error('Sign in again to see open shifts.'); }
-  try { res = await fetch(CONFIG.otApi, { cache: 'no-store', headers: { Authorization: 'Bearer ' + tok } }); } catch (e) { throw new Error('Could not reach the scheduling data from here.'); }
-  if (res.status === 401 || res.status === 403) throw new Error('Your account can not read the scheduling data.');
-  if (!res.ok) throw new Error('Scheduling data said ' + res.status + '.');
-  const j = await res.json() || {};
-  ot = {
-    updated: parseDate(j.updated),
-    shifts: (j.openShifts || []).map(x => ({ date: localDay(x.date), label: x.label || x.type || 'Shift', hours: x.hours, unit: x.unit || '', priority: !!x.priority, posted: parseDate(x.postedAt), interested: +x.interested || 0 })),
-    counts: j.counts || {},
-    weeks: (j.filledPerWeek || []).map(w => ({ start: localDay(w.weekStart), filled: +w.filled || 0 })),
-    next: j.nextUp || {}
-  };
-  otErr = '';
+/* ---------- Scheduling: NCEMS Open Shifts (Derek's app), two read-only feeds ----------
+   Crew 1 (paramedic overtime): CONFIG.otApi   Crew 2 (EMT open shifts): CONFIG.c2Api
+   Both take the Microsoft ID token (Authorization: Bearer <idToken>) and only answer the cgstaff site.
+   { updated, month, nextUp:{long, short} (Crew 1 only),
+     openShifts:[{date "YYYY-MM-DD" Pacific, type, label, hours, unit, crew, minStaff, postedAt, interested (C1) | offers (C2)}],
+     counts:{openThisMonth, minStaffThisMonth, openNext7, minStaffNext7, openNext30, filledThisWeek},
+     links:{app, long, short} }
+   Rules from Derek: use the feeds' minStaff flags and counts as is, never parse "YYYY-MM-DD" with new Date(),
+   no names except the two next up, render as text, don't store the token.                                   */
+const OT_EVERY_MS = 5 * 60 * 1000;
+let ot2 = { c1: null, c2: null, e1: '', e2: '', at: 0 };
+function pacificToday() {   // "YYYY-MM-DD" in America/Los_Angeles
+  const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+  const g = t => (p.find(x => x.type === t) || {}).value;
+  return g('year') + '-' + g('month') + '-' + g('day');
 }
+function ymd(s) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? { y: +m[1], m: +m[2], d: +m[3] } : null; }
+function dayDiff(a, b) { const A = ymd(a), B = ymd(b); if (!A || !B) return null; return Math.round((Date.UTC(B.y, B.m - 1, B.d) - Date.UTC(A.y, A.m - 1, A.d)) / 86400000); }
+function ymdLabel(s, withDay) {   // "Sat 10/17" built from the parts, no time zone shift
+  const p = ymd(s); if (!p) return 'No date';
+  const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay()];
+  const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][p.m - 1];
+  return withDay ? wd + ' ' + mo + ' ' + p.d : wd + ' ' + p.m + '/' + p.d;
+}
+function safeLink(u, fallback) {   // only follow https links on northcountryems.org from the feeds
+  try { const x = new URL(u); if (x.protocol === 'https:' && /(^|\.)northcountryems\.org$/i.test(x.hostname)) return x.href; } catch (e) {}
+  return fallback;
+}
+async function otFetch(url, tok) {
+  let res;
+  try { res = await fetch(url, { cache: 'no-store', headers: { Authorization: 'Bearer ' + tok } }); }
+  catch (e) { throw new Error('unreachable'); }
+  if (res.status === 401) throw new Error('signin');
+  if (res.status === 403) throw new Error('blocked');
+  if (!res.ok) throw new Error('said ' + res.status);
+  return (await res.json()) || {};
+}
+async function loadOT(force) {
+  if (DEMO) return;
+  if (!force && ot2.at && Date.now() - ot2.at < OT_EVERY_MS) return;   // feeds refresh every 5 minutes
+  let tok = '';
+  try { tok = (await msalApp.acquireTokenSilent({ scopes: SCOPES, account })).idToken; }
+  catch (e) { ot2.e1 = ot2.e2 = 'signin'; ot2.at = Date.now(); return; }
+  const [a, b] = await Promise.allSettled([otFetch(CONFIG.otApi, tok), otFetch(CONFIG.c2Api, tok)]);
+  if (a.status === 'fulfilled') { ot2.c1 = a.value; ot2.e1 = ''; } else { ot2.e1 = a.reason.message; ot2.c1 = null; }
+  if (b.status === 'fulfilled') { ot2.c2 = b.value; ot2.e2 = ''; } else { ot2.e2 = b.reason.message; ot2.c2 = null; }
+  ot2.at = Date.now();
+}
+function otErrText(code, crew) {
+  if (code === 'signin') return 'Sign in again to see ' + crew + '.';
+  if (code === 'blocked') return crew + ': your account can not read this feed.';
+  return crew + ' unavailable right now.';
+}
+function otUpdated() {
+  const t = [ot2.c1, ot2.c2].filter(Boolean).map(f => parseDate(f.updated)).filter(Boolean).sort((x, y) => y - x)[0];
+  return t ? fmtDT(t).split(' ')[1] : '';
+}
+function otAppLink() { return safeLink((ot2.c1 && ot2.c1.links && ot2.c1.links.app) || (ot2.c2 && ot2.c2.links && ot2.c2.links.app), CONFIG.shiftsUrl); }
 function otSecBody() {
-  if (!ot) return otErr ? '<div class="sec-msg err">' + esc(otErr) + ' Open scheduling to see shifts.</div>' : '<div class="sec-msg">Loading...</div>';
-  const today = startOfDay();
-  const up = ot.shifts.filter(x => !x.date || x.date >= today).sort((a, b) => (b.priority - a.priority) || ((a.date || 0) - (b.date || 0)));
-  const pri = up.filter(x => x.priority);
-  const c = ot.counts;
-  /* 1.9: who's next to call, big and first. No weekly chart. */
-  const pill = (lbl, name) => '<a class="ot-pill' + (name ? '' : ' none') + '" href="' + esc(CONFIG.overtimeUrl) + '" target="_blank" rel="noopener"><small>' + lbl + '</small><b>' + esc(name || 'Nobody') + '</b></a>';
-  let h = '<div class="ot-next">' + pill('Next up · Long list', ot.next.long) + pill('Next up · Short list', ot.next.short) + '</div>';
-  h += '<div class="stats">' + stat(c.openNext7 != null ? c.openNext7 : '?', 'Open 7 days', c.openNext7 ? 'warn' : '', goUrl(CONFIG.overtimeUrl)) + stat(c.openNext30 != null ? c.openNext30 : '?', 'Open 30 days', '', goUrl(CONFIG.overtimeUrl)) +
-    stat(pri.length, 'Min staffing', pri.length ? 'bad' : '', goUrl(CONFIG.overtimeUrl)) + stat(c.filledThisWeek != null ? c.filledThisWeek : '?', 'Filled this wk', 'good', goUrl(CONFIG.overtimeUrl)) + '</div>';
-  h += rowsHtml(up.slice(0, 5).map(x => rowi(
-    (x.date ? x.date.toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + fmtDate(x.date) : 'No date') + ' · ' + x.label + (x.unit ? ' · ' + x.unit : ''),
-    (x.priority ? '<b>Minimum staffing</b> · ' : '') + (x.interested ? x.interested + ' interested' : 'Nobody interested yet') + (x.posted ? ' · posted ' + fmtDate(x.posted) : ''),
-    x.priority ? (x.interested ? 'warn' : 'bad') : 'info', goUrl(CONFIG.overtimeUrl))).concat(up.length > 5 ? ['<div class="none">' + (up.length - 5) + ' more in scheduling</div>'] : []), 'No open shifts. Everybody\'s covered.');
+  const c1 = ot2.c1, c2 = ot2.c2;
+  if (!c1 && !c2) {
+    if (!ot2.at) return '<div class="sec-msg">Loading...</div>';
+    const msg = ot2.e1 === 'signin' ? 'Sign in again to see open shifts.' : 'Open Shifts is unavailable right now.';
+    return '<div class="sec-msg err">' + esc(msg) + ' Tap Open Shifts to look there.</div>';
+  }
+  const today = pacificToday(), feeds = [c1, c2].filter(Boolean);
+  const app1 = safeLink(c1 && c1.links && c1.links.app, CONFIG.shiftsUrl), app2 = safeLink(c2 && c2.links && c2.links.app, CONFIG.shiftsUrl);
+  const sum = k => feeds.reduce((n, f) => n + (Number((f.counts || {})[k]) || 0), 0);
+  const month = (c1 && c1.month) || (c2 && c2.month) || '';
+  let h = '';
+  /* next up pills: links straight to that list */
+  if (c1) {
+    const nu = c1.nextUp || {}, L = c1.links || {};
+    const pill = (lbl, name, href) => '<a class="ot-pill' + (name ? '' : ' none') + '" href="' + esc(safeLink(href, app1)) + '" target="_blank" rel="noopener"><small>' + lbl + '</small><b>' + esc(name || 'Nobody') + '</b></a>';
+    h += '<div class="ot-next">' + pill('Next up · Long list', nu.long, L.long) + pill('Next up · Short list', nu.short, L.short) + '</div>';
+  }
+  /* hero */
+  const n1 = c1 ? Number((c1.counts || {}).openThisMonth) || 0 : null, n2 = c2 ? Number((c2.counts || {}).openThisMonth) || 0 : null;
+  h += '<div class="ot-hero"><b>' + ((n1 || 0) + (n2 || 0)) + '</b><span>shifts left' + (month ? ' in ' + esc(month) : ' this month') + '</span>' +
+    '<em><i class="c1">Crew 1 ' + (n1 == null ? '?' : n1) + '</i> · <i class="c2">Crew 2 ' + (n2 == null ? '?' : n2) + '</i></em></div>';
+  const notes = [];
+  if (!c1) notes.push(otErrText(ot2.e1, 'Crew 1')); if (!c2) notes.push(otErrText(ot2.e2, 'Crew 2'));
+  if (notes.length) h += '<div class="ot-warn">' + notes.map(esc).join(' ') + ' Numbers below are only what loaded.</div>';
+  /* three tiles */
+  const minS = sum('minStaffThisMonth');
+  h += '<div class="stats three">' + stat(minS, 'Min staffing', minS ? 'bad ot-min' : '', goUrl(otAppLink())) + stat(sum('openNext7'), 'Next 7 days', '', goUrl(otAppLink())) + stat(sum('filledThisWeek'), 'Filled this wk', 'good', goUrl(otAppLink())) + '</div>';
+  /* every open shift, both crews, today on */
+  const all = [];
+  [[c1, 1, app1], [c2, 2, app2]].forEach(([f, crew, app]) => (f && Array.isArray(f.openShifts) ? f.openShifts : []).forEach(x => {
+    const dd = dayDiff(today, x.date); if (dd == null || dd < 0) return;
+    all.push({ date: x.date, dd, crew, unit: String(x.unit || ''), hours: x.hours, label: String(x.label || x.type || ''), min: !!x.minStaff, n: crew === 1 ? (+x.interested || 0) : (+x.offers || 0), app });
+  }));
+  /* day strip: today to the end of the month */
+  const T = ymd(today), last = new Date(Date.UTC(T.y, T.m, 0)).getUTCDate();
+  const days = [];
+  for (let d = T.d; d <= last; d++) days.push(T.y + '-' + String(T.m).padStart(2, '0') + '-' + String(d).padStart(2, '0'));
+  const per = days.map(s => { const xs = all.filter(x => x.date === s); return { s, a: xs.filter(x => x.crew === 1).length, b: xs.filter(x => x.crew === 2).length, min: xs.some(x => x.min) }; });
+  const top = Math.max(1, ...per.map(p => p.a + p.b));
+  h += '<div class="ot-strip" aria-label="Open shifts per day to the end of the month">' + per.map(p => {
+    const tip = ymdLabel(p.s, true) + ': ' + (p.a + p.b ? p.a + ' Crew 1, ' + p.b + ' Crew 2 open' + (p.min ? ' (min staffing)' : '') : 'nothing open');
+    const k = DASH_ACTS.push(() => toast(tip)) - 1;
+    return '<button type="button" class="ot-day" title="' + esc(tip) + '" onclick="dashGo(' + k + ')">' + (p.min ? '<i class="otmk">&#9650;</i>' : '<i class="otmk off">&#9650;</i>') +
+      '<span class="otbar"><span class="b2" style="height:' + Math.round(p.b / top * 100) + '%"></span><span class="b1" style="height:' + Math.round(p.a / top * 100) + '%"></span></span><small>' + ymd(p.s).d + '</small></button>';
+  }).join('') + '</div>';
+  /* needs attention: min staffing first, then soonest */
+  const list = all.slice().sort((x, y) => (y.min - x.min) || (x.dd - y.dd));
+  const when = dd => dd === 0 ? 'today' : dd === 1 ? 'tomorrow' : 'in ' + dd + ' days';
+  if (list.length) {
+    h += '<div class="ot-lbl">Needs attention</div><div class="rows">' + list.slice(0, 4).map(x => {
+      const k = DASH_ACTS.push(goUrl(x.app)) - 1;
+      const what = ymdLabel(x.date) + (x.unit ? ' · ' + x.unit : '') + (x.hours ? ' · ' + x.hours + 'h' : (x.label ? ' · ' + x.label : ''));
+      const interest = x.crew === 1 ? (x.n ? x.n + ' interested' : 'no interest yet') : (x.n ? x.n + ' offer' + (x.n === 1 ? '' : 's') : 'no offers yet');
+      return '<div class="rowi go-row ot-row' + (x.min ? ' min' : '') + '" role="button" tabindex="0" onclick="dashGo(' + k + ')" onkeydown="if(event.key===\'Enter\')dashGo(' + k + ')">' +
+        '<span class="crew c' + x.crew + '">C' + x.crew + '</span><div class="tx">' + esc(what) + '<em>' + (x.min ? '<b class="minlbl">MIN STAFFING</b> · ' : '') + esc(interest) + '</em></div><span class="when">' + when(x.dd) + '</span></div>';
+    }).join('') + '</div>';
+    if (list.length > 4) { const k = DASH_ACTS.push(goUrl(otAppLink())) - 1; h += '<button type="button" class="ot-more" onclick="dashGo(' + k + ')">+' + (list.length - 4) + ' more in Open Shifts</button>'; }
+  } else h += rowsHtml([], 'No open shifts the rest of the month. Everybody\'s covered.');
   return h;
 }
 
@@ -1527,9 +1626,9 @@ function renderHome() {
   }
   SEC.rep = secHtml('#b91c1c', ICON.rep, 'Incident Reports', 'On-duty', repBody, link(CONFIG.reportsUrl, 'Open reports'));
 
-  /* Scheduling (Derek's overtime app) */
-  SEC.ot = secHtml('#8a6a1f', ICON.ot, 'Scheduling', 'Open shifts · OT' + (ot && ot.updated ? ' · as of ' + fmtDT(ot.updated).split(' ')[1] : ''), otSecBody(),
-    link(CONFIG.overtimeUrl, 'Open OT') + link(CONFIG.aladtecUrl, 'Open Aladtec', true));
+  /* Scheduling: NCEMS Open Shifts, Crew 1 and Crew 2 */
+  SEC.ot = secHtml('#8a6a1f', ICON.ot, 'Scheduling', 'Open Shifts' + (otUpdated() ? ' · as of ' + otUpdated() : ''), otSecBody(),
+    link(otAppLink(), 'Open Shifts') + link(CONFIG.aladtecUrl, 'Open Aladtec', true));
 
   /* 1.9 order: Scheduling, Shift Ops, Incident Reports on top; Vehicle Checks, Grounds, Facilities below */
   h += ['ot', 'ops', 'rep', 'veh', 'grd', 'fac'].map(k => SEC[k]).join('');
@@ -2046,12 +2145,15 @@ function demoExtras() {
           { title: 'Weed eat fence line', station: 'St 52', due: d(1), status: 'Not Started' }, { title: 'Empty trash cans', station: 'St 51.5', due: d(0), status: 'In Progress' }] };
   demoVeh(); demoVehCard();
   const sd = n => { const x = startOfDay(); x.setDate(x.getDate() + n); return x; };
-  ot = { updated: new Date(t - 9 * 60000),
-    shifts: [{ date: sd(1), label: '24 hour', unit: 'M51', priority: true, posted: d(-3), interested: 1 }, { date: sd(3), label: '12 hour, nights', unit: 'M52', priority: true, posted: d(-1), interested: 0 },
-             { date: sd(5), label: '12 hour, days', unit: 'M51', priority: false, posted: d(-2), interested: 2 }, { date: sd(12), label: '24 hour', unit: 'M52', priority: false, posted: d(-1), interested: 0 }],
-    counts: { openNext7: 3, openNext30: 6, filledThisWeek: 3 },
-    weeks: [4, 6, 3, 5, 7, 2, 5, 3].map((f, i) => ({ start: sd(-(7 - i) * 7 - startOfDay().getDay()), filled: f })),
-    next: { long: 'Sam Rivera', short: 'Jordan Lee' } };
+  const pd = n => { const p = ymd(pacificToday()), x = new Date(Date.UTC(p.y, p.m - 1, p.d + n)); return x.toISOString().slice(0, 10); };
+  const mo = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', month: 'long' }).format(new Date());
+  ot2 = { at: Date.now(), e1: '', e2: '',
+    c1: { updated: new Date(t - 9 * 60000).toISOString(), month: mo, nextUp: { long: 'Sam Rivera', short: 'Jordan Lee' },
+      openShifts: [{ date: pd(2), unit: 'M54', hours: 24, crew: 1, minStaff: true, interested: 1 }, { date: pd(5), unit: 'M51', hours: 12, crew: 1, minStaff: false, interested: 2 }, { date: pd(9), unit: 'M52', hours: 24, crew: 1, minStaff: false, interested: 0 }],
+      counts: { openThisMonth: 3, minStaffThisMonth: 1, openNext7: 2, openNext30: 5, filledThisWeek: 3 }, links: { app: 'https://shifts.northcountryems.org/', long: 'https://shifts.northcountryems.org/?list=long', short: 'https://shifts.northcountryems.org/?list=short' } },
+    c2: { updated: new Date(t - 7 * 60000).toISOString(), crew: 2, month: mo,
+      openShifts: [{ date: pd(2), unit: 'M54', hours: 24, crew: 2, minStaff: false, offers: 0 }, { date: pd(1), unit: 'M51', hours: 12, crew: 2, minStaff: true, offers: 1 }, { date: pd(6), unit: 'M19', hours: 12, crew: 2, minStaff: false, offers: 2 }, { date: pd(11), unit: 'M51', hours: 24, crew: 2, minStaff: false, offers: 0 }],
+      counts: { openThisMonth: 4, minStaffThisMonth: 1, openNext7: 3, openNext30: 6, filledThisWeek: 2 }, links: { app: 'https://shifts.northcountryems.org/?crew=2' } } };
   reports = [{ type: 'biological', status: 'new', when: d(-1) }, { type: 'vehicle', status: 'reviewed', when: d(-6) }, { type: 'injury', status: 'closed', when: d(-20) }, { type: 'injury', status: 'reviewed', when: d(-40) }];
 }
 

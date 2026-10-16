@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.11**
+**Version 1.12**
 
 ## Links
 
@@ -70,7 +70,7 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 - **Facilities / Grounds:** Facility Work Orders, Facility Services and Grounds Tracker lists on the Facilities and Grounds site (same data as the F&G app, read only here).
 - **Vehicle Checks:** Firebase project `ncems-hub-9111d` (same one the hub uses). Since 1.6, `vehicleLinks/{check ref}` holds the link between a vehicle issue and its Shift Ops card (card id, status, latest note) so the EP Checker can show the chiefs' latest note to crews. The EP Checker (v2.14.0 and up) writes one doc per submitted check to `vehicleChecks`. Out of service marks go to `vehicleStatus`, Fixed marks go to `vehicleResolved`. The dashboard reads the last 45 days.
 - **Incident Reports:** Cloudflare Worker `ncems-api.d-boyce.workers.dev/bin/incident-reports`, read only. Since v1.3 the dashboard sends the Microsoft sign-in token, and the Worker only answers for chiefs on its ADMINS list.
-- **Scheduling:** Derek's Worker feed, `GET https://ncems-ot.d-langdon.workers.dev/dashboard`, read only. CG Staff sends the Microsoft ID token (`Authorization: Bearer <idToken>`), the same way it reads incident reports. Derek's Worker only answers the cgstaff site, NCEMS staff only, no guests. The feed has no start time or position, so shift rows show date, type, unit and how many people are interested.
+- **Scheduling (1.12):** two of Derek's Worker feeds, Crew 1 `https://ncems-ot.d-langdon.workers.dev/dashboard` and Crew 2 `https://ncems-c2.d-langdon.workers.dev/dashboard`, same ID token, cgstaff site only. Older notes: Derek's Worker feed, `GET https://ncems-ot.d-langdon.workers.dev/dashboard`, read only. CG Staff sends the Microsoft ID token (`Authorization: Bearer <idToken>`), the same way it reads incident reports. Derek's Worker only answers the cgstaff site, NCEMS staff only, no guests. The feed has no start time or position, so shift rows show date, type, unit and how many people are interested.
 
 ## Also assigned and reminders (1.9)
 
@@ -98,6 +98,17 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.12
+- Scheduling card rebuilt for Derek's NCEMS Open Shifts (shifts.northcountryems.org), the app that replaced Overtime. Reads two feeds with the same Microsoft ID token: Crew 1 paramedic overtime (`ncems-ot.d-langdon.workers.dev/dashboard`) and Crew 2 EMT open shifts (`ncems-c2.d-langdon.workers.dev/dashboard`)
+- Next up pills open the app straight to the long list or short list
+- Big number: shifts left this month, Crew 1 (green) plus Crew 2 (blue)
+- Three tiles: Min staffing (red when above 0), Next 7 days, Filled this week. Uses the feeds' own counts and min staffing flags
+- Day strip from today to the end of the month: stacked bar per day, Crew 1 green on the bottom, Crew 2 blue on top, red ▲ on any day with a min staffing shift. Tap a day for the count
+- Needs attention: top 4 open shifts from both crews, min staffing first then soonest, with a C1 or C2 chip, interest (Crew 1) or offers (Crew 2), and today / tomorrow / in N days. Tapping opens Open Shifts
+- Buttons: Open Shifts (replaces Open OT) and Open Aladtec
+- The feeds refresh every 5 minutes. If one crew's feed fails, the other still shows with a note, and the missing crew shows ? instead of a fake 0
+- Dates are handled as Pacific calendar days, never shifted by time zone
 
 ### v1.11
 - The number tiles click through too: Shift Ops Open (board), Briefing (opens the Briefing), Red (board showing Red only), Not triaged (board filtered); Vehicle Checks tiles open the vehicles screen or the issue list; Scheduling tiles open OT; Facilities, Grounds and Incident Reports tiles open their apps
