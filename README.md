@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.13**
+**Version 1.14**
 
 ## Links
 
@@ -98,6 +98,9 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.14
+- Sign-in page has a red "CG Staff only" box above the Microsoft button with a Back to the NCEMS Hub button, so crews can leave before trying to sign in (the hub shows the CG Staff button to everyone since hub 2.0)
 
 ### v1.13
 - New phone icon: NCEMS green and maroon split corner to corner with three crossed bugles, bells down like the division chief collar pin, NCEMS across the bottom (matches the Open Shifts icon). `apple-touch-icon.png` is the new icon and `icon-512.png` is the big one Android uses for the icon and the launch screen. Delete the old icon from the home screen and add it again to see it

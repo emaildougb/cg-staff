@@ -408,6 +408,9 @@
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   .toast.err { background:#9a2a2a; }
   .demo-flag { position:fixed; top:calc(var(--hdr-h) + var(--bar-h) + env(safe-area-inset-top) + 6px); right:12px; z-index:19; background:#FFF2C2; color:#7a5a00; font-size:10px; font-weight:800; letter-spacing:1px; padding:4px 8px; border-radius:6px; text-transform:uppercase; }
+.only-box { background: #fdecec; border: 1.5px solid #e3a3a3; border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; color: #6b1a1a; font-size: 13.5px; line-height: 1.45; text-align: center; }
+.only-box b { display: block; font-size: 15px; letter-spacing: .5px; text-transform: uppercase; color: #a11d1d; margin-bottom: 4px; }
+.only-back { display: block; margin-top: 10px; padding: 10px; border-radius: 10px; background: #fff; border: 1px solid #e3a3a3; color: #a11d1d; font-weight: 800; text-align: center; text-decoration: none; }
 </style>
 </head>
 <body>
@@ -547,7 +550,8 @@
   <div class="center-card">
     <div class="center-head"><img src="logo.png" alt=""><h2>CG Staff</h2><p>Command staff dashboard for NCEMS</p></div>
     <div class="center-body">
-      Sign in with your NCEMS Microsoft account. This is for CG Staff: Shift Ops, Facilities, Grounds, Incident Reports and Scheduling in one spot.
+      <div class="only-box"><b>CG Staff only</b>This dashboard is only for the CG Staff. Crew apps are on the NCEMS Hub.<a class="only-back" href="https://hub.northcountryems.org/">&larr; Back to the NCEMS Hub</a></div>
+      CG Staff: sign in with your NCEMS Microsoft account.
       <button class="big-btn" id="signin-btn" onclick="signIn()">Sign in with Microsoft</button>
       <div class="err-box" id="signin-err"></div>
       <a class="small-link" id="open-browser" href="#" target="_blank" rel="noopener" style="display:none">Open in browser</a>
@@ -568,7 +572,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.13';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.14';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
