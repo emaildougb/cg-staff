@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.12**
+**Version 1.13**
 
 ## Links
 
@@ -98,6 +98,9 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.13
+- New phone icon: NCEMS green and maroon split corner to corner with three crossed bugles, bells down like the division chief collar pin, NCEMS across the bottom (matches the Open Shifts icon). `apple-touch-icon.png` is the new icon and `icon-512.png` is the big one Android uses for the icon and the launch screen. Delete the old icon from the home screen and add it again to see it
 
 ### v1.12
 - Scheduling card rebuilt for Derek's NCEMS Open Shifts (shifts.northcountryems.org), the app that replaced Overtime. Reads two feeds with the same Microsoft ID token: Crew 1 paramedic overtime (`ncems-ot.d-langdon.workers.dev/dashboard`) and Crew 2 EMT open shifts (`ncems-c2.d-langdon.workers.dev/dashboard`)
