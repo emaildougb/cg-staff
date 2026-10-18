@@ -439,7 +439,7 @@
 
 <nav class="nav" id="nav">
   <button data-v="home" class="on" onclick="setView('home')">Dashboard</button>
-  <button data-v="board" onclick="setView('board')">Shift Briefing Notes<b id="nav-open"></b></button>
+  <button data-v="board" onclick="setView('board')">Shift Briefing Notes<b id="nav-open" hidden></b></button>
   <a class="nav-link" href="https://forms.northcountryems.org/" target="_blank" rel="noopener">Forms</a>
 </nav>
 
@@ -576,7 +576,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.16';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.17';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds

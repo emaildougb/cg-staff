@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.16**
+**Version 1.17**
 
 ## Links
 
@@ -98,6 +98,9 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.17
+- The Shift Briefing Notes tab no longer shows the open count, just the words. The count is still in the header line and the Open tile
 
 ### v1.16
 - Forms button in the top bar opens NCEMS Forms (forms.northcountryems.org): write ups, quick notes, SOG drafts and personnel search
