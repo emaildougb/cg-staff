@@ -377,6 +377,24 @@
   .vnotes { margin-top:6px; padding:7px 10px; background:#f4f7f4; border-radius:8px; font-size:12px; line-height:1.45; color:#333; }
   .vnotes b { color:var(--g-deep); }
   .vcam { display:inline-block; margin-left:4px; font-size:12px; line-height:1; }
+  /* 1.18 photo button and viewer */
+  .vchip-w { display:inline-flex; align-items:stretch; gap:0; }
+  .vchip-w .vchip { border-top-right-radius:0; border-bottom-right-radius:0; }
+  .vchip-w .vpbtn.chip { align-self:stretch; border-color:var(--border); border-width:2px; border-radius:0 10px 10px 0; border-left:0; margin:0; padding:0 9px; font-size:11px; }
+  .vpbtn { flex-shrink:0; align-self:center; border:2px solid #1F5C8B; background:#E4EEF8; color:#1F5C8B; border-radius:8px; padding:4px 9px; font:inherit; font-size:11px; font-weight:800; letter-spacing:.3px; cursor:pointer; white-space:nowrap; margin-left:6px; }
+  .vpbtn:hover { background:#d3e3f3; }
+  .vpbtn.big { font-size:14px; padding:10px 14px; margin:10px 0 0; width:100%; }
+  .vphotos button { all:unset; cursor:pointer; display:block; color:var(--muted); font-size:10px; font-weight:700; text-align:center; }
+  .vphotos button img { display:block; width:120px; height:90px; object-fit:cover; border-radius:8px; border:1.5px solid var(--border); background:#eef2ee; margin-bottom:2px; }
+  .pv { position:fixed; inset:0; z-index:500; background:rgba(8,14,8,.97); display:none; flex-direction:column; align-items:center; justify-content:center; }
+  .pv.show { display:flex; }
+  .pv-top { position:absolute; top:0; left:0; right:0; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 14px 10px; color:#fff; font-size:14px; font-weight:700; background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,0)); }
+  .pv-top #pv-cap { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pv-top a, .pv-top button { color:#fff; background:rgba(255,255,255,.16); border:0; border-radius:8px; padding:8px 12px; font:inherit; font-size:13px; text-decoration:none; cursor:pointer; }
+  .pv img { max-width:96vw; max-height:80vh; object-fit:contain; border-radius:6px; background:#222; }
+  .pv-nav { position:absolute; top:50%; transform:translateY(-50%); border:0; background:rgba(255,255,255,.16); color:#fff; font-size:34px; width:48px; height:64px; border-radius:10px; cursor:pointer; }
+  .pv-nav.prev { left:8px; } .pv-nav.next { right:8px; }
+  .pv-foot { position:absolute; bottom:calc(14px + env(safe-area-inset-bottom)); color:#cfd8cf; font-size:12px; font-weight:700; text-align:center; left:0; right:0; padding:0 12px; }
   button.vchip { font:inherit; cursor:pointer; }
   button.stat { border:0; font:inherit; cursor:pointer; width:100%; }
   button.stat:hover { outline:2px solid var(--border); }
@@ -528,6 +546,13 @@
   <div class="sh-body" id="vfull-body"></div>
 </div>
 
+<div class="pv" id="pv" onclick="if(event.target===this)pvClose()">
+  <div class="pv-top"><span id="pv-cap"></span><a id="pv-open" href="#" target="_blank" rel="noopener">Full size</a><button type="button" onclick="pvClose()" aria-label="Close">&#10005;</button></div>
+  <img id="pv-img" alt="">
+  <button type="button" class="pv-nav prev" id="pv-prev" onclick="pvStep(-1)" aria-label="Previous">&#8249;</button>
+  <button type="button" class="pv-nav next" id="pv-next" onclick="pvStep(1)" aria-label="Next">&#8250;</button>
+  <div class="pv-foot" id="pv-foot"></div>
+</div>
 <div class="sheet" id="sh-info">
   <div class="sh-head"><h2>About Shift Ops</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
   <div class="sh-body" id="info-body"></div>
@@ -576,7 +601,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.17';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.18';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -604,6 +629,7 @@ const CONFIG = {
   firebase: { apiKey: 'AIzaSyCBSmzaXRU6TV1Jen5z4xHKZfG28UHXlkY', authDomain: 'ncems-hub-9111d.firebaseapp.com', projectId: 'ncems-hub-9111d',
               storageBucket: 'ncems-hub-9111d.firebasestorage.app', messagingSenderId: '282446545601', appId: '1:282446545601:web:41f89407c2a1a348f24a40' },
   vehKeepDays: 45,
+  vehArchive: 'App Data/Vehicle Checks', // 1.18: every check plus its photos is copied here on the CG Staff site
   vehUnits:   ['M25A', 'M25B', 'M19', 'M18', 'M14'], // fallback if units.json can't load
   vehDayStart: 7,    // a "day" of checks starts at 0700
   vehMinChecks: 2,   // at least this many ambulances checked each day
@@ -658,7 +684,7 @@ const REMIND_EVERY = [[0, 'Once'], [1, 'Every day'], [3, 'Every 3 days'], [7, 'E
 
 const DEMO = /[?&]demo=1/.test(location.search);
 const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || 'doug';
-const LS = { cache: 'so_cache_v1', site: 'so_site_v1', filter: 'so_filter_v1', tab: 'so_tab_v1', hours: 'so_hours_v1', view: 'cg_view_v1', fng: 'cg_fng_v1', fsite: 'cg_fsite_v1', veh: 'cg_veh_v1', vunits: 'cg_vunits_v1' };
+const LS = { cache: 'so_cache_v1', site: 'so_site_v1', filter: 'so_filter_v1', tab: 'so_tab_v1', hours: 'so_hours_v1', view: 'cg_view_v1', fng: 'cg_fng_v1', fsite: 'cg_fsite_v1', veh: 'cg_veh_v1', vunits: 'cg_vunits_v1', varch: 'cg_varch_v1' };
 
 let msalApp = null, account = null, siteId = null;
 let items = [];
@@ -844,7 +870,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -994,7 +1020,9 @@ function moveItem(id, newCat) {
 /* ---------------- sheets ---------------- */
 function showSheet(id) { closeSheets(true); $('scrim').classList.add('show'); $(id).classList.add('show'); }
 function closeSheets(keepOpenId) { document.querySelectorAll('.sheet').forEach(s => s.classList.remove('show')); $('scrim').classList.remove('show'); if (keepOpenId !== true) openId = null; }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('brief').classList.contains('show')) closeBrief(); else closeSheets(); } });
+document.addEventListener('keydown', e => {
+  if ($('pv') && $('pv').classList.contains('show')) { if (e.key === 'Escape') pvClose(); else if (e.key === 'ArrowLeft') pvStep(-1); else if (e.key === 'ArrowRight') pvStep(1); return; }
+  if (e.key === 'Escape') { if ($('brief').classList.contains('show')) closeBrief(); else closeSheets(); } });
 
 function personOptions(sel) { return PEOPLE.map(p => '<option ' + (p === sel ? 'selected' : '') + '>' + esc(p) + '</option>').join(''); }
 function groupOptions(sel) { return GROUPS.map(g => '<option value="' + esc(g.key) + '" ' + (g.key === sel ? 'selected' : '') + '>' + esc(g.name) + '</option>').join(''); }
@@ -1547,9 +1575,9 @@ let DASH_ACTS = [];
 function dashGo(n) { const f = DASH_ACTS[n]; if (f) f(); }
 function secGo(e, n) { if (e.target.closest('button, a, input, select, textarea, [role=button]')) return; dashGo(n); }
 function goUrl(u) { return () => window.open(u, '_blank', 'noopener'); }
-function rowi(text, sub, dot, go) {
+function rowi(text, sub, dot, go, extra) {
   const n = go ? DASH_ACTS.push(go) - 1 : -1;
-  return '<div class="rowi' + (go ? ' go-row' : '') + '"' + (go ? ' role="button" tabindex="0" onclick="dashGo(' + n + ')" onkeydown="if(event.key===\'Enter\')dashGo(' + n + ')"' : '') + '><span class="dot ' + (dot || '') + '"></span><div class="tx">' + esc(text) + (sub ? '<em>' + sub + '</em>' : '') + '</div>' + (go ? '<span class="go-chev">›</span>' : '') + '</div>';
+  return '<div class="rowi' + (go ? ' go-row' : '') + '"' + (go ? ' role="button" tabindex="0" onclick="dashGo(' + n + ')" onkeydown="if(event.key===\'Enter\')dashGo(' + n + ')"' : '') + '><span class="dot ' + (dot || '') + '"></span><div class="tx">' + esc(text) + (sub ? '<em>' + sub + '</em>' : '') + '</div>' + (extra || '') + (go ? '<span class="go-chev">›</span>' : '') + '</div>';
 }
 function vehOpenIssueBy(checkId, label) {
   const S = vehSummary(); let ref = null;
@@ -1767,6 +1795,44 @@ function vehIssId(i) { return i.key || i.label; }
 function vehPhotos(c) { return (c && Array.isArray(c.photos) ? c.photos : []).filter(p => p && /^(https:\/\/|data:image\/)/.test(p.url || '')); }
 function vehThumb(url) { return /res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url) ? url.replace('/image/upload/', '/image/upload/c_fill,w_240,h_180,q_auto/') : url; }
 function vehHasPhotoToday(s) { return s.today.some(c => vehPhotos(c).length); }
+/* 1.18: Photo button and viewer. The issue's own photo (EP Checker 2.22+) comes first, then the rest of that check's photos */
+const PV_SETS = []; let pvList = [], pvIdx = 0;
+function vehOkUrl(u) { return /^(https:\/\/|data:image\/)/.test(u || ''); }
+function vehIssuePhoto(c, i) {
+  if (!i) return null;
+  if (vehOkUrl(i.photo)) return { label: i.label, url: i.photo };
+  return vehPhotos(c).find(p => p.key && i.key && p.key === i.key) || null;
+}
+function vehPhotosFor(c, i) {
+  const all = vehPhotos(c).slice(), own = vehIssuePhoto(c, i);
+  if (own) { const x = all.findIndex(p => p.url === own.url); if (x >= 0) all.splice(x, 1); all.unshift(own); }
+  return all.map(p => ({ label: (c.unit ? c.unit + ' ' : '') + (p.label || 'Photo') + ' · ' + (c.at ? fmtDT(new Date(c.at)) : ''), url: p.url }));
+}
+function pvSet(list) { return PV_SETS.push(list) - 1; }
+function photoBtn(list, cls) {
+  if (!list || !list.length) return '';
+  return '<button type="button" class="vpbtn ' + (cls || '') + '" onclick="event.stopPropagation();pvOpen(' + pvSet(list) + ',0)" onkeydown="if(event.key===\'Enter\')event.stopPropagation()" title="See the photo">&#128247; Photo' + (list.length > 1 ? 's ' + list.length : '') + '</button>';
+}
+function vehThumbs(list) {
+  if (!list.length) return '';
+  const n = pvSet(list);
+  return '<div class="vphotos">' + list.map((p, k) => '<button type="button" onclick="event.stopPropagation();pvOpen(' + n + ',' + k + ')" title="Open photo"><img loading="lazy" src="' + esc(vehThumb(p.url)) + '" alt="' + esc(p.label) + '">' + esc(String(p.label).split(' · ')[0].replace(/^\S+ /, '')) + '</button>').join('') + '</div>';
+}
+function vehBig(url) { return /res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url) ? url.replace('/image/upload/', '/image/upload/c_limit,w_1600,q_auto/') : url; }
+function pvOpen(n, k) { pvList = PV_SETS[n] || []; if (!pvList.length) return; pvIdx = k || 0; pvShow(); $('pv').classList.add('show'); const x = $('pv').querySelector('.pv-top button'); if (x) x.focus(); }
+function pvShow() {
+  const p = pvList[pvIdx]; if (!p) return;
+  $('pv-img').src = vehBig(p.url); $('pv-img').alt = p.label;
+  $('pv-cap').textContent = p.label;
+  const a = $('pv-open'); a.href = p.url; a.style.display = /^data:/.test(p.url) ? 'none' : '';
+  const many = pvList.length > 1;
+  $('pv-prev').style.display = many ? '' : 'none'; $('pv-next').style.display = many ? '' : 'none';
+  $('pv-foot').textContent = (many ? (pvIdx + 1) + ' of ' + pvList.length + ' · ' : '') + 'Saved with the check on SharePoint (App Data, Vehicle Checks)';
+}
+function pvStep(d) { if (pvList.length < 2) return; pvIdx = (pvIdx + d + pvList.length) % pvList.length; pvShow(); }
+function pvClose() { $('pv').classList.remove('show'); $('pv-img').src = ''; }
+(function () { let x0 = null; document.addEventListener('touchstart', e => { if ($('pv') && $('pv').classList.contains('show')) x0 = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) pvStep(dx < 0 ? 1 : -1); }, { passive: true }); })();
 function statBtn(n, label, cls, onclick) { return '<button type="button" class="stat ' + (cls || '') + '" onclick="' + onclick + '"><b>' + n + '</b><span>' + label + '</span></button>'; }
 function vehSecBody() {
   if (!veh) return vehErr ? '<div class="sec-msg err">' + esc(vehErr) + '</div>' : '<div class="sec-msg">Loading...</div>';
@@ -1777,21 +1843,25 @@ function vehSecBody() {
   let banner;
   if (S.short) banner = '<div class="vbanner ' + (S.late ? 'bad' : 'warn') + '">' + S.checked.length + ' of ' + S.need + ' minimum ambulances checked since ' + String(CONFIG.vehDayStart).padStart(2, '0') + '00' + (S.late ? '. Crews are behind today.' : '. Still early.') + '</div>';
   else banner = '<div class="vbanner good">' + S.checked.length + ' checked today. Minimum of ' + S.need + ' is covered.</div>';
-  const chips = '<div class="vchips">' + S.states.map(s => '<button type="button" class="vchip ' + (s.cls === 'none' ? '' : s.cls) + '" onclick="openVeh(\'' + esc(s.unit) + '\')" title="Open ' + esc(s.unit) + '"><i></i>' + esc(s.unit) + (s.today.length ? ' ' + hhmm(new Date(s.today[s.today.length - 1].at)) : '') + (vehHasPhotoToday(s) ? '<span class="vcam" title="Photo on today\'s check">&#128247;</span>' : '') + '</button>').join('') + '</div>';
+  const chips = '<div class="vchips">' + S.states.map(s => {
+    const ph = s.today.slice().reverse().reduce((a, c) => a.concat(vehPhotosFor(c, null)), []);
+    const chip = '<button type="button" class="vchip ' + (s.cls === 'none' ? '' : s.cls) + '" onclick="openVeh(\'' + esc(s.unit) + '\')" title="Open ' + esc(s.unit) + '"><i></i>' + esc(s.unit) + (s.today.length ? ' ' + hhmm(new Date(s.today[s.today.length - 1].at)) : '') + '</button>';
+    return ph.length ? '<span class="vchip-w">' + chip + photoBtn(ph, 'chip') + '</span>' : chip;
+  }).join('') + '</div>';
   const firstHand = S.states.find(s => s.handoff.length), firstOpen = S.states.find(s => !s.st.oos && s.openIss.length);
   const rows = [];
   /* 1.8: narcs below par on the latest check today go on the dashboard (red at half par or less) */
   S.states.forEach(s => {
     const last = s.today[s.today.length - 1]; if (!last) return;
     (Array.isArray(last.narcs) ? last.narcs : []).filter(n => n.count != null && n.count < n.par)
-      .forEach(n => rows.push(rowi(s.unit + ': ' + n.name + ' below par', n.count + ' of ' + n.par + ' · ' + vehCrew(last) + ' ' + fmtDT(new Date(last.at)), n.count <= n.par / 2 ? 'bad' : 'warn', () => openVeh(s.unit))));
+      .forEach(n => rows.push(rowi(s.unit + ': ' + n.name + ' below par', n.count + ' of ' + n.par + ' · ' + vehCrew(last) + ' ' + fmtDT(new Date(last.at)), n.count <= n.par / 2 ? 'bad' : 'warn', () => openVeh(s.unit), photoBtn(vehPhotosFor(last, null)))));
   });
   S.states.forEach(s => {
     if (s.st.oos) return;
-    s.unfixed.forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Could not fix · ' + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)), 'bad', () => vehOpenIssueBy(o.c.id, o.i.label))));
+    s.unfixed.forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Could not fix · ' + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)), 'bad', () => vehOpenIssueBy(o.c.id, o.i.label), photoBtn(vehPhotosFor(o.c, o.i)))));
   });
-  S.states.forEach(s => s.handoff.forEach(h => rows.push(rowi(s.unit + ': ' + h.i.label, 'Fixed at check by ' + vehCrew(h.c) + ', left by ' + (h.prev ? vehCrew(h.prev) + ' ' + fmtDate(new Date(h.prev.at)) : 'prior crew'), 'info', () => vehOpenIssueBy(h.c.id, h.i.label)))));
-  S.states.forEach(s => { if (!s.st.oos) s.openIss.filter(o => o.i.state === 'open').forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Open · ' + vehCrew(o.c), 'warn', () => vehOpenIssueBy(o.c.id, o.i.label)))); });
+  S.states.forEach(s => s.handoff.forEach(h => rows.push(rowi(s.unit + ': ' + h.i.label, 'Fixed at check by ' + vehCrew(h.c) + ', left by ' + (h.prev ? vehCrew(h.prev) + ' ' + fmtDate(new Date(h.prev.at)) : 'prior crew'), 'info', () => vehOpenIssueBy(h.c.id, h.i.label), photoBtn(vehPhotosFor(h.c, h.i))))));
+  S.states.forEach(s => { if (!s.st.oos) s.openIss.filter(o => o.i.state === 'open').forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Open · ' + vehCrew(o.c), 'warn', () => vehOpenIssueBy(o.c.id, o.i.label), photoBtn(vehPhotosFor(o.c, o.i))))); });
   return banner + '<div class="stats">' + stat(S.checked.length + '/' + S.inSvc.length, 'Checked', '', () => openVeh()) +
     (openN ? statBtn(openN, 'Open issues', 'warn', 'openVehIssues(\'open\')') : stat(openN, 'Open issues', '', () => openVeh())) +
     (handN ? statBtn(handN, 'Left by prior', 'bad', 'openVehIssues(\'hand\')') : stat(handN, 'Left by prior', '', () => openVeh())) +
@@ -1818,11 +1888,11 @@ function renderVehSheet() {
     if (s.openIss.length) {
       h += '<div class="vsub" id="vopen-' + esc(s.unit) + '">Open problems</div>';
       h += s.openIss.map(o => { const n = VEH_REFS.push({ id: o.c.id, label: o.i.label, c: o.c, i: o.i, unit: s.unit, broken: o.broken }) - 1;
-        return '<div class="viss ' + o.i.state + '" onclick="openVehIssue(' + n + ')"><div class="t"><span class="vtag ' + o.i.state + '">' + (o.i.state === 'unfixed' ? 'Could not fix' : 'Open') + '</span>' + esc(o.i.label) + vehOpsChip(o.c, o.i) + '<em>' + (o.i.notes ? esc(o.i.notes) + ' · ' : '') + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)) + (vehDaysOpen(o.c) ? ' · open ' + vehDaysOpen(o.c) + ' days' : '') + (o.broken && o.broken.length ? ' · crew confirmed still broken ' + fmtDT(new Date(o.broken[o.broken.length - 1].c.at)) : '') + '</em></div><button onclick="event.stopPropagation();vehResolve(' + n + ')">Fixed</button></div>'; }).join('');
+        return '<div class="viss ' + o.i.state + '" onclick="openVehIssue(' + n + ')"><div class="t"><span class="vtag ' + o.i.state + '">' + (o.i.state === 'unfixed' ? 'Could not fix' : 'Open') + '</span>' + esc(o.i.label) + vehOpsChip(o.c, o.i) + '<em>' + (o.i.notes ? esc(o.i.notes) + ' · ' : '') + vehCrew(o.c) + ' ' + fmtDT(new Date(o.c.at)) + (vehDaysOpen(o.c) ? ' · open ' + vehDaysOpen(o.c) + ' days' : '') + (o.broken && o.broken.length ? ' · crew confirmed still broken ' + fmtDT(new Date(o.broken[o.broken.length - 1].c.at)) : '') + '</em></div>' + photoBtn(vehPhotosFor(o.c, o.i)) + '<button onclick="event.stopPropagation();vehResolve(' + n + ')">Fixed</button></div>'; }).join('');
     }
     if (s.handoff.length) {
       h += '<div class="vsub" id="vhand-' + esc(s.unit) + '">Left by the prior crew (fixed at check)</div>';
-      h += s.handoff.map(x => '<div class="viss fixed" onclick="openVehIssue(' + (VEH_REFS.push({ id: x.c.id, label: x.i.label, c: x.c, i: x.i, unit: s.unit, prev: x.prev }) - 1) + ')"><div class="t"><span class="vtag fixed">Handoff</span>' + esc(x.i.label) + '<em>' + (x.i.notes ? esc(x.i.notes) + ' · ' : '') + 'Fixed by ' + vehCrew(x.c) + ' at ' + hhmm(new Date(x.c.at)) + ' · ' + (x.prev ? 'last checked ' + fmtDT(new Date(x.prev.at)) + ' by ' + vehCrew(x.prev) : 'no earlier check on file') + '</em></div></div>').join('');
+      h += s.handoff.map(x => '<div class="viss fixed" onclick="openVehIssue(' + (VEH_REFS.push({ id: x.c.id, label: x.i.label, c: x.c, i: x.i, unit: s.unit, prev: x.prev }) - 1) + ')"><div class="t"><span class="vtag fixed">Handoff</span>' + esc(x.i.label) + '<em>' + (x.i.notes ? esc(x.i.notes) + ' · ' : '') + 'Fixed by ' + vehCrew(x.c) + ' at ' + hhmm(new Date(x.c.at)) + ' · ' + (x.prev ? 'last checked ' + fmtDT(new Date(x.prev.at)) + ' by ' + vehCrew(x.prev) : 'no earlier check on file') + '</em></div>' + photoBtn(vehPhotosFor(x.c, x.i)) + '</div>').join('');
     }
     /* 7 day look back */
     const wk = s.all.filter(c => new Date(c.at).getTime() >= vehDayStart().getTime() - 6 * 86400000);
@@ -1886,8 +1956,9 @@ function renderVehIssue() {
   if (i.state === 'fixed') h += '<div class="vi-line">Crew fixed it on the spot. ' + (r.prev ? 'Last checked before that ' + fmtDT(new Date(r.prev.at)) + ' by ' + vehCrew(r.prev) + '.' : 'No earlier check on file.') + '</div>';
   (r.broken || []).forEach(b => { h += '<div class="vi-line" style="color:var(--bad)">Crew confirmed still broken at the ' + fmtDT(new Date(b.c.at)) + ' check (' + vehCrew(b.c) + ')</div>'; });
   if (resd) h += '<div class="vi-line" style="color:var(--g-mid)"><b>Marked fixed</b> by ' + esc(resd.by || '') + (resd.at ? ' ' + fmtDT(new Date(resd.at)) : '') + (resd.note ? ' · ' + esc(resd.note) : '') + '</div>';
-  const ph = vehPhotos(c);
-  if (ph.length) h += '<div class="vphotos">' + ph.map(p => '<a href="' + esc(p.url) + '" target="_blank" rel="noopener"><img loading="lazy" src="' + esc(vehThumb(p.url)) + '" alt="' + esc(p.label || 'Photo') + '">' + esc(p.label || 'Photo') + '</a>').join('') + '</div>';
+  const ph = vehPhotosFor(c, i);
+  if (ph.length) h += '<button type="button" class="vpbtn big" onclick="pvOpen(' + pvSet(ph) + ',0)">&#128247; ' + (vehIssuePhoto(c, i) ? 'See the photo of this problem' : 'See the photo from this check') + (ph.length > 1 ? ' (' + ph.length + ')' : '') + '</button>' + vehThumbs(ph);
+  else h += '<div class="vi-line" style="color:var(--muted)">No photo on this check.</div>';
   /* Shift Ops */
   h += '<div class="vi-box"><h4>Shift Ops</h4>';
   if (card) {
@@ -2078,11 +2149,99 @@ function gsOpen(n) {
   renderVehIssue(); showSheet('sh-viss');
 }
 
+/* 1.18: keep every check and its photos on the CG Staff SharePoint site.
+   Crew phones can't write there, so whichever chief has CG Staff open does it quietly in the background.
+   App Data/Vehicle Checks/2026-10/2026-10-18 0931 M25B (Josh Fox).txt  plus  .../2026-10/Photos/<same start> - <label>.jpg
+   A check already on SharePoint is skipped (file name match), so two chiefs never make doubles. */
+let vehArchiving = false;
+function vehArchName(x) { return String(x || '').replace(/[\\/:*?"<>|#%\x00-\x1f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80); }
+function vehArchBase(c) { const d = new Date(c.at); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + hhmm(d) + ' ' + vehArchName(c.unit || 'Unit') + (c.crew ? ' (' + vehArchName(c.crew) + ')' : ''); }
+function vehArchMonth(c) { const d = new Date(c.at); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function vehArchEnc(path) { return path.split('/').map(encodeURIComponent).join('/'); }
+async function vehArchPut(path, body, type) {
+  const token = await getToken();
+  const res = await fetch(GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.vehArchive + '/' + path) + ':/content?@microsoft.graph.conflictBehavior=fail',
+    { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': type || 'application/octet-stream' }, body });
+  if (res.ok || res.status === 409) return true;   /* 409 = already there */
+  const err = new Error('SharePoint upload ' + res.status); err.status = res.status; throw err;
+}
+function vehArchPhotos(c) {
+  const out = vehPhotos(c).map(p => ({ label: p.label || 'Photo', url: p.url, key: p.key || '' }));
+  (c.issues || []).forEach(i => { if (vehOkUrl(i.photo) && !out.some(p => p.url === i.photo)) out.push({ label: (c.unit || '') + ' ' + i.label, url: i.photo, key: i.key || '' }); });
+  return out;
+}
+function vehArchText(c, photoLines) {
+  const d = new Date(c.at), L = [];
+  const dt = (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear() + ' ' + hhmm(d);
+  L.push('VEHICLE CHECK RECORD (EP Checker)', 'Unit: ' + (c.unit || ''), 'Date: ' + dt, 'Crew: ' + (c.crew || ''), 'Type: ' + (c.type || ''));
+  if (c.pct != null) L.push('Percent done: ' + c.pct + '%');
+  [['Fuel', c.fuel], ['DEF', c.def ? c.def + '%' : ''], ['Main O2', c.o2psi ? c.o2psi + ' PSI' : ''], ['Mileage', c.mileage], ['App version', c.app]].forEach(([k, v]) => { if (v) L.push(k + ': ' + v); });
+  L.push('', 'PROBLEMS');
+  const iss = c.issues || [];
+  if (!iss.length) L.push('None reported');
+  iss.forEach(i => { const st = i.state === 'unfixed' ? 'Could not fix' : i.state === 'fixed' ? 'Fixed on the spot' : 'Open'; L.push('- ' + i.label + ' [' + st + ']' + (i.notes ? ': ' + i.notes : '')); });
+  const narcs = Array.isArray(c.narcs) ? c.narcs : [];
+  if (narcs.length) { L.push('', 'NARCOTIC COUNTS (count of par)'); narcs.forEach(n => L.push('- ' + n.name + ': ' + (n.count == null ? 'not counted' : n.count) + ' of ' + n.par + (n.count != null && n.count < n.par ? '  BELOW PAR' : ''))); }
+  const notes = (Array.isArray(c.notes) ? c.notes : []).filter(n => n && n.text);
+  if (notes.length) { L.push('', 'SECTION NOTES'); notes.forEach(n => L.push('- ' + n.section + ': ' + n.text)); }
+  L.push('', 'PHOTOS');
+  L.push(photoLines.length ? photoLines.join('\n') : 'None');
+  if (c.detail) L.push('', 'FULL CHECK DETAIL', c.detail);
+  L.push('', 'Record id: ' + (c.id || ''), 'Saved to SharePoint by CG Staff ' + VERSION + ' (' + meName() + ') ' + new Date().toLocaleString(),
+    'Search words: vehicle check, apparatus check, ' + (c.unit || '') + (iss.length ? ', problem' : '') + (photoLines.length ? ', photo' : ''));
+  const raw = JSON.parse(JSON.stringify(c, (k, v) => typeof v === 'string' && v.startsWith('data:') ? '[photo copied above]' : v));
+  L.push('', 'RAW DATA (for reports)', JSON.stringify(raw));
+  return L.join('\n');
+}
+async function vehArchive() {
+  if (DEMO || !veh || vehArchiving || !account) return;
+  vehArchiving = true;
+  try {
+    await getSiteId();
+    const done = new Set(lsGet(LS.varch, []));
+    const todo = (veh.checks || []).filter(c => c && c.id && c.at && !done.has(c.id)).sort((a, b) => new Date(a.at) - new Date(b.at));
+    const months = {};
+    const names = async m => {
+      if (months[m]) return months[m];
+      const set = new Set();
+      try {
+        let url = '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.vehArchive + '/' + m) + ':/children?$select=name&$top=999';
+        while (url) { const j = await graph(url); (j.value || []).forEach(x => set.add(x.name)); url = j['@odata.nextLink'] || null; }
+      } catch (e) { if (e.status !== 404) throw e; }
+      return (months[m] = set);
+    };
+    let wrote = 0;
+    for (const c of todo) {
+      if (wrote >= 40) break;   /* the rest go next time CG Staff opens */
+      const m = vehArchMonth(c), base = vehArchBase(c), set = await names(m);
+      if (!set.has(base + '.txt')) {
+        const lines = [];
+        const ph = vehArchPhotos(c);
+        for (let k = 0; k < ph.length; k++) {
+          const p = ph[k];
+          try {
+            const r = await fetch(p.url); if (!r.ok) throw new Error('photo ' + r.status);
+            const blob = await r.blob(); if (blob.size > 3900000) throw new Error('too big');
+            const ext = /png/.test(blob.type) ? 'png' : /webp/.test(blob.type) ? 'webp' : /heic/.test(blob.type) ? 'heic' : 'jpg';
+            const fname = base + ' - ' + vehArchName(String(p.label).replace(new RegExp('^' + (c.unit || '') + ' '), '')) + (ph.length > 1 ? ' ' + (k + 1) : '') + '.' + ext;
+            await vehArchPut(m + '/Photos/' + fname, blob, blob.type || 'image/jpeg');
+            lines.push('- ' + p.label + ': Photos/' + fname + (/^https/.test(p.url) ? '  (original ' + p.url + ')' : ''));
+          } catch (e) { lines.push('- ' + p.label + ': could not copy (' + e.message + ')' + (/^https/.test(p.url) ? ', original at ' + p.url : '')); }
+        }
+        await vehArchPut(m + '/' + base + '.txt', new Blob([vehArchText(c, lines)], { type: 'text/plain' }), 'text/plain; charset=utf-8');
+        set.add(base + '.txt'); wrote++;
+      }
+      done.add(c.id);
+    }
+    lsSet(LS.varch, [...done].slice(-3000));
+  } catch (e) { console.warn('Vehicle check copy to SharePoint stopped:', e && e.message); }
+  finally { vehArchiving = false; }
+}
+
 /* photos, section notes and short narc counts under a check line */
 function vehCheckExtras(c) {
   let h = '';
-  const ph = vehPhotos(c);
-  if (ph.length) h += '<div class="vphotos">' + ph.map(p => '<a href="' + esc(p.url) + '" target="_blank" rel="noopener" title="Open full size"><img loading="lazy" src="' + esc(vehThumb(p.url)) + '" alt="' + esc(p.label || 'Check photo') + '">' + esc(p.label || 'Photo') + '</a>').join('') + '</div>';
+  h += vehThumbs(vehPhotosFor(c, null));
   const notes = (Array.isArray(c.notes) ? c.notes : []).filter(n => n && n.text);
   const shortN = (Array.isArray(c.narcs) ? c.narcs : []).filter(n => n.count != null && n.count < n.par);
   if (notes.length || shortN.length) {
@@ -2128,7 +2287,7 @@ function demoVeh() {
       { id: 'M19-t', unit: 'M19', type: 'ambulance', at: h(1.2), crew: 'DB + NS', pct: 96, app: '2.16',
         knownChecked: [{ checkId: 'M19-y', label: 'Compartment E: BP Cuff Child', key: 'i|Compartment E||BP Cuff Child', result: 'broken' }],
         detail: 'APPARATUS CHECK, M19\nDate: today   Crew: DB + NS   Type: Ambulance\n\nFULL CHECK DETAIL\nMechanical & Lights:\n  Brake lights: ABNORMAL (UNABLE TO FIX), Left side out, bulb ordered\n  Horn: Normal\nUnder the Hood:\n  Engine oil: Normal (honey colored, clean)\nFuel: Full\nDEF: 75%\nMain O2: 1800 PSI\nNarcotic counts (count / par):\n  Fentanyl: 8 / 8\n  Midazolam (Versed): 5 / 5\n  Ketamine: 2 / 2', issues: [
-        { label: 'Brake lights', notes: 'Left side out, bulb ordered', state: 'unfixed' },
+        { label: 'Brake lights', key: 'r|mech|Brake lights', notes: 'Left side out, bulb ordered', state: 'unfixed', photo: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240"><rect width="320" height="240" fill="#3a3a3a"/><circle cx="90" cy="120" r="40" fill="#551111"/><circle cx="230" cy="120" r="40" fill="#ff3030"/><text x="160" y="215" font-size="16" text-anchor="middle" fill="#ddd">sample: left brake light out</text></svg>') },
         { label: 'Windshield washer fluid', notes: '', state: 'open' } ] },
       { id: 'M18-y', unit: 'M18', type: 'ambulance', at: y(30), crew: 'RT + KM', pct: 100, issues: [] }
     ],
