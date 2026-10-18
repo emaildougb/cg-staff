@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.14**
+**Version 1.16**
 
 ## Links
 
@@ -98,6 +98,13 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.16
+- Forms button in the top bar opens NCEMS Forms (forms.northcountryems.org): write ups, quick notes, SOG drafts and personnel search
+
+### v1.15
+- The Shift Ops tab and dashboard box are now called Shift Briefing Notes (same board, same SharePoint list)
+- Tap anywhere on a dashboard box to open that area: Scheduling opens Open Shifts, Shift Briefing Notes opens the board, Incident Reports opens Reports, Vehicle Checks opens the vehicles page, Grounds and Facilities open Facilities and Grounds. The buttons, number tiles and rows inside each box still go to their own spot
 
 ### v1.14
 - Sign-in page has a red "CG Staff only" box above the Microsoft button with a Back to the NCEMS Hub button, so crews can leave before trying to sign in (the hub shows the CG Staff button to everyone since hub 2.0)
