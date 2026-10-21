@@ -601,7 +601,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.20';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.20.1';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -1475,7 +1475,7 @@ async function otFetch(url, tok) {
   let res;
   try { res = await fetch(url, { cache: 'no-store', headers: { Authorization: 'Bearer ' + tok } }); }
   catch (e) { throw new Error('unreachable'); }
-  if (res.status === 401) throw new Error('signin');
+  if (res.status === 401) { let t = ''; try { t = await res.text(); } catch (e) {} throw new Error(/audience/i.test(t) ? 'newapp' : 'signin'); }
   if (res.status === 403) throw new Error('blocked');
   if (!res.ok) throw new Error('said ' + res.status);
   return (await res.json()) || {};
@@ -1494,6 +1494,7 @@ async function loadOT(force) {
 function otErrText(code, crew) {
   if (code === 'signin') return 'Sign in again to see ' + crew + '.';
   if (code === 'blocked') return crew + ': your account can not read this feed.';
+  if (code === 'newapp') return crew + ': waiting on Derek to accept the new Command Staff sign in.';
   return crew + ' unavailable right now.';
 }
 function otUpdated() {
@@ -1506,7 +1507,7 @@ function otSecBody() {
   if (!c1 && !c2) {
     if (!ot2.at) return '<div class="sec-msg">Loading...</div>';
     const msg = ot2.e1 === 'signin' ? 'Sign in again to see open shifts.'
-      : (/said 40[13]/.test(ot2.e1) ? 'Open Shifts has not been switched to the new Command Staff sign in yet (Derek adds the new app ID on his side).' : 'Open Shifts is unavailable right now.');
+      : (ot2.e1 === 'newapp' ? 'Open Shifts has not been switched to the new Command Staff sign in yet. Derek adds the new app ID on his side.' : 'Open Shifts is unavailable right now.');
     return '<div class="sec-msg err">' + esc(msg) + ' Tap Open Shifts to look there.</div>';
   }
   const today = pacificToday(), feeds = [c1, c2].filter(Boolean);

@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.20**
+**Version 1.20.1**
 
 ## Links
 
@@ -103,6 +103,9 @@ Since 1.20, CG Staff signs in through its own Entra app, **NCEMS Command Staff**
 - Before 1.20 it used "NCEMS Grounds Tracker" (`254c214f-bfe2-4ebb-9294-99815e167ab0`), which now only signs in F&G and Incident Reports
 
 ## Changelog
+
+### v1.20.1
+- Scheduling: when Derek's feed answers "wrong audience" (it hasn't been given the new app ID yet), the card says that instead of "sign in again"
 
 ### v1.20
 - Signs in with the new **NCEMS Command Staff** Entra app (`f758d1fe-91b7-4bd5-92a9-1324d8bf0826`). Only the 7 CG Staff are assigned, so Microsoft turns everyone else away before the app loads. Everyone signs in once more after this update
