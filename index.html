@@ -601,10 +601,10 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.19';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.20';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
-  clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
+  clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
   tenantId:  '153dc089-095e-4a20-8d10-39321a0aca09',
   siteHost:  'northcountryemsorg.sharepoint.com',
   sitePath:  '/sites/BattalionChiefLocal',             // CG Staff
@@ -1505,7 +1505,8 @@ function otSecBody() {
   const c1 = ot2.c1, c2 = ot2.c2;
   if (!c1 && !c2) {
     if (!ot2.at) return '<div class="sec-msg">Loading...</div>';
-    const msg = ot2.e1 === 'signin' ? 'Sign in again to see open shifts.' : 'Open Shifts is unavailable right now.';
+    const msg = ot2.e1 === 'signin' ? 'Sign in again to see open shifts.'
+      : (/said 40[13]/.test(ot2.e1) ? 'Open Shifts has not been switched to the new Command Staff sign in yet (Derek adds the new app ID on his side).' : 'Open Shifts is unavailable right now.');
     return '<div class="sec-msg err">' + esc(msg) + ' Tap Open Shifts to look there.</div>';
   }
   const today = pacificToday(), feeds = [c1, c2].filter(Boolean);

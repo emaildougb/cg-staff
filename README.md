@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.19**
+**Version 1.20**
 
 ## Links
 
@@ -94,11 +94,19 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 
 ## Microsoft sign-in setup
 
-1. Uses the existing Entra app "NCEMS Grounds Tracker" (client id `254c214f-bfe2-4ebb-9294-99815e167ab0`), Sites.ReadWrite.All already consented
-2. Entra > App registrations > NCEMS Grounds Tracker > Authentication > Single-page application > add `https://emaildougb.github.io/cg-staff/`
-3. Save. No new consent needed
+Since 1.20, CG Staff signs in through its own Entra app, **NCEMS Command Staff** (client id `f758d1fe-91b7-4bd5-92a9-1324d8bf0826`), set up 10/21/2026. Forms uses the same one.
+
+- Single-page application redirects: `https://cgstaff.northcountryems.org/`, `https://emaildougb.github.io/forms/`, `https://forms.northcountryems.org/`
+- API permissions (Microsoft Graph, delegated): User.Read, Sites.ReadWrite.All, People.Read, admin consent granted
+- Enterprise applications > NCEMS Command Staff > Properties: **Assignment required = Yes**. Users and groups: Doug Boyce, Derek Langdon, Dennis Madler, Bryce Shirley, Chuck Andrus, Kim Reid, Nicholas Stafford. Microsoft blocks anyone else at sign in. To add a chief: Users and groups > Add user/group, and add them to `CONFIG.staff`
+- Workers that accept this app's sign in: `ncems-checks` (CLIENT_IDS variable), `ncems-api` (AUDIENCES in its code), and Derek's `ncems-ot` and `ncems-c2` (his side)
+- Before 1.20 it used "NCEMS Grounds Tracker" (`254c214f-bfe2-4ebb-9294-99815e167ab0`), which now only signs in F&G and Incident Reports
 
 ## Changelog
+
+### v1.20
+- Signs in with the new **NCEMS Command Staff** Entra app (`f758d1fe-91b7-4bd5-92a9-1324d8bf0826`). Only the 7 CG Staff are assigned, so Microsoft turns everyone else away before the app loads. Everyone signs in once more after this update
+- Scheduling card says so plainly if Derek's Open Shifts feed hasn't accepted the new app yet
 
 ### v1.19
 - Vehicle Checks moved off Firebase: checks, out of service, Fixed and Shift Ops links all live on the `ncems-checks` Worker (Doug's NCEMS Cloudflare, `https://ncems-checks.d-boyce.workers.dev`), read and written with the Microsoft ID token
