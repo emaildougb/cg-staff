@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.18**
+**Version 1.19**
 
 ## Links
 
@@ -68,7 +68,7 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 
 - **Shift Ops:** "Shift Ops" SharePoint list in the CG Staff team. Fed by the Claude email sweep (every 4 hours) through the "Shift Ops Drop (do not delete)" folder and the Power Automate flows "Shift Ops: drop folder to list" and "Shift Ops: completed stamp". The list also has `Triage` (Choice: Red, Yellow, Green) and `Briefing` (Yes/No) columns, added for v1.2. If they're ever missing, the app still works but triage and flags show a note instead of saving.
 - **Facilities / Grounds:** Facility Work Orders, Facility Services and Grounds Tracker lists on the Facilities and Grounds site (same data as the F&G app, read only here).
-- **Vehicle Checks:** Firebase project `ncems-hub-9111d` (same one the hub uses). Since 1.6, `vehicleLinks/{check ref}` holds the link between a vehicle issue and its Shift Ops card (card id, status, latest note) so the EP Checker can show the chiefs' latest note to crews. The EP Checker (v2.14.0 and up) writes one doc per submitted check to `vehicleChecks`. Out of service marks go to `vehicleStatus`, Fixed marks go to `vehicleResolved`. The dashboard reads the last 45 days.
+- **Vehicle Checks (1.19):** the `ncems-checks` Worker on Doug's NCEMS Cloudflare, `https://ncems-checks.d-boyce.workers.dev` (D1 database `ncems-checks-db`, photos in R2 `ncems-check-photos`). Same lists as before (checks, vehicleStatus, vehicleResolved, vehicleLinks). Older notes: it used to be Firebase project `ncems-hub-9111d`. Since 1.6, `vehicleLinks/{check ref}` holds the link between a vehicle issue and its Shift Ops card (card id, status, latest note) so the EP Checker can show the chiefs' latest note to crews. The EP Checker (v2.14.0 and up) writes one doc per submitted check to `vehicleChecks`. Out of service marks go to `vehicleStatus`, Fixed marks go to `vehicleResolved`. The dashboard reads the last 45 days.
 - **Vehicle check records on SharePoint (1.18):** every check, with its photos, is copied to the CG Staff site under `App Data/Vehicle Checks/YYYY-MM/` as a text file named `YYYY-MM-DD HHMM UNIT (Crew).txt` (unit, crew, fuel, DEF, O2, mileage, problems, narc counts, section notes, photo list, full check detail and the raw data for reports). Photos go to `App Data/Vehicle Checks/YYYY-MM/Photos/`. Crew phones can't write to this site, so CG Staff does it in the background whenever a chief has it open, up to 40 checks per refresh, skipping files already there. Photos are downloaded from Cloudinary in the browser; if one can't be copied, the text file says so and keeps the original link. This is the stopgap until the Cloudflare nightly copy (claude/firebase-to-cloudflare-plan.md step 6)
 - **Incident Reports:** Cloudflare Worker `ncems-api.d-boyce.workers.dev/bin/incident-reports`, read only. Since v1.3 the dashboard sends the Microsoft sign-in token, and the Worker only answers for chiefs on its ADMINS list.
 - **Scheduling (1.12):** two of Derek's Worker feeds, Crew 1 `https://ncems-ot.d-langdon.workers.dev/dashboard` and Crew 2 `https://ncems-c2.d-langdon.workers.dev/dashboard`, same ID token, cgstaff site only. Older notes: Derek's Worker feed, `GET https://ncems-ot.d-langdon.workers.dev/dashboard`, read only. CG Staff sends the Microsoft ID token (`Authorization: Bearer <idToken>`), the same way it reads incident reports. Derek's Worker only answers the cgstaff site, NCEMS staff only, no guests. The feed has no start time or position, so shift rows show date, type, unit and how many people are interested.
@@ -99,6 +99,12 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 3. Save. No new consent needed
 
 ## Changelog
+
+### v1.19
+- Vehicle Checks moved off Firebase: checks, out of service, Fixed and Shift Ops links all live on the `ncems-checks` Worker (Doug's NCEMS Cloudflare, `https://ncems-checks.d-boyce.workers.dev`), read and written with the Microsoft ID token
+- Who can change out of service and links: the Worker's ADMINS and READERS lists (Nick is a reader). Anyone else gets "not on the vehicle checks list"
+- The SharePoint copy (App Data/Vehicle Checks) keeps working; photos now come from the Worker
+- Firebase history (11 checks, 1 photo, 5 Fixed, 1 out of service, 2 links) was copied to Cloudflare on 10/21 with matching counts
 
 ### v1.18
 - Photo button. Any vehicle with a photo on today's check gets a "📷 Photo" button joined to its chip. Narc below par rows and issue rows on the dashboard, and issue rows on the vehicle sheet, get the same button when that check has a photo. The issue's own photo (EP Checker 2.22 and up) shows first, then the rest of that check's photos

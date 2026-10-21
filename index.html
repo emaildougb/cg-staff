@@ -601,7 +601,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.18';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.19';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // same Entra app as Facilities and Grounds
@@ -625,9 +625,8 @@ const CONFIG = {
   /* Vehicle checks: the EP Checker app logs every submitted check here */
   checksUrl:  'https://checks.northcountryems.org/',
   checksUnits:'https://checks.northcountryems.org/units.json',
-  /* Firebase project shared with the hub. Collections: vehicleChecks, vehicleStatus, vehicleResolved */
-  firebase: { apiKey: 'AIzaSyCBSmzaXRU6TV1Jen5z4xHKZfG28UHXlkY', authDomain: 'ncems-hub-9111d.firebaseapp.com', projectId: 'ncems-hub-9111d',
-              storageBucket: 'ncems-hub-9111d.firebasestorage.app', messagingSenderId: '282446545601', appId: '1:282446545601:web:41f89407c2a1a348f24a40' },
+  /* 1.19: vehicle checks, out of service, Fixed and Shift Ops links live on the ncems-checks Worker (Doug's NCEMS Cloudflare). No more Firebase */
+  checksApi:  'https://ncems-checks.d-boyce.workers.dev',
   vehKeepDays: 45,
   vehArchive: 'App Data/Vehicle Checks', // 1.18: every check plus its photos is copied here on the CG Staff site
   vehUnits:   ['M25A', 'M25B', 'M19', 'M18', 'M14'], // fallback if units.json can't load
@@ -1676,7 +1675,7 @@ function renderHome() {
   renderGSearch();
 }
 
-/* ---------- Vehicle checks (EP Checker logs every check to Firebase) ----------
+/* ---------- Vehicle checks (EP Checker logs every check to the ncems-checks Worker, 1.19) ----------
    vehicleChecks/{id}   = {id, unit, type, date, at, atMs, crew, pct, held, fuel, mileage, issues:[{label, notes, state}]}
    vehicleStatus/{unit} = {oos, reason, by, at}
    vehicleResolved/{id} = {checkId, label, by, at}
@@ -1697,47 +1696,49 @@ async function loadVehUnits() {
   vehUnits = (c && c.units) || CONFIG.vehUnits.slice();
   return vehUnits;
 }
-let fbDb = null, fbFs = null;
-async function fbReady() {
-  if (fbDb) return fbDb;
-  const fb = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-  fbFs = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  fbDb = fbFs.getFirestore(fb.initializeApp(CONFIG.firebase));
-  return fbDb;
+/* 1.19: talk to the ncems-checks Worker with the Microsoft ID token */
+async function cfApi(path, opts) {
+  opts = opts || {};
+  let tok;
+  try { tok = (await msalApp.acquireTokenSilent({ scopes: SCOPES, account })).idToken; } catch (e) { throw new Error('Sign in again to see vehicle checks.'); }
+  const headers = Object.assign({ Authorization: 'Bearer ' + tok }, opts.body ? { 'Content-Type': 'application/json' } : {});
+  let res;
+  try { res = await fetch(CONFIG.checksApi + path, { method: opts.method || 'GET', headers, body: opts.body ? JSON.stringify(opts.body) : undefined, cache: 'no-store' }); }
+  catch (e) { throw new Error('Could not reach vehicle checks from here.'); }
+  let data = null; try { data = await res.json(); } catch (e) {}
+  if (!res.ok) { const err = new Error((data && data.error) || ('Vehicle checks ' + res.status)); err.status = res.status; throw err; }
+  return data;
 }
+const cfPut = (col, id, data, merge) => cfApi('/state/' + col + '/' + encodeURIComponent(id), { method: 'PUT', body: { data, merge: !!merge } });
 function resKey(checkId, label) { return (checkId + '__' + label).replace(/[\/]/g, '-').slice(0, 400); }
 async function loadVeh() {
   if (DEMO) return;
   await loadVehUnits();
-  let db;
-  try { db = await fbReady(); } catch (e) { throw new Error('Could not load Firebase from here.'); }
-  const F = fbFs, since = Date.now() - CONFIG.vehKeepDays * 86400000;
+  const since = Date.now() - CONFIG.vehKeepDays * 86400000;
+  const fromDay = new Date(since).toISOString().slice(0, 10);
   try {
-    const [cs, ss, rs, ls] = await Promise.all([
-      F.getDocs(F.query(F.collection(db, 'vehicleChecks'), F.where('atMs', '>=', since))),
-      F.getDocs(F.collection(db, 'vehicleStatus')),
-      F.getDocs(F.collection(db, 'vehicleResolved')),
-      F.getDocs(F.collection(db, 'vehicleLinks')).catch(() => ({ forEach() {} }))
+    const [cr, sr] = await Promise.all([
+      cfApi('/checks?from=' + fromDay),
+      cfApi('/state?cols=vehicleStatus,vehicleResolved,vehicleLinks')
     ]);
-    const checks = [], status = {}, resolved = {}, links = {};
-    cs.forEach(d => checks.push(d.data()));
-    ss.forEach(d => { const v = d.data(); if (v && v.oos) status[d.id] = v; });
-    rs.forEach(d => { const v = d.data(); if (v) resolved[v.checkId + '|' + v.label] = v; });
-    ls.forEach(d => { const v = d.data(); if (v && v.checkId) links[d.id] = v; });
+    const checks = ((cr && cr.checks) || []).filter(c => !c.atMs || c.atMs >= since), status = {}, resolved = {}, links = {};
+    const S = (sr && sr.state) || {};
+    Object.entries(S.vehicleStatus || {}).forEach(([id, v]) => { if (v && v.oos) status[id] = v; });
+    Object.values(S.vehicleResolved || {}).forEach(v => { if (v) resolved[v.checkId + '|' + v.label] = v; });
+    Object.entries(S.vehicleLinks || {}).forEach(([id, v]) => { if (v && v.checkId) links[id] = v; });
     veh = { checks, status, resolved, links };
   } catch (e) {
-    throw new Error(/permission/i.test(e && (e.code || e.message) || '') ? 'Firebase rules are blocking vehicle checks. See the README.' : 'Could not read vehicle checks from Firebase.');
+    throw new Error(e.status === 403 ? 'Your account is not on the vehicle checks list. Ask Doug.' : (e.message || 'Could not read vehicle checks.'));
   }
   vehErr = ''; lsSet(LS.veh, { at: Date.now(), veh });
 }
 async function vehWrite(fn, local, okMsg) {
   if (DEMO) { local(veh); renderHome(); renderVehSheet(); toast(okMsg + ' (demo, not saved)'); return; }
   try {
-    const db = await fbReady();
-    await fn(fbFs, db);
+    await fn();
     local(veh); lsSet(LS.veh, { at: Date.now(), veh });
     renderHome(); renderVehSheet(); toast(okMsg);
-  } catch (e) { toast(/permission/i.test(e && (e.code || e.message) || '') ? 'Firebase rules blocked the save' : 'Could not save', true); }
+  } catch (e) { toast(e.status === 403 ? 'Your account can\'t change that' : 'Could not save', true); }
 }
 function vehChecksFor(unit) { return (veh ? veh.checks : []).filter(c => c.unit === unit && c.type !== 'rescue').sort((a, b) => new Date(a.at) - new Date(b.at)); }
 function issueKey(c, i) { return c.id + '|' + i.label; }
@@ -2003,7 +2004,7 @@ async function vehLinkWrite(rk, data) {
   veh.links = veh.links || {};
   veh.links[rk] = Object.assign({}, veh.links[rk] || {}, data);
   if (DEMO) return;
-  try { const db = await fbReady(); await fbFs.setDoc(fbFs.doc(db, 'vehicleLinks', rk), data, { merge: true }); }
+  try { await cfPut('vehicleLinks', rk, data, true); }
   catch (e) { console.warn('vehicle link not saved', e); }
 }
 async function vehAddToOps() {
@@ -2072,7 +2073,7 @@ async function vehSyncLinks() {
       if (card.status === STATUS.DONE && !resd) {
         const rec = { checkId: L.checkId, label: L.label, by: card.completedBy || 'Shift Ops', at: (card.completedDate || new Date()).toISOString(), note: 'Shift Ops card completed' };
         veh.resolved[rkey] = rec;
-        if (!DEMO) { try { const db = await fbReady(); await fbFs.setDoc(fbFs.doc(db, 'vehicleResolved', rk), rec); } catch (e) {} }
+        if (!DEMO) { try { await cfPut('vehicleResolved', rk, rec); } catch (e) {} }
       } else if (resd && card.status !== STATUS.DONE && new Date(resd.at).getTime() > (card.modified ? card.modified.getTime() : 0)) {
         await vehCompleteCard(card, (resd.note && /crew/i.test(resd.note) ? 'Crew found it fixed at their check (' + (resd.by || 'crew') + ')' : 'Marked fixed in Vehicle Checks by ' + (resd.by || 'someone')));
       }
@@ -2255,7 +2256,7 @@ function vehSetOos(unit, on) {
   const reason = on ? (($('oos-' + unit) || {}).value || '').trim() : '';
   if (on && !reason) { toast('Add a reason first', true); const i = $('oos-' + unit); if (i) i.focus(); return; }
   const rec = on ? { oos: true, reason, by: meName(), at: new Date().toISOString() } : { oos: false, reason: '', by: meName(), at: new Date().toISOString() };
-  vehWrite((F, db) => F.setDoc(F.doc(db, 'vehicleStatus', unit), rec),
+  vehWrite(() => cfPut('vehicleStatus', unit, rec),
     v => { if (on) v.status[unit] = rec; else delete v.status[unit]; },
     unit + (on ? ' marked out of service' : ' back in service'));
 }
@@ -2265,7 +2266,7 @@ function vehResolveRef(r, note) {
   const rec = { checkId: r.id, label: r.label, by: meName(), at: new Date().toISOString() };
   if (note) rec.note = note;
   const rk = resKey(r.id, r.label), card = vehCardFor(rk);
-  return vehWrite((F, db) => F.setDoc(F.doc(db, 'vehicleResolved', rk), rec),
+  return vehWrite(() => cfPut('vehicleResolved', rk, rec),
     v => { v.resolved[r.id + '|' + r.label] = rec; }, card && card.status !== STATUS.DONE ? 'Marked fixed, Shift Ops card completed' : 'Marked fixed').then(() => {
       if (card && card.status !== STATUS.DONE) vehCompleteCard(card, 'Marked fixed in Vehicle Checks');
       if ($('sh-viss').classList.contains('show')) renderVehIssue();
