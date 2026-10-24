@@ -313,7 +313,8 @@
   /* phone */
   .tabs { display:none; }
   @media (max-width:760px) {
-    .board { display:block; padding:0 0 90px; overflow-y:auto; overflow-x:hidden; }
+    .board { display:block; padding:0 0 90px; overflow-y:auto; overflow-x:hidden; touch-action:pan-y; }
+    .col.show { will-change:transform; }
     .tabs { display:flex; gap:6px; overflow-x:auto; padding:10px 10px 6px; position:sticky; top:0; background:var(--bg); z-index:5; }
     .tabs::-webkit-scrollbar { display:none; }
     .tab { flex-shrink:0; border:2px solid var(--border); background:#fff; color:var(--g-deep); border-radius:10px; padding:8px 11px;
@@ -693,7 +694,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.25';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.26';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -792,6 +793,13 @@ function assigneeValue(typed) {   // "Steve" or "Stephen Schutts" -> "Stephen Sc
 }
 /* 1.25: haptics. Android uses vibrate. iPhone Safari has no vibrate, but iOS 18 and up gives a tick when a hidden switch is toggled, so a tap on a button or card flips one */
 let hapLbl = null;
+function hapticReport() {   /* 1.26: tells Doug what this phone can do */
+  const ua = navigator.userAgent, m = /OS (\d+)_(\d+)/.exec(ua), ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (navigator.vibrate) return 'This device can vibrate, haptics should work.';
+  if (ios && m) return 'iPhone or iPad on iOS ' + m[1] + '.' + m[2] + '. ' + (Number(m[1]) >= 18 ? 'New enough. If the test does nothing, check System Haptics in Settings.' : 'Haptics need iOS 18 or newer. Update iOS to get them.');
+  if (ios) return 'iPhone or iPad. Haptics need iOS 18 or newer and System Haptics on.';
+  return 'This browser has no haptics (a computer, most likely).';
+}
 function haptic() {
   try {
     if (navigator.vibrate) { navigator.vibrate(10); return; }
@@ -1110,7 +1118,9 @@ function render() {
       '<div class="col-body">' + (list.length ? list.map(cardHtml).join('') : '<div class="col-empty">' + (search || filter !== 'all' ? 'Nothing matches' : 'Nothing here') + '</div>') + '</div>' +
       '<button class="col-add" onclick="openAdd(\'' + esc(g.key) + '\')">+ Add item</button></section>';
   }).join('');
+  const tabsLeft = $('tabs') ? $('tabs').scrollLeft : 0;   /* 1.26: keep the group tab row where it was, so Chief doesn't slide off screen */
   $('board').innerHTML = h;
+  keepTabInView(tabsLeft);
   wireDrag();
   const weekAgo = Date.now() - 7 * 86400000;
   $('done-n').textContent = items.filter(i => i.status === STATUS.DONE && i.completedDate && i.completedDate.getTime() >= weekAgo).length;
@@ -1120,6 +1130,13 @@ function render() {
   setSync();
 }
 function setTab(k) { phoneTab = k; lsSet(LS.tab, k); render(); $('board').scrollTop = 0; }
+function keepTabInView(left) {
+  const tb = $('tabs'); if (!tb) return;
+  tb.scrollLeft = left || 0;
+  const on = tb.querySelector('.tab.on'); if (!on) return;
+  const a = on.offsetLeft - 10, b = on.offsetLeft + on.offsetWidth + 10 - tb.clientWidth;
+  if (tb.scrollLeft > a) tb.scrollLeft = a; else if (tb.scrollLeft < b) tb.scrollLeft = b;
+}
 
 /* drag and drop (desktop) */
 function wireDrag() {
@@ -1144,18 +1161,43 @@ function moveItem(id, newCat) {
   return applyChange(id, local, fields, 'Moved to ' + group(newCat).name + (followOwner && newDefault !== 'Unassigned' ? ', assigned to ' + firstName(newDefault) : ''));
 }
 
-/* phone swipe between groups */
+/* phone swipe between groups. 1.26: the column follows your finger and slides to the next group (Doug 10/24) */
 (function () {
-  let sx = 0, sy = 0, on = false;
-  document.addEventListener('touchstart', e => { if (!isPhone() || !e.target.closest('#board')) return; on = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-  document.addEventListener('touchend', e => {
-    if (!on) return; on = false;
-    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
-    if (Math.abs(dx) < 70 || Math.abs(dy) > 50 || e.target.closest('.tabs')) return;
-    const i = GROUPS.findIndex(g => g.key === phoneTab), n = GROUPS[(i + (dx < 0 ? 1 : -1) + GROUPS.length) % GROUPS.length];
-    setTab(n.key);
-    const t = document.querySelector('.tab.on'); if (t) t.scrollIntoView({ inline: 'center', block: 'nearest' });
+  let sx = 0, sy = 0, dx = 0, mode = '', col = null, t0 = 0, blockClick = 0;
+  const reset = el => { if (el) { el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; } };
+  document.addEventListener('touchstart', e => {
+    mode = ''; col = null;
+    if (!isPhone() || !e.target.closest('#board') || e.target.closest('.tabs') || e.touches.length > 1) return;
+    col = document.querySelector('#board .col.show'); if (!col) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; t0 = Date.now(); mode = 'wait';
   }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!mode || !col) return;
+    const x = e.touches[0].clientX - sx, y = e.touches[0].clientY - sy;
+    if (mode === 'wait') {
+      if (Math.abs(y) > 12 && Math.abs(y) > Math.abs(x)) { mode = ''; return; }          // scrolling the list
+      if (Math.abs(x) > 12 && Math.abs(x) > Math.abs(y) * 1.2) mode = 'slide'; else return;
+    }
+    dx = x; col.style.transition = 'none'; col.style.transform = 'translateX(' + dx + 'px)'; col.style.opacity = String(1 - Math.min(Math.abs(dx) / window.innerWidth, 1) * 0.35);
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (mode !== 'slide' || !col) { mode = ''; return; }
+    mode = ''; blockClick = Date.now();
+    const w = window.innerWidth, fast = Math.abs(dx) / Math.max(1, Date.now() - t0) > 0.5, go = Math.abs(dx) > w * 0.25 || (fast && Math.abs(dx) > 40);
+    const c = col; col = null;
+    if (!go) { c.style.transition = 'transform .2s ease, opacity .2s ease'; c.style.transform = ''; c.style.opacity = ''; setTimeout(() => reset(c), 220); return; }
+    const dir = dx < 0 ? 1 : -1;
+    c.style.transition = 'transform .16s ease-in, opacity .16s ease-in'; c.style.transform = 'translateX(' + (-dir * w) + 'px)'; c.style.opacity = '0';
+    setTimeout(() => {
+      const i = GROUPS.findIndex(g => g.key === phoneTab), n = GROUPS[(i + dir + GROUPS.length) % GROUPS.length];
+      setTab(n.key); haptic();
+      const nc = document.querySelector('#board .col.show'); if (!nc) return;
+      nc.style.transition = 'none'; nc.style.transform = 'translateX(' + (dir * w * 0.35) + 'px)'; nc.style.opacity = '0.4';
+      requestAnimationFrame(() => requestAnimationFrame(() => { nc.style.transition = 'transform .2s ease-out, opacity .2s ease-out'; nc.style.transform = ''; nc.style.opacity = ''; setTimeout(() => reset(nc), 230); }));
+    }, 160);
+  }, { passive: true });
+  /* a slide never counts as a tap on the card under your finger */
+  document.addEventListener('click', e => { if (Date.now() - blockClick < 400 && e.target.closest && e.target.closest('#board')) { e.stopPropagation(); e.preventDefault(); } }, true);
 })();
 
 /* ---------------- sheets ---------------- */
@@ -1469,6 +1511,7 @@ function openInfo() {
   $('info-body').innerHTML =
     '<div class="meta" style="font-size:13px;line-height:1.6;color:#333">' +
     '<b>CG Staff version ' + VERSION + '</b>' + (DEMO ? ' (demo, sample data, nothing saves)' : '') + '<br>Signed in as ' + esc(meName()) + (DEMO ? '' : ' (' + esc(meEmail()) + ')') + (IN_FRAME ? '<br>Running inside Teams.' : '') +
+    '<br><br><b>Haptics check</b><br>' + esc(hapticReport()) + '<br><button class="btn ghost" style="margin-top:6px" onclick="haptic();toast(\'Tick sent. Felt it? Haptics work. Nothing? See the iPhone steps in the README.\')">Test haptic</button>' +
     '<br><br><b>How it works</b><br>' +
     'Every card is a row in the Shift Ops list in the CG Staff team. The email sweep adds shift notes, equipment issues, LP35 reports and "Add to Trello" emails every 4 hours. Anyone on CG Staff can add, move, note and complete items.<br><br>' +
     '<b>Move a card</b>: drag it to another group (computer), or open it and change Group (phone). If it was with that group\'s default person, it goes to the new group\'s default person.<br>' +

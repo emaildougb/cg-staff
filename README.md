@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.25**
+**Version 1.26**
 
 ## Links
 
@@ -100,6 +100,13 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.26
+- Shift Briefing Notes on a phone: tapping a group tab (Operations, Chief) no longer snaps the tab row back to the start. The row stays put and slides just enough to keep the tab you picked in view
+- Swipe left or right on the board to slide to the next group. The column follows your finger and slides over, with a tick. A short or slow swipe snaps back, and a swipe never opens the card under your finger
+- (i) panel has a Haptics check: shows what this phone supports (iOS version) and a Test haptic button
+
+**iPhone haptics checklist:** iOS 18 or newer (Settings, General, About, iOS Version); Settings, Sounds & Haptics, System Haptics on; Settings, Accessibility, Touch, Vibration on. Low Power Mode can mute them. Then open the (i) panel and tap Test haptic.
 
 ### v1.25
 - The "Set them up now" button for the Also assigned and reminder columns only shows for Doug, the site owner. Everyone else sees "waiting on a one time setup by Doug." Derek hit a No permission error on that button 10/23 because only an owner can add list columns
