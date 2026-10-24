@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.23.1**
+**Version 1.24**
 
 ## Links
 
@@ -110,6 +110,13 @@ Since 1.20, CG Staff signs in through its own Entra app, **NCEMS Command Staff**
 - Before 1.20 it used "NCEMS Grounds Tracker" (`254c214f-bfe2-4ebb-9294-99815e167ab0`), which now only signs in F&G and Incident Reports
 
 ## Changelog
+
+### v1.24
+- Shift Briefing Notes: every card no one has rated yet shows an amber **Needs triage** tag. Tap the tag (or the dot) to rate it; any CG Staff member can. The first rating adds a note line with who triaged it and when
+- Any rated card with no change in 6 or more days shows a blue **Update status · Nd** tag. Tap it to open the card and add a note; any change clears it. The 6 days is `CONFIG.updateDays`
+- New order in each column: briefing items, then Red, then Needs triage, then Yellow, then Green, so untouched items sit right under the urgent ones
+- Filter row cut to All, Mine and Needs triage (plus search). Getting old, Waiting, Briefing and Red chips are gone: the card colors and the Briefing button already cover those
+- Dashboard tile renamed Need triage, amber when above 0. The Red tile opens the whole board (Red items are on top)
 
 ### v1.23.1
 - New reminder for Dennis and Derek: run the retro personnel notes search with Retro-October-Input-Directions-v2.md from Doug's 10/19 email "Retro personnel notes, plus check out Forms". Open Outlook button, stays until they tap Done

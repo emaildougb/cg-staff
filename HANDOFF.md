@@ -1,6 +1,6 @@
 # CG Staff Handoff
 
-Updated 10/24/2026 for version **1.23.1** (built from live 1.23). Check the raw files for merge markers after each upload.
+Updated 10/24/2026 for version **1.24** (built from live 1.23.1). Check the raw files for merge markers after each upload.
 
 - Live: [https://cgstaff.northcountryems.org/](https://cgstaff.northcountryems.org/)
 - Upload: [https://github.com/emaildougb/cg-staff/upload/main](https://github.com/emaildougb/cg-staff/upload/main)
