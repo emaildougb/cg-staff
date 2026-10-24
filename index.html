@@ -694,7 +694,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.26.1';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.26.2';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -1435,11 +1435,13 @@ function renderDone() {
 /* 1.9: Briefing (and the board) sit on the browser history, so Back returns to the dashboard instead of leaving the app */
 function openBrief() {
   $('brief').classList.add('show'); renderBrief();
-  try { if (!(history.state && history.state.cg === 'brief')) history.pushState({ cg: 'brief' }, '', location.pathname + location.search.replace(/([?&])view=brief(&|$)/, '$1').replace(/[?&]$/, '')); } catch (e) {}
+  try { if (!(history.state && history.state.cg === 'brief')) { history.pushState({ cg: 'brief' }, '', location.pathname + location.search.replace(/([?&])view=brief(&|$)/, '$1').replace(/[?&]$/, '')); PUSHED.brief = true; } } catch (e) {}
 }
 function closeBrief(fromPop) {
   $('brief').classList.remove('show');
-  if (!fromPop && history.state && history.state.cg === 'brief') { try { history.back(); } catch (e) {} }
+  if (!fromPop && history.state && history.state.cg === 'brief') {
+    if (PUSHED.brief) { PUSHED.brief = false; try { history.back(); } catch (e) {} } else { try { history.replaceState(null, ''); } catch (e) {} }
+  }
 }
 window.addEventListener('popstate', e => {
   const st = e.state || {};
@@ -1579,9 +1581,14 @@ const ICON = {
 const GSTATION = { 'Station 1 (404 S Parcel)': 'St 51', 'Station 1.5 Admin (300 W Hoag)': 'St 51.5', 'Station 2 (15413 NE Fargher Lake Hwy)': 'St 52' };
 const REP_TYPE = { injury: 'Injury / illness', biological: 'Biological exposure', chemical: 'Chemical exposure', vehicle: 'Vehicle incident' };
 
+const PUSHED = { board: false, brief: false };   /* history entries this page load added */
 function setView(v, fromPop) {
-  if (!fromPop && v === 'board' && view !== 'board') { try { history.pushState({ cg: 'board' }, ''); } catch (e) {} }
-  if (!fromPop && v === 'home' && view === 'board' && history.state && history.state.cg === 'board') { try { history.back(); } catch (e) {} return; }
+  if (!fromPop && v === 'board' && view !== 'board' && !(history.state && history.state.cg === 'board')) { try { history.pushState({ cg: 'board' }, ''); PUSHED.board = true; } catch (e) {} }
+  /* 1.26.2: only step back if this page load added the board entry. After a relaunch or sign in, going back left the iPhone app (blank page) */
+  if (!fromPop && v === 'home' && view === 'board' && history.state && history.state.cg === 'board') {
+    if (PUSHED.board) { PUSHED.board = false; try { history.back(); } catch (e) {} return; }
+    try { history.replaceState(null, ''); } catch (e) {}
+  }
   view = v; lsSet(LS.view, v);
   document.body.classList.toggle('v-home', v === 'home'); document.body.classList.toggle('v-board', v === 'board');
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));

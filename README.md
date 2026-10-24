@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.26.1**
+**Version 1.26.2**
 
 ## Links
 
@@ -100,6 +100,9 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.26.2
+- Dashboard button on the iPhone no longer drops you out of CG Staff to a blank page. It used to "go back" in the browser history, and after a relaunch or a sign in the step back left the app. Now it only steps back over pages CG Staff itself added. Same fix for closing the shift briefing
 
 ### v1.26.1
 - Home button (house, top left) opens the NCEMS Hub in Safari instead of inside the CG Staff home screen app. On an iPhone, leaving a home screen app for another site showed a blank page and dropped you out of CG Staff. Now CG Staff stays open behind it; switch back with the app switcher
