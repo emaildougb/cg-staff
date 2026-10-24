@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.21**
+**Version 1.22**
 
 ## Links
 
@@ -110,6 +110,9 @@ Since 1.20, CG Staff signs in through its own Entra app, **NCEMS Command Staff**
 - Before 1.20 it used "NCEMS Grounds Tracker" (`254c214f-bfe2-4ebb-9294-99815e167ab0`), which now only signs in F&G and Incident Reports
 
 ## Changelog
+
+### v1.22
+- Header no longer shows the open count, update time and name under North Country EMS. That line only appears if something goes wrong (it shows "Offline" with the reason), and says Demo in demo mode
 
 ### v1.21
 - New crews strip at the top of the dashboard: who is on M51, M52, M53 and M54 now and tomorrow, from Derek's Schedule API

@@ -44,6 +44,7 @@
   .hdr-sub .org { font-size:12px; color:#5f675f; white-space:nowrap; }
   .hdr-text p { font-family:inherit; font-size:12px; color:#4a4a4a; letter-spacing:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
   .hdr-text p.err { color:#c0392b; font-weight:600; }
+  .hdr-text p:empty { display:none; }
   .icon-btn { flex-shrink:0; width:38px; height:38px; border-radius:8px; background:#fff; border:1px solid #d5e2d5;
     color:#2d6a2d; display:flex; align-items:center; justify-content:center; text-decoration:none; transition:background .15s, border-color .15s; font-family:inherit; }
   .icon-btn:hover { background:#e8f4e8; border-color:#a3c9a3; }
@@ -518,7 +519,7 @@
   <img class="hdr-logo" src="logo.png" alt="">
   <div class="hdr-text">
     <h1>NCEMS <span class="os-g">CG Staff</span></h1>
-    <div class="hdr-sub"><span class="org">North Country EMS</span><p id="sync">Loading...</p></div>
+    <div class="hdr-sub"><span class="org">North Country EMS</span><p id="sync"></p></div>
   </div>
   <button class="icon-btn wide" id="brief-btn" onclick="openBrief()" title="Shift briefing">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
@@ -676,7 +677,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.21';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.22';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -956,8 +957,7 @@ function setSync(err) {
   const p = $('sync');
   if (err) { p.textContent = 'Offline: ' + err; p.classList.add('err'); return; }
   p.classList.remove('err');
-  const open = items.filter(i => i.status !== STATUS.DONE).length;
-  p.textContent = (DEMO ? 'DEMO, ' : '') + open + ' open' + (lastSync ? ' · updated ' + fmtDT(lastSync).split(' ')[1] : '') + ' · ' + firstName(meName());
+  p.textContent = DEMO ? 'Demo' : '';   /* 1.22 Doug: no open count, time or name under the header. It only speaks up when something is wrong */
 }
 
 /* ---------------- filtering ---------------- */
