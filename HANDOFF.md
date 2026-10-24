@@ -1,6 +1,6 @@
 # CG Staff Handoff
 
-Updated 10/24/2026 for version **1.22** (built from live 1.21). Check the raw files for merge markers after each upload.
+Updated 10/24/2026 for version **1.23** (built from live 1.22). Check the raw files for merge markers after each upload.
 
 - Live: [https://cgstaff.northcountryems.org/](https://cgstaff.northcountryems.org/)
 - Upload: [https://github.com/emaildougb/cg-staff/upload/main](https://github.com/emaildougb/cg-staff/upload/main)
@@ -82,6 +82,7 @@ Firebase (`ncems-hub-9111d`) and Cloudinary are retired as of 10/21. Old notes a
 - Upload through the website upload page, not GitHub Desktop. After upload, check the raw file for `<<<<<<<` merge markers
 - After a deploy, delete and re-add the home screen icon on iPhones (iOS caches hard). On a computer, Ctrl+Shift+R
 - Never call `history.replaceState()` or clean the address bar before MSAL's `handleRedirectPromise()` runs. It wipes the sign in code and causes a sign in loop (bit the Forms app once)
+- Reminders (1.23): `CONFIG.reminders` near the top of index.html. Each has id, who (email names before the @), mode once or daily, text, and a link (go) or the board (act). Done marks are files in `App Data/Reminders` on the CG Staff site: `<id> <email>.txt` for once, `<id> <email> <YYYY-MM-DD>.txt` for daily (day flips at 0600). Delete a file there to make a reminder show again
 - Header look (1.21, Doug's standing rule for every NCEMS app): Derek's Open Shifts style. White bar, system font, "NCEMS" in black and "CG Staff" in green #2d6a2d at 18px weight 800, a thin line, then "North Country EMS" in gray. Crews strip uses the same look; tabs and boxes below still have the old style
 - Home button to hub.northcountryems.org stays on top, iOS bottom bar flush with the bottom, search stays at the bottom of the dashboard
 - Doug's writing rules apply to app text and the README: plain words, no em dashes, no hyphens as punctuation

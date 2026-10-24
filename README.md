@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.22**
+**Version 1.23**
 
 ## Links
 
@@ -110,6 +110,15 @@ Since 1.20, CG Staff signs in through its own Entra app, **NCEMS Command Staff**
 - Before 1.20 it used "NCEMS Grounds Tracker" (`254c214f-bfe2-4ebb-9294-99815e167ab0`), which now only signs in F&G and Incident Reports
 
 ## Changelog
+
+### v1.23
+- Reminders at the top of the dashboard, only for the person they're meant for (set in `CONFIG.reminders`):
+  - Dennis and Derek: "Upload your forms with Doug's Forms app" with an Open Forms button. Stays until they tap Done
+  - Dennis and Derek: "Look over Shift Briefing Notes. Update your items and add anything for shift briefing." Comes back every day at 0600 until they tap Done for today
+  - Dennis only: "Update the Facilities and Grounds site" with an Open F&G button. Stays until he taps Done
+- Done marks are small text files on the CG Staff site in `App Data/Reminders` (who, when), so they follow the person to any device and Doug can open that folder to see who has done what. To add or change a reminder, edit `CONFIG.reminders` (id, who, once or daily, text, link)
+- Vehicle Checks shows the check day's date instead of just "today": the box reads "Ambulances Fri Oct 23", the green banner says "checked Fri Oct 23", and the vehicles screen title has the date. The check day still starts at 0700
+- Demo: add `&as=dennis` or `&as=derek` to see the reminders
 
 ### v1.22
 - Header no longer shows the open count, update time and name under North Country EMS. That line only appears if something goes wrong (it shows "Offline" with the reason), and says Demo in demo mode

@@ -97,6 +97,21 @@
   .hello { max-width:1300px; margin:0 auto 12px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
   .hello h2 { font-size:18px; font-weight:800; color:var(--g-deep); letter-spacing:.5px; }
   .hello span { font-size:11px; color:var(--muted); letter-spacing:.4px; }
+  /* 1.23 reminders for the person signed in, same Open Shifts look as the crews strip */
+  .rems { max-width:1300px; margin:0 auto 14px; display:flex; flex-direction:column; gap:8px;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing:normal; text-transform:none; }
+  .rems * { font-family:inherit; }
+  .rem { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#fffbea; border:1px solid #f0c040; border-radius:10px; padding:10px 14px; color:#1a1a1a; }
+  .rem p { flex:1 1 260px; min-width:0; font-size:15px; line-height:1.4; font-weight:600; }
+  .rem p small { display:block; font-size:12.5px; font-weight:400; color:#5f675f; margin-top:2px; }
+  .rem .rem-btns { display:flex; gap:8px; flex-wrap:wrap; }
+  .rem a, .rem button { font-size:13.5px; font-weight:600; border-radius:8px; padding:7px 12px; text-decoration:none; cursor:pointer; transition:background .15s, border-color .15s; }
+  .rem .rem-go { background:#2d6a2d; color:#fff; border:1px solid #2d6a2d; }
+  .rem .rem-go:hover { background:#245624; }
+  .rem .rem-done { background:#fff; color:#2d6a2d; border:1px solid #d5e2d5; }
+  .rem .rem-done:hover { background:#e8f4e8; border-color:#a3c9a3; }
+  .rem a:focus-visible, .rem button:focus-visible { outline:2px solid #2d6a2d; outline-offset:2px; }
+  @media (max-width:760px) { .rems { margin:0 0 10px; gap:6px; } .rem { padding:8px 10px; gap:8px; } .rem p { font-size:14px; } .rem p small { font-size:12px; } .rem .rem-btns { width:100%; } .rem a, .rem button { flex:1; text-align:center; padding:6px 10px; font-size:13px; } }
   /* 1.21 crews strip: who is on the ambulances today and tomorrow.
      Look matched to Derek's Open Shifts app (shifts.northcountryems.org): system font, sentence case,
      his green, amber, red and text colors, flat white card with a light green border. */
@@ -603,7 +618,7 @@
 </div>
 
 <div class="sheet" id="sh-veh">
-  <div class="sh-head"><h2>Vehicle Checks</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-head"><h2 id="veh-head">Vehicle Checks</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
   <div class="sh-body" id="veh-body"></div>
 </div>
 
@@ -677,7 +692,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.22';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.23';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -702,6 +717,17 @@ const CONFIG = {
   crewsApi:   'https://ncems-schedule-crews.d-boyce.workers.dev/crews',
   crewsEveryMin: 10,   // Derek's data changes every few days, so 10 minutes is plenty
   crewsOldDays: 4,     // schedule data older than this shows a yellow note
+  /* 1.23: reminders Doug sets for one chief or a few. once = shows until they tap Done. daily = comes back every day at 0600 until they tap Done for today.
+     Done marks are small files on the CG Staff site in App Data/Reminders, so they follow the person to any device and Doug can see who has done what. */
+  remindersFolder: 'App Data/Reminders',
+  reminders: [
+    { id: 'forms-upload', who: ['d.madler', 'd.langdon'], mode: 'once',
+      text: 'Upload your forms with Doug\'s Forms app.', go: 'https://forms.northcountryems.org/', goLabel: 'Open Forms' },
+    { id: 'shift-brief', who: ['d.madler', 'd.langdon'], mode: 'daily',
+      text: 'Look over Shift Briefing Notes. Update your items and add anything for shift briefing.', act: 'board', goLabel: 'Open Notes' },
+    { id: 'fng-update', who: ['d.madler'], mode: 'once',
+      text: 'Update the Facilities and Grounds site.', go: 'https://fng.northcountryems.org/?view=dash', goLabel: 'Open F&G' }
+  ],
   /* Vehicle checks: the EP Checker app logs every submitted check here */
   checksUrl:  'https://checks.northcountryems.org/',
   checksUnits:'https://checks.northcountryems.org/units.json',
@@ -949,7 +975,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadReminders(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -1523,6 +1549,69 @@ async function loadReports() {
   repErr = '';
 }
 
+/* ---------- 1.23 Reminders (CONFIG.reminders) ----------
+   Shown only to the people in each reminder's who list. Done marks live on SharePoint:
+   App Data/Reminders/<id> <email>.txt for once, App Data/Reminders/<id> <email> <YYYY-MM-DD>.txt for daily (day flips at 0600). */
+let remDone = null, remAt = 0, remBusy = {};
+const DEMO_REM_DONE = new Set();
+function remDay() {   // Pacific calendar day, flipping at 0600 like the crews strip
+  const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false }).formatToParts(new Date());
+  const g = t => (p.find(x => x.type === t) || {}).value, day = g('year') + '-' + g('month') + '-' + g('day');
+  const hr = Number(g('hour')) % 24; if (hr >= 6) return day;
+  const q = ymd(day); return new Date(Date.UTC(q.y, q.m - 1, q.d - 1)).toISOString().slice(0, 10);
+}
+function remFile(r, email) { return vehArchName(r.id + ' ' + email + (r.mode === 'daily' ? ' ' + remDay() : '')) + '.txt'; }
+function myReminders() {
+  const me = meEmail().split('@')[0];
+  return (CONFIG.reminders || []).filter(r => r.who.includes(me)).filter(r => {
+    const f = remFile(r, meEmail());
+    return DEMO ? !DEMO_REM_DONE.has(f) : remDone && !remDone.has(f.toLowerCase());
+  });
+}
+async function loadReminders(force) {
+  if (DEMO) return;
+  const me = meEmail().split('@')[0];
+  if (!(CONFIG.reminders || []).some(r => r.who.includes(me))) { remDone = new Set(); return; }
+  if (!force && remDone && Date.now() - remAt < 5 * 60000) return;
+  await getSiteId();
+  const names = new Set();
+  try {
+    let url = '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.remindersFolder) + ':/children?$select=name&$top=999';
+    while (url) { const j = await graph(url); (j.value || []).forEach(x => names.add(String(x.name).toLowerCase())); url = j['@odata.nextLink'] || null; }
+  } catch (e) { if (e.status !== 404) throw e; }
+  remDone = names; remAt = Date.now();
+}
+async function remMarkDone(id) {
+  const r = (CONFIG.reminders || []).find(x => x.id === id); if (!r || remBusy[id]) return;
+  const f = remFile(r, meEmail());
+  if (DEMO) { DEMO_REM_DONE.add(f); renderHome(); toast('Marked done (demo, not saved)'); return; }
+  remBusy[id] = true; renderHome();
+  try {
+    const token = await getToken(); await getSiteId();
+    const body = r.text + '\nDone by ' + meName() + ' (' + meEmail() + ') ' + new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }) + '\nFrom CG Staff ' + VERSION + '\n';
+    const res = await fetch(GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.remindersFolder + '/' + f) + ':/content',
+      { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'text/plain' }, body });
+    if (!res.ok) throw new Error('SharePoint said ' + res.status);
+    if (remDone) remDone.add(f.toLowerCase());
+    toast(r.mode === 'daily' ? 'Done for today. It comes back tomorrow at 0600.' : 'Done. That reminder is cleared.');
+  } catch (e) { toast('Could not save that. ' + e.message, true); }
+  finally { remBusy[id] = false; renderHome(); }
+}
+function remGo(id) {
+  const r = (CONFIG.reminders || []).find(x => x.id === id); if (!r) return;
+  if (r.act === 'board') setView('board');
+}
+function remindersHtml() {
+  const list = myReminders(); if (!list.length) return '';
+  return '<div class="rems">' + list.map(r => {
+    const go = r.go ? '<a class="rem-go" href="' + esc(r.go) + '" target="_blank" rel="noopener">' + esc(r.goLabel || 'Open') + '</a>'
+      : r.act ? '<button type="button" class="rem-go" onclick="remGo(\'' + esc(r.id) + '\')">' + esc(r.goLabel || 'Open') + '</button>' : '';
+    const done = '<button type="button" class="rem-done" onclick="remMarkDone(\'' + esc(r.id) + '\')"' + (remBusy[r.id] ? ' disabled' : '') + '>' + (remBusy[r.id] ? 'Saving...' : r.mode === 'daily' ? 'Done for today' : 'Done') + '</button>';
+    const sub = r.mode === 'daily' ? 'Every day until you mark it done for the day' : 'From Doug. Stays here until you tap Done';
+    return '<div class="rem"><p>' + esc(r.text) + '<small>' + sub + '</small></p><div class="rem-btns">' + go + done + '</div></div>';
+  }).join('') + '</div>';
+}
+
 /* ---------- 1.21 Crews: who is on M51, M52, M53, M54 (Derek's Schedule API through our Worker) ----------
    CONFIG.crewsApi answers only the CG Staff list and only with names and seats:
    { generated_at "YYYY-MM-DD HH:MM" Pacific, shifts:[ {which now|next, date, dow, shift, missing?, units:[ {unit, name,
@@ -1764,11 +1853,11 @@ function renderHome() {
     return;
   }
   const now = new Date(), today = startOfDay(), day = 86400000;
-  let h = '<div class="hello"><h2>' + (now.getHours() < 12 ? 'Morning' : now.getHours() < 17 ? 'Afternoon' : 'Evening') + ', ' + esc(firstName(meName())) + '</h2><span>' + now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) + (lastSync ? ' · updated ' + fmtDT(lastSync).split(' ')[1] : '') + '</span></div>' + crewsHtml() + '<div class="grid">';
+  let h = '<div class="hello"><h2>' + (now.getHours() < 12 ? 'Morning' : now.getHours() < 17 ? 'Afternoon' : 'Evening') + ', ' + esc(firstName(meName())) + '</h2><span>' + now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) + (lastSync ? ' · updated ' + fmtDT(lastSync).split(' ')[1] : '') + '</span></div>' + remindersHtml() + crewsHtml() + '<div class="grid">';
 
   /* Vehicle checks (first: daily operations) */
   const SEC = {};
-  SEC.veh = secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', 'Ambulances today', vehSecBody(), '<button class="go" onclick="openVeh()">Open vehicles</button>' + link(CONFIG.checksUrl, 'EP Checker', true), () => openVeh());
+  SEC.veh = secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', 'Ambulances ' + vehDayLabel(), vehSecBody(), '<button class="go" onclick="openVeh()">Open vehicles</button>' + link(CONFIG.checksUrl, 'EP Checker', true), () => openVeh());
 
   /* Shift Ops */
   const open = openItems(), since48 = now.getTime() - 48 * 3600000;
@@ -1840,6 +1929,7 @@ function renderHome() {
    vehicleResolved/{id} = {checkId, label, by, at}
    state: fixed = crew fixed it on the spot (so the crew before left it that way)
           unfixed = crew could not fix it, open = left abnormal                         */
+function vehDayLabel() { const d = vehDayStart(); return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()] + ' ' + d.getDate(); }   /* 1.23 Doug: show the check day's date, not just "today" */
 function vehDayStart(d) { const x = new Date(d || Date.now()); if (x.getHours() < CONFIG.vehDayStart) x.setDate(x.getDate() - 1); x.setHours(CONFIG.vehDayStart, 0, 0, 0); return x; }
 function hhmm(d) { return String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0'); }
 async function loadVehUnits() {
@@ -2002,7 +2092,7 @@ function vehSecBody() {
   const oosN = S.states.length - S.inSvc.length;
   let banner;
   if (S.short) banner = '<div class="vbanner ' + (S.late ? 'bad' : 'warn') + '">' + S.checked.length + ' of ' + S.need + ' minimum ambulances checked since ' + String(CONFIG.vehDayStart).padStart(2, '0') + '00' + (S.late ? '. Crews are behind today.' : '. Still early.') + '</div>';
-  else banner = '<div class="vbanner good">' + S.checked.length + ' checked today. Minimum of ' + S.need + ' is covered.</div>';
+  else banner = '<div class="vbanner good">' + S.checked.length + ' checked ' + vehDayLabel() + '. Minimum of ' + S.need + ' is covered.</div>';
   const chips = '<div class="vchips">' + S.states.map(s => {
     const ph = s.today.slice().reverse().reduce((a, c) => a.concat(vehPhotosFor(c, null)), []);
     const chip = '<button type="button" class="vchip ' + (s.cls === 'none' ? '' : s.cls) + '" onclick="openVeh(\'' + esc(s.unit) + '\')" title="Open ' + esc(s.unit) + '"><i></i>' + esc(s.unit) + (s.today.length ? ' ' + hhmm(new Date(s.today[s.today.length - 1].at)) : '') + '</button>';
@@ -2032,6 +2122,7 @@ let vehFocus = '';
 function openVeh(unit, focus) { vehOpen = unit || ''; vehFocus = focus || ''; renderVehSheet(); showSheet('sh-veh'); }
 function renderVehSheet() {
   const el = $('veh-body'); if (!el) return;
+  if ($('veh-head')) $('veh-head').textContent = 'Vehicle Checks · ' + vehDayLabel();
   if (!veh) { el.innerHTML = '<div class="sec-msg' + (vehErr ? ' err' : '') + '">' + esc(vehErr || 'Loading...') + '</div>'; return; }
   const keep = {}; el.querySelectorAll('input[id^="oos-"]').forEach(i => { if (i.value) keep[i.id] = i.value; });
   VEH_REFS = [];
