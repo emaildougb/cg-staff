@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.23**
+**Version 1.23.1**
 
 ## Links
 
@@ -110,6 +110,9 @@ Since 1.20, CG Staff signs in through its own Entra app, **NCEMS Command Staff**
 - Before 1.20 it used "NCEMS Grounds Tracker" (`254c214f-bfe2-4ebb-9294-99815e167ab0`), which now only signs in F&G and Incident Reports
 
 ## Changelog
+
+### v1.23.1
+- New reminder for Dennis and Derek: run the retro personnel notes search with Retro-October-Input-Directions-v2.md from Doug's 10/19 email "Retro personnel notes, plus check out Forms". Open Outlook button, stays until they tap Done
 
 ### v1.23
 - Reminders at the top of the dashboard, only for the person they're meant for (set in `CONFIG.reminders`):

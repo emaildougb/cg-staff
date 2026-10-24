@@ -692,7 +692,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.23';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.23.1';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -726,7 +726,10 @@ const CONFIG = {
     { id: 'shift-brief', who: ['d.madler', 'd.langdon'], mode: 'daily',
       text: 'Look over Shift Briefing Notes. Update your items and add anything for shift briefing.', act: 'board', goLabel: 'Open Notes' },
     { id: 'fng-update', who: ['d.madler'], mode: 'once',
-      text: 'Update the Facilities and Grounds site.', go: 'https://fng.northcountryems.org/?view=dash', goLabel: 'Open F&G' }
+      text: 'Update the Facilities and Grounds site.', go: 'https://fng.northcountryems.org/?view=dash', goLabel: 'Open F&G' },
+    { id: 'retro-notes', who: ['d.madler', 'd.langdon'], mode: 'once',
+      text: 'Run the retro personnel notes search in your Claude, using Retro-October-Input-Directions-v2.md from Doug\'s 10/19 email "Retro personnel notes, plus check out Forms".',
+      go: 'https://outlook.office.com/mail/', goLabel: 'Open Outlook' }
   ],
   /* Vehicle checks: the EP Checker app logs every submitted check here */
   checksUrl:  'https://checks.northcountryems.org/',
