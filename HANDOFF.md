@@ -1,6 +1,6 @@
 # CG Staff Handoff
 
-Updated 10/24/2026 for version **1.24** (built from live 1.23.1). Check the raw files for merge markers after each upload.
+Updated 10/24/2026 for version **1.25** (built from live 1.24). Check the raw files for merge markers after each upload.
 
 - Live: [https://cgstaff.northcountryems.org/](https://cgstaff.northcountryems.org/)
 - Upload: [https://github.com/emaildougb/cg-staff/upload/main](https://github.com/emaildougb/cg-staff/upload/main)
@@ -66,6 +66,7 @@ Firebase (`ncems-hub-9111d`) and Cloudinary are retired as of 10/21. Old notes a
 
 ## Open items
 
+0. **Reminders (done 10/24):** Shift Ops list has AlsoAssigned, RemindOn, RemindEvery. Flow "Shift Ops: reminders" runs daily 7:00 AM Pacific from Doug's Power Automate (details in README). If a chief says a reminder never came, check that flow's run history first
 1. **Crews strip:** the `ncems-schedule-crews` Worker was made 10/23 with its code and plain settings. Doug still pastes the key as the Secret `NCEMS_SCHEDULE_KEY` (Settings > Variables and Secrets). Until then the strip says "Schedule data is unavailable right now"
 2. **Derek:** add `f758d1fe-91b7-4bd5-92a9-1324d8bf0826` to the allowed audiences on `ncems-ot` and `ncems-c2`. Until he does, the Scheduling box says it's waiting on him. Leave `254c214f` in for now
 3. **Later:** once Derek confirms, drop the old Grounds Tracker id (`254c214f...`) from anything on the Command Staff side
@@ -75,6 +76,9 @@ Firebase (`ncems-hub-9111d`) and Cloudinary are retired as of 10/21. Old notes a
 7. **README cleanup:** the old Firebase rules block and Cloudinary photo note at the bottom are stale. Trim them next version
 
 ## Rules for the next version
+
+- Haptics (1.25): `haptic()` runs on every tap of a button, card, link or tab (one capture listener). iPhone uses the hidden `<input type="checkbox" switch>` trick (iOS 18+), Android uses `navigator.vibrate`. Doug wants the same in every NCEMS app as each is rebuilt
+- Anything fixed to the bottom edge must be `visibility:hidden` when idle, or iPhone Safari tints its bottom bar with that color
 
 - Start from the live files: `https://raw.githubusercontent.com/emaildougb/cg-staff/main/index.html` (and README.md). Never an old local copy
 - Bump `const VERSION` in index.html and the version line plus changelog in README.md. Version shows in the (i) panel

@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.24**
+**Version 1.25**
 
 ## Links
 
@@ -92,24 +92,22 @@ Add three columns to the **Shift Ops** list (List settings, Create column). The 
 
 Until they exist, the card shows the fields greyed out with a note, and everything else works.
 
-**Power Automate flow "Shift Ops: reminders"** (Scheduled cloud flow, every day at 0700 Pacific):
-1. SharePoint **Get items**: site BattalionChiefLocal, list Shift Ops, Filter Query `Status ne 'Completed' and RemindOn le '@{utcNow()}'`
+**Power Automate flow "Shift Ops: reminders"** (built 10/24/2026 in Doug's Power Automate, Default environment, flow id 8de26877-6ea9-4b3a-b2a2-1728e8e5c6c0, runs as Doug, emails come from Doug's mailbox). Tested 10/24 on SO-016 (Once): email sent, RemindOn cleared, nothing else on the card changed. Scheduled cloud flow, every day at 7:00 AM Pacific:
+1. SharePoint **Get items**: site BattalionChiefLocal, list Shift Ops, Filter Query `Status ne 'Completed' and RemindOn le '@{addHours(utcNow(), 12)}'`. The 12 hours matter: the app saves reminder dates at 15:00 UTC, so a plain "now" would skip today's reminders until tomorrow
 2. **Apply to each** item:
-   - Compose **To**: `if(contains(coalesce(item()?['AlsoAssigned'],''),'<'), first(split(last(split(item()?['AlsoAssigned'],'<')),'>')), '')`. If that's empty, use the chief: Office 365 Users **Search for users** with `item()?['AssignedTo']`, take the first Mail
-   - Outlook **Send an email (V2)**: To = that address, CC = the chief's address, Subject `Reminder: @{item()?['ItemID']} @{item()?['Title']}`, Body: the Details, the newest Notes line, and the link https://cgstaff.northcountryems.org/?view=board
-   - SharePoint **Update item**: RemindOn = `if(greater(int(coalesce(item()?['RemindEvery'],0)),0), addDays(utcNow(), int(item()?['RemindEvery'])), null)`. Once clears the date after one email; the others move it forward until the card is completed
-
-## Microsoft sign-in setup
-
-Since 1.20, CG Staff signs in through its own Entra app, **NCEMS Command Staff** (client id `f758d1fe-91b7-4bd5-92a9-1324d8bf0826`), set up 10/21/2026. Forms uses the same one.
-
-- Single-page application redirects: `https://cgstaff.northcountryems.org/`, `https://emaildougb.github.io/forms/`, `https://forms.northcountryems.org/`
-- API permissions (Microsoft Graph, delegated): User.Read, Sites.ReadWrite.All, People.Read, admin consent granted
-- Enterprise applications > NCEMS Command Staff > Properties: **Assignment required = Yes**. Users and groups: Doug Boyce, Derek Langdon, Dennis Madler, Bryce Shirley, Chuck Andrus, Kim Reid, Nicholas Stafford. Microsoft blocks anyone else at sign in. To add a chief: Users and groups > Add user/group, and add them to `CONFIG.staff`
-- Workers that accept this app's sign in: `ncems-checks` (CLIENT_IDS variable), `ncems-api` (AUDIENCES in its code), `ncems-schedule-crews` (CLIENT_IDS variable), and Derek's `ncems-ot` and `ncems-c2` (his side)
-- Before 1.20 it used "NCEMS Grounds Tracker" (`254c214f-bfe2-4ebb-9294-99815e167ab0`), which now only signs in F&G and Incident Reports
+   - **Compose** (the chief's email): looks up the card's AssignedTo (Doug, Derek, Dennis, Bryce, Tyler, Nick) in a small name to email table. Unassigned or anyone else falls back to Doug
+   - Outlook **Send an email (V2)**: To = the email inside AlsoAssigned (`Name <email>`), or the chief if nobody is set. CC = the chief. Subject `Reminder: <ItemID> <Title>`. Body: owner, status, details, the newest note line, and a link to https://cgstaff.northcountryems.org/?view=board
+   - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.25
+- The "Set them up now" button for the Also assigned and reminder columns only shows for Doug, the site owner. Everyone else sees "waiting on a one time setup by Doug." Derek hit a No permission error on that button 10/23 because only an owner can add list columns
+- The three columns (AlsoAssigned, RemindOn, RemindEvery) were added to the Shift Ops list 10/24, so Also assigned and reminders are on for every chief
+- The "Shift Ops: reminders" Power Automate flow was built 10/24 (see Also assigned and reminders above), so reminder emails now go out at 7:00 AM
+- One click or tap anywhere on a Shift Briefing Notes card opens it, on a computer too. No more click to preview, then Open card
+- Fixed the dark green band at the bottom of the screen on iPhone. The hidden Undo bar and message pop up were parked dark at the bottom edge, so Safari tinted its bottom bar to match and the Undo button peeked out. Both are now fully hidden until they're needed
+- Haptics: a light tick when you tap a button, tab or card. Android phones vibrate. iPhones need iOS 18 or newer and System Haptics on (Settings, Sounds & Haptics); Safari has no vibrate, so the app flips a hidden switch, which iOS answers with a tick
 
 ### v1.24
 - Shift Briefing Notes: every card no one has rated yet shows an amber **Needs triage** tag. Tap the tag (or the dot) to rate it; any CG Staff member can. The first rating adds a note line with who triaged it and when

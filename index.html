@@ -517,12 +517,12 @@
   .btn.small { padding:7px 12px; font-size:13px; flex-shrink:0; width:auto; white-space:nowrap; }
   .btn.armed { background:var(--bad) !important; border-color:var(--bad) !important; color:#fff !important; }
   .rem-row { display:flex; gap:6px; } .rem-row .inp { flex:1.2; min-width:0; } .rem-row .sel { flex:1; min-width:0; }
-  .undo-bar { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(140%); background:#1C3A1C; color:#fff; border-radius:12px; padding:10px 10px 10px 16px; display:flex; align-items:center; gap:14px; z-index:400; box-shadow:0 8px 24px rgba(0,0,0,.3); transition:transform .2s; max-width:92vw; font-size:14px; }
-  .undo-bar.show { transform:translateX(-50%) translateY(0); }
+  .undo-bar { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(calc(100% + 40px + env(safe-area-inset-bottom))); visibility:hidden; background:#1C3A1C; color:#fff; border-radius:12px; padding:10px 10px 10px 16px; display:flex; align-items:center; gap:14px; z-index:400; box-shadow:0 8px 24px rgba(0,0,0,.3); transition:transform .2s, visibility 0s .2s; max-width:92vw; font-size:14px; }   /* 1.25: fully hidden when idle so iPhone Safari doesn't tint its bottom bar dark green */
+  .undo-bar.show { transform:translateX(-50%) translateY(0); visibility:visible; transition:transform .2s; }
   .undo-bar button { background:#fff; color:#1C3A1C; border:0; border-radius:8px; padding:8px 14px; font-weight:800; font-size:14px; cursor:pointer; }
   .toast { position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px); background:#1C3A1C; color:#fff;
-    padding:12px 16px; border-radius:12px; font-size:13px; font-weight:700; z-index:60; opacity:0; pointer-events:none; transition:all .2s; max-width:92%; text-align:center; }
-  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    padding:12px 16px; border-radius:12px; font-size:13px; font-weight:700; z-index:60; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .2s, transform .2s, visibility 0s .2s; max-width:92%; text-align:center; }
+  .toast.show { opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); transition:opacity .2s, transform .2s; }
   .toast.err { background:#9a2a2a; }
   .demo-flag { position:fixed; top:calc(var(--hdr-h) + var(--bar-h) + env(safe-area-inset-top) + 6px); right:12px; z-index:19; background:#FFF2C2; color:#7a5a00; font-size:10px; font-weight:800; letter-spacing:1px; padding:4px 8px; border-radius:6px; text-transform:uppercase; }
 .only-box { background: #fdecec; border: 1.5px solid #e3a3a3; border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; color: #6b1a1a; font-size: 13.5px; line-height: 1.45; text-align: center; }
@@ -693,7 +693,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.24';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.25';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -790,6 +790,26 @@ function assigneeValue(typed) {   // "Steve" or "Stephen Schutts" -> "Stephen Sc
   const hit = ASSIGNEES.find(a => a[0].toLowerCase() === t.toLowerCase());
   return hit ? hit[0] + ' <' + hit[1] + '>' : t;
 }
+/* 1.25: haptics. Android uses vibrate. iPhone Safari has no vibrate, but iOS 18 and up gives a tick when a hidden switch is toggled, so a tap on a button or card flips one */
+let hapLbl = null;
+function haptic() {
+  try {
+    if (navigator.vibrate) { navigator.vibrate(10); return; }
+    if (!hapLbl) {
+      const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); i.id = 'hap-sw'; i.tabIndex = -1; i.setAttribute('aria-hidden', 'true');
+      i.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none';
+      hapLbl = document.createElement('label'); hapLbl.htmlFor = 'hap-sw'; hapLbl.style.display = 'none'; hapLbl.setAttribute('aria-hidden', 'true');
+      [i, hapLbl].forEach(el => el.addEventListener('click', ev => ev.stopPropagation()));
+      document.body.append(i, hapLbl);
+    }
+    hapLbl.click();
+  } catch (e) {}
+}
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (t && t.closest && t.closest('button, .card, a, [role="button"], .tab')) haptic();
+}, true);
+const SITE_OWNER = 'd.boyce@northcountryems.org';   /* 1.25: owner of the CG Staff site, the only one who can add list columns */
 const REMIND_EVERY = [[0, 'Once'], [1, 'Every day'], [3, 'Every 3 days'], [7, 'Every week']];
 
 const DEMO = /[?&]demo=1/.test(location.search);
@@ -1039,10 +1059,10 @@ function cardHtml(it) {
     pill + (noteCount ? '<span class="card-note">' + noteCount + ' note' + (noteCount > 1 ? 's' : '') + '</span>' : '') + '</div>' +
     '<div class="card-more">' + more + '</div></div>';
 }
-/* computer: a click shows the details on the card, a second click or Open card opens it. phone: a tap opens it */
+/* 1.25 Doug: one click or tap anywhere on a card opens it, on a computer and a phone. The old click to preview is gone */
 let expandedId = null;
 function cardClick(e, id) {
-  if (isPhone()) { openItem(id); return; }
+  openItem(id); return;
   expandedId = expandedId === id ? null : id;
   document.querySelectorAll('.card.open').forEach(c => { if (c.dataset.id !== expandedId) c.classList.remove('open'); });
   const c = document.querySelector('.card[data-id="' + id + '"]'); if (c) c.classList.toggle('open', expandedId === id);
@@ -1264,7 +1284,9 @@ function assignFieldsHTML(it, pfx) {
   return '<label class="lbl" for="' + pfx + '-also">Also assigned to</label><input class="inp" id="' + pfx + '-also" list="assignee-list" placeholder="Anyone, like Stephen Schutts" value="' + esc(assigneeLabel(it.also)) + '"' + (dis ? ' disabled' : '') + '>' +
     '<label class="lbl" for="' + pfx + '-rem">Email reminder</label><div class="row2"><input class="inp" type="date" id="' + pfx + '-rem" value="' + rd + '"' + (dis ? ' disabled' : '') + '>' +
     '<select class="sel" id="' + pfx + '-every"' + (dis ? ' disabled' : '') + '>' + REMIND_EVERY.map(([n, l]) => '<option value="' + n + '"' + (n === (it.remindEvery || 0) ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></div>' +
-    (dis ? '<div class="setup-note">Also assigned and reminders need 3 new columns on the Shift Ops list. One time only. <button type="button" class="btn small" onclick="setupAssignCols(this)">Set them up now</button></div>'
+    (dis ? (meEmail() === SITE_OWNER   /* 1.25: only the site owner can add columns, so only Doug sees the button */
+            ? '<div class="setup-note">Also assigned and reminders need 3 new columns on the Shift Ops list. One time only. <button type="button" class="btn small" onclick="setupAssignCols(this)">Set them up now</button></div>'
+            : '<div class="setup-note">Also assigned and reminders are waiting on a one time setup by Doug. Everything else on this card works.</div>')
          : '<div class="meta">Reminders email the Also assigned person (or the chief if nobody is) until the card is completed.</div>');
 }
 /* 1.10: Also assigned searches your Microsoft people (anyone you work with at NCEMS), not just a fixed list */
@@ -1452,7 +1474,7 @@ function openInfo() {
     '<b>Move a card</b>: drag it to another group (computer), or open it and change Group (phone). If it was with that group\'s default person, it goes to the new group\'s default person.<br>' +
     '<b>Triage</b>: tap the dot on a card to set Red (urgent), Yellow (soon) or Green (routine). The left edge shows the color. White dot means nobody has triaged it yet.<br>' +
     '<b>Briefing flag</b>: tap the flag on a card to put it on the shift briefing. Flagged cards float to the top of their group. The day count turns amber after ' + CONFIG.amberDays + ' days and red after ' + CONFIG.redDays + '.<br>' +
-    '<b>Click</b> a card on a computer to see its details and last note right on the board. Click Open card (or double click) for the full card. On a phone, tap to open.<br>' +
+    '<b>Click or tap</b> anywhere on a card to open it.<br>' +
     '<b>Complete</b> records who finished it and when. Find it again under Done this week, where you can reopen it.<br>' +
     '<b>Briefing</b> shows only flagged items by default. Tap Everything for new, being worked, done and getting old. Print it or put it on the TV. Direct link: <a href="?view=brief">?view=brief</a><br><br>' +
     '<b>Today and Tomorrow</b> at the top show who is on M51, M52, M53 and M54 (M53 and M54 only when someone is on them). It comes from Derek\'s Schedule API, rebuilt from Aladtec every few days, so check the as of time. The day flips at 0600. Trade, cover and OT tags come from Aladtec. Tap a unit to open Aladtec.<br><br>' +
