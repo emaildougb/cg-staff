@@ -31,20 +31,37 @@
   button { cursor:pointer; }
 
   /* header */
+  /* 1.21: header matched to Derek's Open Shifts app: white bar, system font, "NCEMS" in ink and the app name in green, then North Country EMS */
   .hdr { position:fixed; top:0; left:0; right:0; height:calc(var(--hdr-h) + env(safe-area-inset-top));
-    padding:env(safe-area-inset-top) 10px 0; background:linear-gradient(135deg,var(--g-deep) 0%,var(--g-mid) 100%);
-    color:#fff; display:flex; align-items:center; gap:10px; z-index:30; box-shadow:0 2px 12px rgba(0,0,0,.3); }
+    padding:env(safe-area-inset-top) 16px 0; background:#fff; border-bottom:1px solid #d5e2d5;
+    color:#1a1a1a; display:flex; align-items:center; gap:10px; z-index:30;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   .hdr-logo { width:40px; height:40px; border-radius:50%; background:#fff; object-fit:cover; flex-shrink:0; }
-  .hdr-text { flex:1; min-width:0; }
-  .hdr-text h1 { font-size:14px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .hdr-text p { font-size:10px; opacity:.8; margin-top:2px; letter-spacing:.4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .hdr-text p.err { color:#ffd0d0; font-weight:700; opacity:1; }
-  .icon-btn { flex-shrink:0; width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
-    color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none; }
-  .icon-btn:active { background:rgba(255,255,255,.3); }
+  .hdr-text { flex:1; min-width:0; display:flex; align-items:center; gap:12px; }
+  .hdr-text h1 { font-family:inherit; font-size:18px; font-weight:800; letter-spacing:-.3px; text-transform:none; color:#1a1a1a; white-space:nowrap; flex-shrink:0; }
+  .hdr-text h1 .os-g { color:#2d6a2d; }
+  .hdr-sub { min-width:0; padding-left:12px; border-left:1px solid #d5e2d5; display:flex; flex-direction:column; gap:1px; }
+  .hdr-sub .org { font-size:12px; color:#5f675f; white-space:nowrap; }
+  .hdr-text p { font-family:inherit; font-size:12px; color:#4a4a4a; letter-spacing:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+  .hdr-text p.err { color:#c0392b; font-weight:600; }
+  .icon-btn { flex-shrink:0; width:38px; height:38px; border-radius:8px; background:#fff; border:1px solid #d5e2d5;
+    color:#2d6a2d; display:flex; align-items:center; justify-content:center; text-decoration:none; transition:background .15s, border-color .15s; font-family:inherit; }
+  .icon-btn:hover { background:#e8f4e8; border-color:#a3c9a3; }
+  .icon-btn:active { background:#d9ecd9; }
+  .icon-btn:focus-visible { outline:2px solid #2d6a2d; outline-offset:2px; }
   .icon-btn svg { width:19px; height:19px; }
   .icon-btn.spin svg { animation:spin .9s linear infinite; }
-  .icon-btn.wide { width:auto; padding:0 12px; border-radius:19px; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; gap:6px; }
+  .icon-btn.wide { width:auto; padding:0 12px; font-size:13.5px; font-weight:600; letter-spacing:normal; text-transform:none; gap:6px; color:#4a4a4a; }
+  .icon-btn.wide svg { color:#2d6a2d; }
+  @media (max-width:760px) {
+    .hdr { padding:env(safe-area-inset-top) 10px 0; gap:8px; }
+    .hdr-logo { width:34px; height:34px; }
+    .hdr-text { display:block; }
+    .hdr-text h1 { font-size:16px; }
+    .hdr-sub { padding-left:0; border-left:0; }
+    .hdr-sub .org { display:none; }
+    .icon-btn { width:36px; height:36px; }
+  }
   @keyframes spin { to { transform:rotate(360deg); } }
   .info-i { font-size:19px; font-weight:800; font-style:italic; font-family:Georgia,serif; }
 
@@ -79,6 +96,64 @@
   .hello { max-width:1300px; margin:0 auto 12px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
   .hello h2 { font-size:18px; font-weight:800; color:var(--g-deep); letter-spacing:.5px; }
   .hello span { font-size:11px; color:var(--muted); letter-spacing:.4px; }
+  /* 1.21 crews strip: who is on the ambulances today and tomorrow.
+     Look matched to Derek's Open Shifts app (shifts.northcountryems.org): system font, sentence case,
+     his green, amber, red and text colors, flat white card with a light green border. */
+  .crews { --os-green:#2d6a2d; --os-green-l:#e8f4e8; --os-blue:#1a5a8a; --os-blue-l:#e6f0f8; --os-amber:#9a5f06; --os-amber-l:#fff3d6;
+    --os-red:#c0392b; --os-purple:#3b4eab; --os-purple-l:#eef3ff; --os-border:#d5e2d5; --os-surface2:#f5f8f5;
+    --os-text:#1a1a1a; --os-text2:#4a4a4a; --os-text3:#5f675f;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing:normal; text-transform:none; color:var(--os-text);
+    max-width:1300px; margin:0 auto 14px; background:#fff; border:1px solid var(--os-border); border-radius:10px; padding:14px 16px 16px; }
+  .crews * { font-family:inherit; }
+  .cr-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .cr-head h3 { font-size:18px; font-weight:800; letter-spacing:-.3px; color:var(--os-text); text-transform:none; }
+  .cr-date { display:inline-flex; align-items:center; background:var(--os-green); color:#fff; border-radius:8px; padding:4px 11px; font-size:17px; font-weight:800; letter-spacing:-.2px; line-height:1.25; font-variant-numeric:tabular-nums; }
+  .cr-day { font-size:14px; font-weight:600; color:var(--os-text2); }
+  .cr-asof { margin-left:auto; font-size:12.5px; color:var(--os-text3); }
+  .cr-asof.old { color:var(--os-amber); font-weight:600; }
+  a.cr-al { font-size:13px; font-weight:600; color:var(--os-green); text-decoration:none; padding:5px 10px; border-radius:8px; border:1px solid var(--os-border); background:#fff; transition:background .15s, border-color .15s; }
+  a.cr-al:hover { background:var(--os-green-l); border-color:#a3c9a3; }
+  .cr-cards { display:grid; grid-template-columns:repeat(var(--n,3),minmax(0,1fr)); gap:10px; }
+  .cr-card { display:block; text-decoration:none; color:inherit; background:var(--os-surface2); border:1px solid #e6eee6; border-radius:8px; padding:10px 12px; min-width:0; transition:background .15s, border-color .15s; }
+  .cr-card:hover { background:var(--os-green-l); border-color:#a3c9a3; }
+  .cr-card:focus-visible, a.cr-al:focus-visible, .cr-next a:focus-visible, .cr-tabs button:focus-visible { outline:2px solid var(--os-green); outline-offset:2px; }
+  .cr-unit { font-size:16px; font-weight:800; letter-spacing:-.2px; color:var(--os-green); margin-bottom:4px; }
+  .cr-seat { display:flex; gap:8px; align-items:baseline; font-size:14.5px; line-height:1.5; min-width:0; }
+  .cr-seat i { font-style:normal; flex:0 0 32px; font-size:12px; font-weight:600; color:var(--os-text3); }
+  .cr-seat span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cr-seat .t { font-size:12.5px; color:var(--os-text3); font-variant-numeric:tabular-nums; }
+  .cr-open { color:var(--os-red); font-weight:800; }
+  .cr-tag { display:inline-block; font-size:11px; font-weight:600; border-radius:6px; padding:0 6px; margin-left:5px; line-height:1.55; background:var(--os-purple-l); color:var(--os-purple); vertical-align:1px; }
+  .cr-tag.cover { background:var(--os-blue-l); color:var(--os-blue); } .cr-tag.ot { background:var(--os-amber-l); color:var(--os-amber); }
+  .cr-next { display:flex; gap:6px 18px; flex-wrap:wrap; align-items:center; margin:12px -16px -16px; padding:10px 16px; background:var(--os-surface2); border-radius:0 0 10px 10px; font-size:14px; }
+  .crews .cr-next b.lbl { font-size:14px; font-weight:800; color:var(--os-text); text-transform:none; letter-spacing:normal; }
+  .cr-next .cr-date { font-size:13.5px; padding:2px 8px; background:var(--os-green-l); color:var(--os-green); }
+  .cr-next a { color:var(--os-text); text-decoration:none; border-radius:6px; padding:2px 4px; }
+  .cr-next a:hover { background:var(--os-green-l); }
+  .cr-next a b { color:var(--os-green); font-weight:800; margin-right:5px; }
+  .cr-msg { font-size:14px; color:var(--os-text3); }
+  .cr-msg.err { color:var(--os-red); }
+  .cr-tabs { display:none; }
+  @media (max-width:760px) {
+    /* phone: no swiping. Each unit is one tight row and every unit shows at once (Doug 10/23) */
+    .crews { margin:0 0 10px; padding:12px 10px 10px; }
+    .cr-head { gap:8px; margin-bottom:10px; padding:0 2px; }
+    .cr-head h3 { display:none; }   /* the Today / Tomorrow switch already says which day */
+    .cr-date { font-size:15px; padding:3px 9px; }
+    .cr-day { font-size:13px; }
+    .cr-asof { flex-basis:100%; margin-left:0; order:5; font-size:12px; }
+    a.cr-al { display:none; }
+    .cr-tabs { display:inline-flex; margin-left:auto; background:var(--os-surface2); border:1px solid var(--os-border); border-radius:8px; padding:2px; }
+    .cr-tabs button { border:0; background:transparent; color:var(--os-text2); border-radius:6px; font-size:13px; font-weight:600; padding:5px 10px; transition:background .15s, color .15s; }
+    .cr-tabs button.on { background:var(--os-green); color:#fff; }
+    .cr-cards { display:flex; flex-direction:column; gap:6px; }
+    .cr-card { display:flex; align-items:center; gap:10px; padding:7px 10px; }
+    .cr-unit { flex:0 0 40px; font-size:15px; margin:0; }
+    .cr-card .cr-seats { flex:1; min-width:0; }
+    .cr-seat { font-size:14px; line-height:1.4; }
+    .cr-seat i { flex:0 0 30px; font-size:11.5px; }
+    .cr-next { display:none; }
+  }
   .grid { max-width:1300px; margin:0 auto; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
   @media (max-width:1180px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media (max-width:760px) { .grid { grid-template-columns:1fr; } .home { padding:10px 10px 40px; } }
@@ -233,7 +308,7 @@
     .add-btn.bar-add { display:none; }
     .fab { display:flex !important; }
   }
-  @media (max-width:760px) { .brief-word { display:none; } .icon-btn.wide { width:38px; padding:0; border-radius:50%; } }
+  @media (max-width:760px) { .brief-word { display:none; } .icon-btn.wide { width:36px; padding:0; } }
   .fab { display:none; position:fixed; right:18px; bottom:calc(20px + env(safe-area-inset-bottom)); width:60px; height:60px; border-radius:50%; border:none;
     background:linear-gradient(135deg,var(--g-mid),var(--g-accent)); color:#fff; font-size:32px; font-weight:300; align-items:center; justify-content:center;
     box-shadow:0 6px 18px rgba(0,0,0,.3); z-index:25; }
@@ -442,8 +517,8 @@
   </a>
   <img class="hdr-logo" src="logo.png" alt="">
   <div class="hdr-text">
-    <h1>NCEMS CG Staff</h1>
-    <p id="sync">Loading...</p>
+    <h1>NCEMS <span class="os-g">CG Staff</span></h1>
+    <div class="hdr-sub"><span class="org">North Country EMS</span><p id="sync">Loading...</p></div>
   </div>
   <button class="icon-btn wide" id="brief-btn" onclick="openBrief()" title="Shift briefing">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
@@ -601,7 +676,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.20.1';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.21';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -622,6 +697,10 @@ const CONFIG = {
   aladtecUrl: 'https://secure2.aladtec.com/northcountryems/',
   otApi:      'https://ncems-ot.d-langdon.workers.dev/dashboard', // Crew 1 (paramedic overtime) feed, read only, ID token
   c2Api:      'https://ncems-c2.d-langdon.workers.dev/dashboard', // Crew 2 (EMT open shifts) feed, read only, ID token
+  /* 1.21: who is on M51, M52, M53, M54 now and next shift. Our Worker holds the key for Derek's Schedule API; this page only sends the ID token */
+  crewsApi:   'https://ncems-schedule-crews.d-boyce.workers.dev/crews',
+  crewsEveryMin: 10,   // Derek's data changes every few days, so 10 minutes is plenty
+  crewsOldDays: 4,     // schedule data older than this shows a yellow note
   /* Vehicle checks: the EP Checker app logs every submitted check here */
   checksUrl:  'https://checks.northcountryems.org/',
   checksUnits:'https://checks.northcountryems.org/units.json',
@@ -683,7 +762,7 @@ const REMIND_EVERY = [[0, 'Once'], [1, 'Every day'], [3, 'Every 3 days'], [7, 'E
 
 const DEMO = /[?&]demo=1/.test(location.search);
 const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || 'doug';
-const LS = { cache: 'so_cache_v1', site: 'so_site_v1', filter: 'so_filter_v1', tab: 'so_tab_v1', hours: 'so_hours_v1', view: 'cg_view_v1', fng: 'cg_fng_v1', fsite: 'cg_fsite_v1', veh: 'cg_veh_v1', vunits: 'cg_vunits_v1', varch: 'cg_varch_v1' };
+const LS = { cache: 'so_cache_v1', site: 'so_site_v1', filter: 'so_filter_v1', tab: 'so_tab_v1', hours: 'so_hours_v1', view: 'cg_view_v1', fng: 'cg_fng_v1', fsite: 'cg_fsite_v1', veh: 'cg_veh_v1', vunits: 'cg_vunits_v1', varch: 'cg_varch_v1', crews: 'cg_crews_v1', crewtab: 'cg_crewtab_v1' };
 
 let msalApp = null, account = null, siteId = null;
 let items = [];
@@ -869,7 +948,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -1333,6 +1412,7 @@ function openInfo() {
     '<b>Click</b> a card on a computer to see its details and last note right on the board. Click Open card (or double click) for the full card. On a phone, tap to open.<br>' +
     '<b>Complete</b> records who finished it and when. Find it again under Done this week, where you can reopen it.<br>' +
     '<b>Briefing</b> shows only flagged items by default. Tap Everything for new, being worked, done and getting old. Print it or put it on the TV. Direct link: <a href="?view=brief">?view=brief</a><br><br>' +
+    '<b>Today and Tomorrow</b> at the top show who is on M51, M52, M53 and M54 (M53 and M54 only when someone is on them). It comes from Derek\'s Schedule API, rebuilt from Aladtec every few days, so check the as of time. The day flips at 0600. Trade, cover and OT tags come from Aladtec. Tap a unit to open Aladtec.<br><br>' +
     '<b>Scheduling</b> comes from Derek\'s Open Shifts app: Crew 1 (paramedic overtime) and Crew 2 (EMT open shifts), refreshed every 5 minutes. Tap a next up name to open that list. Minimum staffing shifts sort to the top with a red edge.<br><br>' +
     '<a href="' + esc(CONFIG.listUrl) + '" target="_blank" rel="noopener">Open the SharePoint list</a></div>' +
     '<div class="btns"><button class="btn ghost" onclick="refresh(true)">Refresh</button><button class="btn warn" onclick="signOut()">' + (DEMO ? 'Leave demo' : 'Sign out') + '</button></div>';
@@ -1441,6 +1521,83 @@ async function loadReports() {
   const j = await res.json();
   reports = (j && j.reports || []).map(r => ({ id: r.id, type: r.type || '', status: (r.status || 'new').toLowerCase(), when: r.submittedAt ? new Date(r.submittedAt) : parseDate(r.date), agency: r.agency || '' }));
   repErr = '';
+}
+
+/* ---------- 1.21 Crews: who is on M51, M52, M53, M54 (Derek's Schedule API through our Worker) ----------
+   CONFIG.crewsApi answers only the CG Staff list and only with names and seats:
+   { generated_at "YYYY-MM-DD HH:MM" Pacific, shifts:[ {which now|next, date, dow, shift, missing?, units:[ {unit, name,
+     seats:[ {seat C1|C2|AC, label, pieces:[ {person, state filled|open|hidden, start, end, tag trade|cover|extra|""} ]} ]} ]} ] }
+   The Worker already flips "now" to the new day at 0600 (Doug 10/23). The key for Derek's API lives on the Worker, never in this file.      */
+let crews = null, crewsErr = '', crewsAt = 0, crewTab = 'now';
+const UNIT_COLOR = { M51: '#2E6B2E', M52: '#1F5C8B', M53: '#8a6a1f', M54: '#7a1f1f' };
+async function loadCrews(force) {
+  if (DEMO) return;
+  if (!force && crewsAt && Date.now() - crewsAt < CONFIG.crewsEveryMin * 60000) return;
+  let tok = '';
+  try { tok = (await msalApp.acquireTokenSilent({ scopes: SCOPES, account })).idToken; }
+  catch (e) { crewsErr = 'Sign in again to see crews.'; crewsAt = Date.now(); return; }
+  let res;
+  try { res = await fetch(CONFIG.crewsApi, { cache: 'no-store', headers: { Authorization: 'Bearer ' + tok } }); }
+  catch (e) { crewsErr = 'Crew list is not reachable right now.'; crewsAt = Date.now(); return; }
+  crewsAt = Date.now();
+  if (res.status === 401) { crewsErr = 'Sign in again to see crews.'; return; }
+  if (res.status === 403) { crewsErr = 'Your account is not on the crew list.'; return; }
+  if (res.status === 404) { crewsErr = 'Crew list is not set up yet.'; return; }
+  if (!res.ok) { crewsErr = 'Schedule data is unavailable right now.'; return; }
+  const j = await res.json();
+  if (!j || !Array.isArray(j.shifts)) { crewsErr = 'Schedule data came back empty.'; return; }
+  crews = j; crewsErr = ''; lsSet(LS.crews, { at: Date.now(), crews });
+}
+function asOfLabel(g) {   // "2026-10-23 18:22" -> "10/23 1822", built from the parts
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):?(\d{2})/.exec(g || ''); return m ? (+m[2]) + '/' + (+m[3]) + ' ' + m[4] + m[5] : '';
+}
+function asOfDays(g) { const m = /^(\d{4}-\d{2}-\d{2})/.exec(g || ''); return m ? dayDiff(m[1], pacificToday()) : null; }
+function hm4(t) { return String(t || '').replace(':', ''); }
+function crTag(t) { return t === 'trade' ? '<span class="cr-tag">Trade</span>' : t === 'cover' ? '<span class="cr-tag cover">Cover</span>' : t === 'extra' ? '<span class="cr-tag ot">OT</span>' : ''; }
+function crSeatShort(s) { return s === 'C1' ? 'PM' : s === 'C2' ? 'EMT' : s === 'AC' ? 'AC' : s; }
+function crPiece(p, split) {
+  const t = split ? ' <span class="t">' + esc(hm4(p.start)) + ' to ' + esc(hm4(p.end)) + '</span>' : '';
+  if (p.state === 'filled') return esc(p.person) + crTag(p.tag) + t;
+  if (p.state === 'hidden') return '<span class="t">not shown in Aladtec export</span>' + t;
+  return '<span class="cr-open">OPEN</span>' + t;
+}
+function crCard(u) {
+  const lines = [];
+  for (const s of u.seats) {
+    const split = s.pieces.length > 1;
+    if (!s.pieces.length) continue;
+    s.pieces.forEach((p, i) => lines.push('<div class="cr-seat"><i>' + (i ? '' : crSeatShort(s.seat)) + '</i><span>' + crPiece(p, split) + '</span></div>'));
+  }
+  return '<a class="cr-card" style="--uc:' + (UNIT_COLOR[u.unit] || '#555B66') + '" href="' + esc(CONFIG.aladtecUrl) + '" target="_blank" rel="noopener"><div class="cr-unit">' + esc(u.unit) + '</div><div class="cr-seats">' + (lines.join('') || '<div class="cr-msg">No one listed</div>') + '</div></a>';
+}
+function crLast(name) { const p = String(name || '').trim().split(/\s+/); return p.length > 1 ? p[p.length - 1] : p[0] || ''; }
+function crShort(u) {   // "M51 Komm / Cooper" for the tomorrow line on a computer
+  const seat = id => { const s = u.seats.find(x => x.seat === id); if (!s) return ''; return s.pieces.map(p => p.state === 'filled' ? esc(crLast(p.person)) + crTag(p.tag) : p.state === 'open' ? '<span class="cr-open">OPEN</span>' : '?').join(' + '); };
+  const parts = ['C1', 'C2'].map(seat).filter(Boolean);
+  return '<a href="' + esc(CONFIG.aladtecUrl) + '" target="_blank" rel="noopener" style="--uc:' + (UNIT_COLOR[u.unit] || '#555B66') + '"><b>' + esc(u.unit) + '</b>' + parts.join(' / ') + '</a>';
+}
+function crDayLabel(s) { return s && s.shift ? esc(s.shift) + ' shift' : ''; }
+function crDate(s) { return s ? '<span class="cr-date">' + esc(ymdLabel(s.date, true)) + '</span>' : ''; }   /* big date pill, Doug 10/23: make the date obvious */
+function setCrewTab(t) { crewTab = t; lsSet(LS.crewtab, t); renderHome(); }
+function crewsHtml() {
+  const al = '<a class="cr-al" href="' + esc(CONFIG.aladtecUrl) + '" target="_blank" rel="noopener">Open Aladtec</a>';
+  if (!crews) {
+    const msg = crewsErr || 'Loading crews...';
+    return '<div class="crews"><div class="cr-head"><h3>Crews</h3>' + al + '</div><div class="cr-msg' + (crewsErr ? ' err' : '') + '">' + esc(msg) + '</div></div>';
+  }
+  const now = crews.shifts.find(s => s.which === 'now'), next = crews.shifts.find(s => s.which === 'next');
+  const old = asOfDays(crews.generated_at), isOld = old != null && old >= CONFIG.crewsOldDays;
+  const asof = '<span class="cr-asof' + (isOld ? ' old' : '') + '">Schedule data as of ' + esc(asOfLabel(crews.generated_at)) + (isOld ? ' (' + old + ' days old)' : '') + (crewsErr ? ' · ' + esc(crewsErr) : '') + '</span>';
+  const cards = s => !s ? '' : s.missing ? '<div class="cr-msg">Not in the schedule data yet.</div>'
+    : '<div class="cr-cards" style="--n:' + Math.max(s.units.length, 1) + '">' + (s.units.map(crCard).join('') || '<div class="cr-msg">No ambulances listed.</div>') + '</div>';
+  if (isPhone()) {
+    const s = crewTab === 'next' ? next : now;
+    return '<div class="crews"><div class="cr-head"><h3>' + (crewTab === 'next' ? 'Tomorrow' : 'Today') + '</h3>' + crDate(s) + '<span class="cr-day">' + crDayLabel(s) + '</span>' +
+      '<div class="cr-tabs"><button class="' + (crewTab !== 'next' ? 'on' : '') + '" onclick="setCrewTab(\'now\')">Today</button><button class="' + (crewTab === 'next' ? 'on' : '') + '" onclick="setCrewTab(\'next\')">Tomorrow</button></div>' + asof + '</div>' + cards(s) + '</div>';
+  }
+  const nextLine = !next ? '' : '<div class="cr-next"><b class="lbl">Tomorrow</b>' + crDate(next) + '<span class="cr-day">' + crDayLabel(next) + '</span>' +
+    (next.missing ? '<span class="cr-msg">Not in the schedule data yet.</span>' : next.units.map(crShort).join('')) + '</div>';
+  return '<div class="crews"><div class="cr-head"><h3>Today</h3>' + crDate(now) + '<span class="cr-day">' + crDayLabel(now) + '</span>' + asof + al + '</div>' + cards(now) + nextLine + '</div>';
 }
 
 /* ---------- Scheduling: NCEMS Open Shifts (Derek's app), two read-only feeds ----------
@@ -1607,7 +1764,7 @@ function renderHome() {
     return;
   }
   const now = new Date(), today = startOfDay(), day = 86400000;
-  let h = '<div class="hello"><h2>' + (now.getHours() < 12 ? 'Morning' : now.getHours() < 17 ? 'Afternoon' : 'Evening') + ', ' + esc(firstName(meName())) + '</h2><span>' + now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) + (lastSync ? ' · updated ' + fmtDT(lastSync).split(' ')[1] : '') + '</span></div><div class="grid">';
+  let h = '<div class="hello"><h2>' + (now.getHours() < 12 ? 'Morning' : now.getHours() < 17 ? 'Afternoon' : 'Evening') + ', ' + esc(firstName(meName())) + '</h2><span>' + now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) + (lastSync ? ' · updated ' + fmtDT(lastSync).split(' ')[1] : '') + '</span></div>' + crewsHtml() + '<div class="grid">';
 
   /* Vehicle checks (first: daily operations) */
   const SEC = {};
@@ -2327,6 +2484,12 @@ function demoExtras() {
     c2: { updated: new Date(t - 7 * 60000).toISOString(), crew: 2, month: mo,
       openShifts: [{ date: pd(2), unit: 'M54', hours: 24, crew: 2, minStaff: false, offers: 0 }, { date: pd(1), unit: 'M51', hours: 12, crew: 2, minStaff: true, offers: 1 }, { date: pd(6), unit: 'M19', hours: 12, crew: 2, minStaff: false, offers: 2 }, { date: pd(11), unit: 'M51', hours: 24, crew: 2, minStaff: false, offers: 0 }],
       counts: { openThisMonth: 4, minStaffThisMonth: 1, openNext7: 3, openNext30: 6, filledThisWeek: 2 }, links: { app: 'https://shifts.northcountryems.org/?crew=2' } } };
+  const dn = new Date(t - 7.5 * 3600000), dd = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(dn), dd2 = pd(dayDiff(pacificToday(), dd) + 1);
+  const P = (person, tag, start, end) => ({ person, state: 'filled', start: start || '07:30', end: end || '07:30', tag: tag || '' }), O = (start, end) => ({ person: '', state: 'open', start: start || '07:30', end: end || '07:30', tag: '' });
+  const U = (unit, c1, c2) => ({ unit, name: 'Medic ' + unit.slice(1), seats: [{ seat: 'C1', label: 'Paramedic', pieces: c1 }, { seat: 'C2', label: 'EMT', pieces: c2 }].filter(s => s.pieces.length) });
+  crews = { generated_at: new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date(t - 2 * day)) + ' 18:22', shifts: [
+    { which: 'now', date: dd, dow: '', shift: 'B', units: [U('M51', [P('Sam Rivera', 'trade')], [P('Jordan Lee')]), U('M52', [P('Alex Morgan', '', '07:30', '14:00'), O('14:00', '17:30'), P('Casey Brooks', 'extra', '17:30', '07:30')], [P('Riley Chen')]), U('M54', [P('Doug Boyce')], [P('Taylor Quinn', 'cover')])] },
+    { which: 'next', date: dd2, dow: '', shift: 'C', units: [U('M51', [P('Pat Kim')], [O()]), U('M52', [P('Drew Ellis')], [P('Jamie Fox', 'trade')]), U('M54', [P('Nick Stafford')], [])] } ] };
   reports = [{ type: 'biological', status: 'new', when: d(-1) }, { type: 'vehicle', status: 'reviewed', when: d(-6) }, { type: 'injury', status: 'closed', when: d(-20) }, { type: 'injury', status: 'reviewed', when: d(-40) }];
 }
 
@@ -2344,6 +2507,7 @@ async function boot() {
   $('hub-link').href = CONFIG.hubUrl;
   filter = lsGet(LS.filter, 'all'); setFilter(filter);
   briefHours = lsGet(LS.hours, 48);
+  crewTab = lsGet(LS.crewtab, 'now') === 'next' ? 'next' : 'now';
   if (DEMO) {
     items = demoItems(); demoExtras(); lastSync = new Date(); setView(/[?&]view=board/.test(location.search) ? 'board' : lsGet(LS.view, 'home')); render();
     if (/[?&]view=brief/.test(location.search)) openBrief();
@@ -2357,6 +2521,7 @@ async function boot() {
   const fc = lsGet(LS.fng, null);
   if (fc && fc.fng) { fng = fc.fng; ['wo', 'svc', 'grd'].forEach(k => (fng[k] || []).forEach(x => ['created', 'next', 'due'].forEach(f => { if (x[f]) x[f] = new Date(x[f]); }))); }
   const vc = lsGet(LS.veh, null); if (vc && vc.veh) veh = vc.veh;
+  const cc = lsGet(LS.crews, null); if (cc && cc.crews && Date.now() - cc.at < 86400000) crews = cc.crews;
   vehUnits = (lsGet(LS.vunits, null) || {}).units || null;
   if (c && c.items) { items = c.items.map(mapItem); lastSync = new Date(c.at); render(); } else renderHome();
   if (/[?&]view=brief/.test(location.search)) openBrief();

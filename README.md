@@ -2,11 +2,13 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.20.1**
+**Version 1.21**
 
 ## Links
 
-- Live (dashboard): [https://emaildougb.github.io/cg-staff/](https://emaildougb.github.io/cg-staff/)
+- Live: [https://cgstaff.northcountryems.org/](https://cgstaff.northcountryems.org/)
+- Upload: [https://github.com/emaildougb/cg-staff/upload/main](https://github.com/emaildougb/cg-staff/upload/main)
+- Live (dashboard, GitHub address): [https://emaildougb.github.io/cg-staff/](https://emaildougb.github.io/cg-staff/)
 - Live (Shift Ops board): [https://emaildougb.github.io/cg-staff/?view=board](https://emaildougb.github.io/cg-staff/?view=board)
 - Live (shift briefing): [https://emaildougb.github.io/cg-staff/?view=brief](https://emaildougb.github.io/cg-staff/?view=brief)
 - Demo (sample data, no sign-in): [https://emaildougb.github.io/cg-staff/?demo=1](https://emaildougb.github.io/cg-staff/?demo=1)
@@ -22,12 +24,16 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 - `logo.png` : NCEMS round logo (header)
 - `apple-touch-icon.png` : iOS home-screen + tab icon
 - `manifest.json` : standalone app-mode config
+- `icon-512.png` : large app icon
+- `HANDOFF.md` : how the app is built and how to start a new chat on it
 - `README.md` : this file
 
 ## Page layout
 
 **Top tabs:** Dashboard (default) | Shift Ops
 **Header buttons:** home (NCEMS hub) · Briefing · Refresh · (i) info (shows version)
+
+**Crews strip (1.21), above the boxes:** who is on M51, M52, M53 and M54 today, with the date in a big pill next to it so it's obvious which day you're looking at (M53 and M54 only when someone is on them). PM is the C1 paramedic, EMT is C2, AC shows on M54 when someone is in it. Split shifts show each piece with times, an empty seat shows OPEN in red, and trade, cover and OT tags come from Aladtec. On a computer, tomorrow's crews show on one line under it. On a phone every unit is one tight row, all on screen at once (no swiping), with a Today / Tomorrow switch. The day flips at 0600. "Schedule data as of" shows when Derek last rebuilt the data, and turns yellow when it is 4 or more days old. Tap a unit to open Aladtec.
 
 **Dashboard sections:**
 
@@ -71,6 +77,7 @@ Emails in `CONFIG.staff`: Doug, Derek, Dennis, Bryce, Chuck, Nick, K. Reid. Anyo
 - **Vehicle Checks (1.19):** the `ncems-checks` Worker on Doug's NCEMS Cloudflare, `https://ncems-checks.d-boyce.workers.dev` (D1 database `ncems-checks-db`, photos in R2 `ncems-check-photos`). Same lists as before (checks, vehicleStatus, vehicleResolved, vehicleLinks). Older notes: it used to be Firebase project `ncems-hub-9111d`. Since 1.6, `vehicleLinks/{check ref}` holds the link between a vehicle issue and its Shift Ops card (card id, status, latest note) so the EP Checker can show the chiefs' latest note to crews. The EP Checker (v2.14.0 and up) writes one doc per submitted check to `vehicleChecks`. Out of service marks go to `vehicleStatus`, Fixed marks go to `vehicleResolved`. The dashboard reads the last 45 days.
 - **Vehicle check records on SharePoint (1.18):** every check, with its photos, is copied to the CG Staff site under `App Data/Vehicle Checks/YYYY-MM/` as a text file named `YYYY-MM-DD HHMM UNIT (Crew).txt` (unit, crew, fuel, DEF, O2, mileage, problems, narc counts, section notes, photo list, full check detail and the raw data for reports). Photos go to `App Data/Vehicle Checks/YYYY-MM/Photos/`. Crew phones can't write to this site, so CG Staff does it in the background whenever a chief has it open, up to 40 checks per refresh, skipping files already there. Photos are downloaded from Cloudinary in the browser; if one can't be copied, the text file says so and keeps the original link. This is the stopgap until the Cloudflare nightly copy (claude/firebase-to-cloudflare-plan.md step 6)
 - **Incident Reports:** Cloudflare Worker `ncems-api.d-boyce.workers.dev/bin/incident-reports`, read only. Since v1.3 the dashboard sends the Microsoft sign-in token, and the Worker only answers for chiefs on its ADMINS list.
+- **Crews (1.21):** Doug's Worker `ncems-schedule-crews` on the North Country Cloudflare, `https://ncems-schedule-crews.d-boyce.workers.dev/crews`. It holds Doug's key for Derek's Schedule API (`ncems-schedule.d-langdon.workers.dev`) as the secret `NCEMS_SCHEDULE_KEY`, checks the Microsoft ID token (Command Staff app, CG Staff emails only), and hands back only names and seats for M51 to M54, now and next shift. No time off reasons, hours, phones or requests reach the browser. The key is never in this repo. A copy of the key, Derek's prompt and the API Usage Guide are on the CG Staff site under `App Data/Schedule API (Derek)/`. Refreshes every 10 minutes; the Worker only downloads Derek's file again when his `generated_at` changes.
 - **Scheduling (1.12):** two of Derek's Worker feeds, Crew 1 `https://ncems-ot.d-langdon.workers.dev/dashboard` and Crew 2 `https://ncems-c2.d-langdon.workers.dev/dashboard`, same ID token, cgstaff site only. Older notes: Derek's Worker feed, `GET https://ncems-ot.d-langdon.workers.dev/dashboard`, read only. CG Staff sends the Microsoft ID token (`Authorization: Bearer <idToken>`), the same way it reads incident reports. Derek's Worker only answers the cgstaff site, NCEMS staff only, no guests. The feed has no start time or position, so shift rows show date, type, unit and how many people are interested.
 
 ## Also assigned and reminders (1.9)
@@ -99,10 +106,20 @@ Since 1.20, CG Staff signs in through its own Entra app, **NCEMS Command Staff**
 - Single-page application redirects: `https://cgstaff.northcountryems.org/`, `https://emaildougb.github.io/forms/`, `https://forms.northcountryems.org/`
 - API permissions (Microsoft Graph, delegated): User.Read, Sites.ReadWrite.All, People.Read, admin consent granted
 - Enterprise applications > NCEMS Command Staff > Properties: **Assignment required = Yes**. Users and groups: Doug Boyce, Derek Langdon, Dennis Madler, Bryce Shirley, Chuck Andrus, Kim Reid, Nicholas Stafford. Microsoft blocks anyone else at sign in. To add a chief: Users and groups > Add user/group, and add them to `CONFIG.staff`
-- Workers that accept this app's sign in: `ncems-checks` (CLIENT_IDS variable), `ncems-api` (AUDIENCES in its code), and Derek's `ncems-ot` and `ncems-c2` (his side)
+- Workers that accept this app's sign in: `ncems-checks` (CLIENT_IDS variable), `ncems-api` (AUDIENCES in its code), `ncems-schedule-crews` (CLIENT_IDS variable), and Derek's `ncems-ot` and `ncems-c2` (his side)
 - Before 1.20 it used "NCEMS Grounds Tracker" (`254c214f-bfe2-4ebb-9294-99815e167ab0`), which now only signs in F&G and Incident Reports
 
 ## Changelog
+
+### v1.21
+- New crews strip at the top of the dashboard: who is on M51, M52, M53 and M54 now and tomorrow, from Derek's Schedule API
+- Flips to the new day at 0600. Today's date sits in a big pill next to the crews
+- Computer: unit cards across the top, tomorrow on one line under them
+- Shows split shifts with times, OPEN in red, and trade, cover and OT tags. "Schedule data as of" time on the strip, yellow when 4 or more days old
+- Reads through the new `ncems-schedule-crews` Worker, which keeps the API key off this public repo
+- Demo mode has sample crews
+- Phone: no swiping. Each ambulance is one tight row, all units on screen at once, with a Today / Tomorrow switch
+- New look matched to Derek's Open Shifts app: white header reading **NCEMS CG Staff** | North Country EMS (NCEMS in black, CG Staff in green, a thin line, then North Country EMS in gray), system font, his green #2d6a2d, light green borders, square cornered buttons. The crews strip uses the same look. The tabs and boxes below keep the old style for now. Every NCEMS app gets this header as it's rebuilt
 
 ### v1.20.1
 - Scheduling: when Derek's feed answers "wrong audience" (it hasn't been given the new app ID yet), the card says that instead of "sign in again"
