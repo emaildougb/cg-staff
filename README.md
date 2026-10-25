@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.27**
+**Version 1.27.1**
 
 ## Links
 
@@ -68,7 +68,7 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 
 ## Fleet Health (1.27)
 
-"Open vehicles" on the Vehicle Checks card now opens the **Fleet Health** page (full screen, "&#8592; CG Staff" to go back). Also opens from cgstaff.northcountryems.org/#fleet (the EP Checker's i links there for CG Staff). Data comes from the ncems-checks Worker 1.3 (`/fleet/summary`, admins and readers only) plus Derek's schedule, which the Worker saves every hour.
+The **Fleet Health** button on the Vehicle Checks card (1.27.1, where the EP Checker button was) opens the **Fleet Health** page, and so does a button at the top of the vehicle sheet. "Open vehicles" opens the vehicle sheet as before. In 1.27 "Open vehicles" opened the page (full screen, "&#8592; CG Staff" to go back). Also opens from cgstaff.northcountryems.org/#fleet (the EP Checker's i links there for CG Staff). Data comes from the ncems-checks Worker 1.3 (`/fleet/summary`, admins and readers only) plus Derek's schedule, which the Worker saves every hour.
 
 - Range: Today, 7, 14, 30 days or Custom (up to 92 days). Check days run 0730 to 0730
 - Top numbers: ambulance rig days checked (75% or more counts), other units due and checked, crew days with every rig checked, open problems, out of service
@@ -114,6 +114,10 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.27.1 (10/25/2026)
+- Vehicle Checks card: the EP Checker button is now **Fleet Health** (opens the full page). Open vehicles and tapping the card open the vehicle sheet again, and the extra Problems button is gone
+- Fleet Health, full page button at the top of the vehicle sheet
 
 ### v1.27 (10/25/2026)
 - Fleet Health page: Open vehicles on the Vehicle Checks card opens it (also cgstaff.northcountryems.org/#fleet). Range picker, top numbers, every rig every day grid, daily bar chart, problems by rig, crews with who signed in and checked, providers with Shift compliance and Hands on (30 days), weekly report, CSV export

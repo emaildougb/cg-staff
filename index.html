@@ -787,7 +787,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.27';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.27.1';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -2039,7 +2039,7 @@ function renderHome() {
 
   /* Vehicle checks (first: daily operations) */
   const SEC = {};
-  SEC.veh = secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', vehCardSmall(), vehSecBody(), '<button class="go" onclick="openFleet()">Open vehicles</button><button class="go ghost" onclick="openVeh()">Problems</button>' + link(CONFIG.checksUrl, 'EP Checker', true), () => openFleet());   /* 1.27 Doug: Open vehicles goes to Fleet Health */
+  SEC.veh = secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', vehCardSmall(), vehSecBody(), '<button class="go" onclick="openVeh()">Open vehicles</button><button class="go ghost" onclick="openFleet()">Fleet Health</button>', () => openVeh());   /* 1.27.1 Doug: Fleet Health button replaces EP Checker, Open vehicles back to the vehicle sheet */
 
   /* Shift Ops */
   const open = openItems(), since48 = now.getTime() - 48 * 3600000;
@@ -2309,7 +2309,7 @@ function renderVehSheet() {
   const keep = {}; el.querySelectorAll('input[id^="oos-"]').forEach(i => { if (i.value) keep[i.id] = i.value; });
   VEH_REFS = [];
   const S = vehSummary();
-  let h = vehSecBody().split('<div class="stats">')[0];
+  let h = '<div style="padding:12px 14px 4px"><button type="button" class="fh-btn dark fh-full" onclick="openFleet()">Fleet Health, full page</button></div>' + vehSecBody().split('<div class="stats">')[0];   // 1.27.1
   S.states.forEach(s => {
     const lastT = s.today.length ? s.today[s.today.length - 1] : null;
     const stTxt = s.st.oos ? 'Out of service' : !s.today.length ? 'Not checked today' : s.cls === 'bad' ? 'Checked, could not fix something' : s.cls === 'iss' ? 'Checked, open issues' : 'Checked, all good';
