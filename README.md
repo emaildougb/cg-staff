@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.27.1**
+**Version 1.28**
 
 ## Links
 
@@ -70,7 +70,8 @@ Command staff dashboard for North Country EMS. One sign-in, live counts for ever
 
 The **Fleet Health** button on the Vehicle Checks card (1.27.1, where the EP Checker button was) opens the **Fleet Health** page, and so does a button at the top of the vehicle sheet. "Open vehicles" opens the vehicle sheet as before. In 1.27 "Open vehicles" opened the page (full screen, "&#8592; CG Staff" to go back). Also opens from cgstaff.northcountryems.org/#fleet (the EP Checker's i links there for CG Staff). Data comes from the ncems-checks Worker 1.3 (`/fleet/summary`, admins and readers only) plus Derek's schedule, which the Worker saves every hour.
 
-- Range: Today, 7, 14, 30 days or Custom (up to 92 days). Check days run 0730 to 0730
+- Range: Today, Last 7 days (default), 14 days, **Month in review** (calendar month with arrows for earlier months; 1.28) or Custom (up to 92 days). Check days run 0730 to 0730
+- **Counting starts Fri 10/23/2026** (1.28, Doug): nothing before that shows or counts, so test days don't drag the numbers down. Nothing was deleted; change `FH_START` in index.html to move it
 - Top numbers: ambulance rig days checked (75% or more counts), other units due and checked, crew days with every rig checked, open problems, out of service
 - Every rig, every day grid (green checked, yellow partial, red missed, brown out of service, blank not due) and a bar chart of ambulances checked each day
 - Problems by rig, with a button to the old vehicle sheet for Fixed and out of service (that sheet is also the new **Problems** button on the card)
@@ -114,6 +115,10 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.28 (10/25/2026)
+- Fleet Health counts from Fri 10/23 (FH_START); earlier days are left out of every range, the 30 day provider columns, the report and the CSV. Nothing deleted
+- New Month in review range (calendar month, previous and next arrows) with a Monthly report; it replaces 30 days. Last 7 days stays the default
 
 ### v1.27.1 (10/25/2026)
 - Vehicle Checks card: the EP Checker button is now **Fleet Health** (opens the full page). Open vehicles and tapping the card open the vehicle sheet again, and the extra Problems button is gone

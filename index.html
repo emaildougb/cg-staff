@@ -787,7 +787,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.27.1';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.28';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -2807,12 +2807,26 @@ function fhToday() { return fhYmd(vehDayStart()); }
 function fhLabel(ymd, today) { if (ymd === today) return 'Today'; const d = new Date(ymd + 'T12:00:00'); return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + ' ' + (d.getMonth() + 1) + '/' + d.getDate(); }
 function fhLong(ymd) { const d = new Date(ymd + 'T12:00:00'); return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }); }
 function fhPct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+const FH_START = '2026-10-23';   // 1.28 Doug: Fleet Health counts from Friday 10/23 (Checker trial start). Nothing before it shows or counts; nothing is deleted
+function fhMonthName(ym) { const [y, m] = ym.split('-').map(Number); return new Date(y, m - 1, 15).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }); }
+function fhMonthEnd(ym) { const [y, m] = ym.split('-').map(Number); return fhYmd(new Date(y, m, 0)); }
+function fhMonthStep(n) {
+  const [y, m] = FH.month.split('-').map(Number), d = new Date(y, m - 1 + n, 1);
+  const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  if (ym < FH_START.slice(0, 7) || ym > fhToday().slice(0, 7)) return;
+  FH.month = ym; FH.report = false; FH.at = Date.now(); fhLoad();
+}
+function fh30From() { const f = fhAdd(fhToday(), -29); return f < FH_START ? FH_START : f; }
 function fhRangeDates() {
   const t = fhToday();
-  if (FH.range === 'custom' && FH.from && FH.to) return { from: FH.from, to: FH.to };
-  if (FH.range === 'week') return { from: fhAdd(t, -7), to: fhAdd(t, -1) };
-  const n = { today: 1, '7': 7, '14': 14, '30': 30 }[FH.range] || 7;
-  return { from: fhAdd(t, -(n - 1)), to: t };
+  let r;
+  if (FH.range === 'custom' && FH.from && FH.to) r = { from: FH.from, to: FH.to };
+  else if (FH.range === 'week') r = { from: fhAdd(t, -7), to: fhAdd(t, -1) };
+  else if (FH.range === 'month') { FH.month = FH.month || t.slice(0, 7); const e = fhMonthEnd(FH.month); r = { from: FH.month + '-01', to: e < t ? e : t }; }
+  else { const n = { today: 1, '7': 7, '14': 14, '30': 30 }[FH.range] || 7; r = { from: fhAdd(t, -(n - 1)), to: t }; }
+  if (r.from < FH_START) r.from = FH_START;
+  if (r.to < r.from) r.to = r.from;
+  return r;
 }
 async function fhLoad() {
   if (FH.busy) return;
@@ -2822,7 +2836,7 @@ async function fhLoad() {
     const want30 = !FH.d30 || FH.d30.to !== t;
     const [a, b] = await Promise.all([
       DEMO ? fhDemo(r.from, r.to) : cfApi('/fleet/summary?from=' + r.from + '&to=' + r.to),
-      want30 ? (DEMO ? fhDemo(fhAdd(t, -29), t) : cfApi('/fleet/summary?from=' + fhAdd(t, -29) + '&to=' + t)) : Promise.resolve(FH.d30)
+      want30 ? (DEMO ? fhDemo(fh30From(), t) : cfApi('/fleet/summary?from=' + fh30From() + '&to=' + t)) : Promise.resolve(FH.d30)
     ]);
     FH.data = a; FH.d30 = b;
   } catch (e) {
@@ -2881,7 +2895,7 @@ function fhPctCls(v) { return v == null ? 'mut' : v >= 90 ? 'good' : v >= 75 ? '
 function fhReportText() {
   const d = FH.data; if (!d) return '';
   const T = d.totals, P = fhProblems(), L = [];
-  L.push('NCEMS Fleet Health, ' + fhLabel(d.from, '') + ' to ' + fhLabel(d.to, '') + ' (check days 0730 to 0730)');
+  L.push('NCEMS Fleet Health, ' + (FH.range === 'month' ? fhMonthName(FH.month) + ', month in review, ' : '') + fhLabel(d.from, '') + ' to ' + fhLabel(d.to, '') + ' (check days 0730 to 0730)');
   L.push('');
   L.push('Ambulance rig days checked: ' + T.ambDone + ' of ' + T.ambDue + ' (' + fhPct(T.ambDone, T.ambDue) + '%), counting a rig as checked at ' + d.doneAt + '% or more');
   L.push('Other units due and checked: ' + T.othDone + ' of ' + T.othDue);
@@ -2917,15 +2931,16 @@ function fhCsv() {
 function renderFleet() {
   const el = $('fh-body'); if (!el || $('fleet').hidden) return;
   const d = FH.data, t = fhToday();
-  const ranges = [['today', 'Today'], ['7', '7 days'], ['14', '14 days'], ['30', '30 days'], ['custom', 'Custom']];
-  let h = '<div class="fh-top"><div class="fh-title"><h2>Fleet health and daily checks</h2><p>' + esc(fhLong(t)) + ' · check days run 0730 to 0730' + (d ? ' · showing ' + esc(fhLabel(d.from, '')) + ' to ' + esc(fhLabel(d.to, '')) : '') + '</p></div>' +
+  const ranges = [['today', 'Today'], ['7', 'Last 7 days'], ['14', '14 days'], ['month', 'Month in review'], ['custom', 'Custom']];   // 1.28: Month in review replaces 30 days; Last 7 days is the default
+  let h = '<div class="fh-top"><div class="fh-title"><h2>Fleet health and daily checks</h2><p>' + esc(fhLong(t)) + ' · check days run 0730 to 0730 · counting starts ' + esc(fhLabel(FH_START, '')) + (d ? ' · showing ' + esc(fhLabel(d.from, '')) + ' to ' + esc(fhLabel(d.to, '')) : '') + '</p></div>' +
     '<div class="fh-seg" role="group" aria-label="Date range">' + ranges.map(([k, l]) => '<button type="button" class="' + (FH.range === k ? 'on' : '') + '" onclick="fhSetRange(\'' + k + '\')">' + l + '</button>').join('') + '</div>' +
-    '<button type="button" class="fh-btn dark" onclick="FH.report=!FH.report;renderFleet()">Weekly report</button><button type="button" class="fh-btn" onclick="fhCsv()"' + (d ? '' : ' disabled') + '>Export CSV</button></div>';
-  if (FH.range === 'custom') h += '<div class="fh-custom"><label>From <input type="date" id="fh-from" value="' + esc(FH.from || fhAdd(t, -13)) + '" max="' + t + '"></label><label>To <input type="date" id="fh-to" value="' + esc(FH.to || t) + '" max="' + t + '"></label><button type="button" class="fh-btn dark" onclick="fhCustom()">Show</button><span>Up to 92 days</span></div>';
+    '<button type="button" class="fh-btn dark" onclick="FH.report=!FH.report;renderFleet()">' + (FH.range === 'month' ? 'Monthly report' : 'Weekly report') + '</button><button type="button" class="fh-btn" onclick="fhCsv()"' + (d ? '' : ' disabled') + '>Export CSV</button></div>';
+  if (FH.range === 'custom') h += '<div class="fh-custom"><label>From <input type="date" id="fh-from" value="' + esc(FH.from || (fhAdd(t, -13) < FH_START ? FH_START : fhAdd(t, -13))) + '" min="' + FH_START + '" max="' + t + '"></label><label>To <input type="date" id="fh-to" value="' + esc(FH.to || t) + '" min="' + FH_START + '" max="' + t + '"></label><button type="button" class="fh-btn dark" onclick="fhCustom()">Show</button><span>Up to 92 days</span></div>';
+  if (FH.range === 'month') { const ym = FH.month || t.slice(0, 7); h += '<div class="fh-custom"><button type="button" class="fh-btn" onclick="fhMonthStep(-1)"' + (ym <= FH_START.slice(0, 7) ? ' disabled' : '') + ' aria-label="Previous month">&#8249;</button><b style="font-size:15px;color:#17201A">' + esc(fhMonthName(ym)) + '</b><button type="button" class="fh-btn" onclick="fhMonthStep(1)"' + (ym >= t.slice(0, 7) ? ' disabled' : '') + ' aria-label="Next month">&#8250;</button><span>Month in review' + (ym === t.slice(0, 7) ? ', so far' : '') + (ym === FH_START.slice(0, 7) ? '. Counting starts ' + esc(fhLabel(FH_START, '')) : '') + '</span></div>'; }
   if (FH.err) h += '<div class="fh-err">' + esc(FH.err) + ' <button type="button" class="fh-btn" onclick="fhLoad()">Try again</button></div>';
   if (FH.busy && !d) { el.innerHTML = h + '<div class="fh-card fh-msg">Loading Fleet Health...</div>'; return; }
   if (!d) { el.innerHTML = h; return; }
-  if (FH.report) h += '<section class="fh-card"><div class="fh-h"><h3>Weekly report</h3><span>' + (FH.range === 'week' ? 'Last 7 full days' : 'For the range shown. <a href="#" onclick="fhSetRange(\'week\');FH.report=true;return false">Use the last 7 full days</a>') + '</span></div><textarea class="fh-rep" readonly>' + esc(fhReportText()) + '</textarea><div class="fh-row"><button type="button" class="fh-btn dark" onclick="fhCopyReport()">Copy</button><button type="button" class="fh-btn" onclick="window.print()">Print</button></div></section>';
+  if (FH.report) h += '<section class="fh-card"><div class="fh-h"><h3>' + (FH.range === 'month' ? 'Monthly report, ' + esc(fhMonthName(FH.month)) : 'Weekly report') + '</h3><span>' + (FH.range === 'month' ? 'Month in review' : FH.range === 'week' ? 'Last 7 full days' : 'For the range shown. <a href="#" onclick="fhSetRange(\'week\');FH.report=true;return false">Use the last 7 full days</a>') + '</span></div><textarea class="fh-rep" readonly>' + esc(fhReportText()) + '</textarea><div class="fh-row"><button type="button" class="fh-btn dark" onclick="fhCopyReport()">Copy</button><button type="button" class="fh-btn" onclick="window.print()">Print</button></div></section>';
   const T = d.totals, P = fhProblems();
   const missedRigs = [];
   (d.rigs || []).forEach(r => r.days.forEach(x => { if (!x.oos && x.day !== d.today && !(x.check && x.check.pct >= d.doneAt)) missedRigs.push(r.rig); }));
