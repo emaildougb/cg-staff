@@ -787,7 +787,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.28';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.28.1';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -2872,6 +2872,15 @@ function fhProblems() {
   return { list, openN, unfixedN, oos };
 }
 function fhAgeDays(at) { const t = Date.parse(at); return isNaN(t) ? 0 : Math.max(0, Math.floor((Date.now() - t) / 86400000)); }
+function fhCrewSeat(p, q) {   // 1.28.1 Doug: Crew 1 / Crew 2 like the schedule (a few paramedics work Crew 2), not Paramedic / EMT
+  const s = (q && Object.keys(q.seats || {}).length ? q.seats : p.seats) || {};
+  let seat = (s.C1 || s.C2) ? ((s.C1 || 0) >= (s.C2 || 0) ? 'C1' : 'C2') : '';
+  if (!seat) {   // no scored shifts yet (today still open): use the seat from the schedule
+    const key = p.email || p.name;
+    for (const d of [FH.data, FH.d30]) for (const c of ((d && d.crewDays) || [])) { const m = c.people.find(x => (x.email || x.name) === key); if (m && m.seat && !seat) seat = m.seat; }
+  }
+  return seat === 'C1' ? 'Crew 1' : seat === 'C2' ? 'Crew 2' : '';
+}
 function fhProvRows() {
   const d = FH.data, d30 = FH.d30 || d;
   if (!d) return [];
@@ -2880,7 +2889,7 @@ function fhProvRows() {
   (d.providers || []).forEach(p => { (byKey[p.email || p.name] = byKey[p.email || p.name] || {}).p = p; });
   let rows = Object.values(byKey).filter(x => x.p).map(x => {
     const p = x.p, q = x.p30 || p;
-    return { name: p.name, role: p.role, shifts: p.shifts, crewDone: p.crewDone, handsOn: p.handsOn, today: p.today,
+    return { name: p.name, role: fhCrewSeat(p, q), shifts: p.shifts, crewDone: p.crewDone, handsOn: p.handsOn, today: p.today,
       c30: q.shifts ? fhPct(q.crewDone, q.shifts) : null, h30: q.shifts ? fhPct(q.handsOn, q.shifts) : null, n30: q.shifts, marks: q.marks || [] };
   });
   const qq = FH.q.trim().toLowerCase();

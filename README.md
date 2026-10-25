@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.28**
+**Version 1.28.1**
 
 ## Links
 
@@ -115,6 +115,9 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.28.1 (10/25/2026)
+- Providers table shows Crew 1 or Crew 2 (the seat from the schedule) instead of Paramedic or EMT. Someone with no scored shift yet gets the seat from today's schedule (Garrett Long showed as Paramedic)
 
 ### v1.28 (10/25/2026)
 - Fleet Health counts from Fri 10/23 (FH_START); earlier days are left out of every range, the 30 day provider columns, the report and the CSV. Nothing deleted
