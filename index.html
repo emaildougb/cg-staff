@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="CG Staff">
 <meta name="theme-color" content="#1C3A1C">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -529,6 +529,94 @@
 .only-box { background: #fdecec; border: 1.5px solid #e3a3a3; border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; color: #6b1a1a; font-size: 13.5px; line-height: 1.45; text-align: center; }
 .only-box b { display: block; font-size: 15px; letter-spacing: .5px; text-transform: uppercase; color: #a11d1d; margin-bottom: 4px; }
 .only-back { display: block; margin-top: 10px; padding: 10px; border-radius: 10px; background: #fff; border: 1px solid #e3a3a3; color: #a11d1d; font-weight: 800; text-align: center; text-decoration: none; }
+
+  /* 1.27 Fleet Health page */
+  .fleet { position:fixed; inset:0; z-index:45; background:var(--bg); display:flex; flex-direction:column; }
+  .fleet[hidden] { display:none; }
+  .fh-bar { background:#fff; border-bottom:1px solid #dfe6df; padding:calc(8px + env(safe-area-inset-top)) 14px 8px; display:flex; align-items:center; gap:10px; }
+  .fh-bar img { width:30px; height:30px; border-radius:50%; }
+  .fh-bar h1 { font-size:16px; font-weight:800; color:#1A1A1A; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fh-bar h1 span { color:#2d6a2d; }
+  .fh-back { border:2px solid var(--border); background:#fff; color:var(--g-deep); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:800; letter-spacing:1px; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+  .fh-scrollwrap { flex:1; overflow:auto; -webkit-overflow-scrolling:touch; }
+  #fh-body { max-width:1360px; margin:0 auto; padding:18px 14px calc(40px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:16px; }
+  .fh-top { display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; }
+  .fh-title { flex:1 1 300px; }
+  .fh-title h2 { font-size:21px; font-weight:800; color:#17201A; }
+  .fh-title p { font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .fh-seg { display:flex; background:#dfe6df; border-radius:10px; padding:3px; gap:3px; flex-wrap:wrap; }
+  .fh-seg button { border:0; background:transparent; border-radius:8px; padding:8px 11px; font-size:12px; font-weight:700; color:#3E4A42; cursor:pointer; }
+  .fh-seg button.on { background:#fff; color:#17201A; font-weight:800; }
+  .fh-btn { min-height:38px; padding:0 14px; border-radius:10px; border:1.5px solid #C9D0C8; background:#fff; color:#17201A; font-size:12px; font-weight:800; cursor:pointer; }
+  .fh-btn.dark { background:#1C3A55; border-color:#1C3A55; color:#fff; }
+  .fh-btn:disabled { opacity:.5; }
+  .fh-full { width:100%; margin-top:6px; }
+  .fh-custom { display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:12.5px; color:var(--muted); }
+  .fh-custom input { height:36px; border:1.5px solid #C9D0C8; border-radius:8px; padding:0 8px; margin-left:4px; }
+  .fh-err { background:#FBE6E4; color:#8E1B12; border-radius:12px; padding:12px 14px; font-size:13px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .fh-card { background:#fff; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .fh-msg { color:var(--muted); font-size:13px; }
+  .fh-h { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .fh-h h3 { font-size:15px; font-weight:800; color:#17201A; }
+  .fh-h span { font-size:12px; color:var(--muted); line-height:1.4; }
+  .fh-kpis { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:14px; }
+  .fh-kpis > div { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .fh-kpis span { font-size:12px; color:var(--muted); }
+  .fh-kpis b { font-size:26px; font-weight:800; color:#17201A; letter-spacing:-.02em; }
+  .fh-kpis b.bad { color:#B42318; } .fh-kpis b.oos { color:#5B4636; }
+  .fh-kpis small { font-size:12px; color:var(--muted); line-height:1.35; }
+  @media (max-width:900px) { .fh-kpis { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+  .fh-two { display:flex; flex-wrap:wrap; gap:16px; }
+  .fh-wide { flex:999 1 620px; }
+  .fh-side { flex:1 1 320px; min-width:0; display:flex; flex-direction:column; gap:16px; }
+  .fh-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .fh-grid { display:grid; gap:4px; font-size:12px; min-width:min-content; }
+  .fh-dh { text-align:center; color:var(--muted); padding-bottom:3px; line-height:1.25; font-size:11px; }
+  .fh-dh.now { color:#17201A; font-weight:800; }
+  .fh-rn { display:flex; flex-direction:column; justify-content:center; font-weight:800; font-size:13px; padding-right:6px; }
+  .fh-rn small { font-weight:500; font-size:11px; color:var(--muted); }
+  .fh-c { height:34px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:700; font-variant-numeric:tabular-nums; font-size:12px; }
+  .fh-c.g { background:#CFE6CF; color:#1F4D1F; } .fh-c.a { background:#FFE7B3; color:#6B4500; } .fh-c.r { background:#F6C9C4; color:#8E1B12; }
+  .fh-c.o { background:#DDD3CA; color:#4A3829; } .fh-c.n { background:#F1F3F1; color:#7A857C; font-weight:600; font-size:11px; } .fh-c.x { background:transparent; }
+  .fh-key { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); align-items:center; }
+  .fh-key i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin-right:5px; }
+  .fh-key i.g { background:#CFE6CF; } .fh-key i.a { background:#FFE7B3; } .fh-key i.r { background:#F6C9C4; } .fh-key i.o { background:#DDD3CA; }
+  .fh-key i.dot, .fh-pp i { border-radius:50%; width:10px; height:10px; display:inline-block; }
+  i.y { background:#2d6a2d; } i.s { background:#fff; box-shadow:inset 0 0 0 2px #B87E0A; } i.n { background:#fff; box-shadow:inset 0 0 0 2px #B42318; }
+  .fh-trend { display:flex; align-items:flex-end; gap:6px; height:150px; }
+  .fh-trend div { flex:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; min-width:0; }
+  .fh-trend b { font-size:11px; }
+  .fh-trend i { width:100%; max-width:30px; border-radius:5px 5px 0 0; background:#2d6a2d; }
+  .fh-trend i.short { background:#C98A1A; } .fh-trend i.now { background:#8FB98F; }
+  .fh-trend span { font-size:11px; color:var(--muted); }
+  .fh-prob { display:flex; gap:10px; font-size:13px; align-items:baseline; }
+  .fh-prob b { width:58px; flex-shrink:0; } .fh-prob span { flex:1; color:#2A332D; }
+  .fh-prob em { font-style:normal; font-size:11.5px; font-weight:800; white-space:nowrap; }
+  .fh-prob em.bad { color:#B42318; } .fh-prob em.warn { color:#8A5A00; } .fh-prob em.oos { color:#5B4636; }
+  .fh-more { font-size:12.5px; color:var(--muted); }
+  .fh-tab { width:100%; min-width:760px; border-collapse:collapse; font-size:13px; }
+  .fh-tab th { text-align:left; color:var(--muted); font-size:11.5px; font-weight:700; padding:7px 8px; border-bottom:1px solid #E2E6E1; }
+  .fh-tab td { padding:9px 8px; border-bottom:1px solid #EEF1ED; vertical-align:top; }
+  .fh-tab .r { text-align:right; } .fh-tab .nw { white-space:nowrap; }
+  .fh-tab small { color:var(--muted); font-size:11.5px; }
+  .fh-sort { border:0; background:none; color:inherit; font:inherit; cursor:pointer; padding:0; text-align:inherit; }
+  .fh-sort.on { color:#17201A; text-decoration:underline; }
+  .fh-pp { display:inline-flex; align-items:center; gap:5px; margin-right:14px; white-space:nowrap; }
+  .fh-res { font-size:11.5px; font-weight:800; padding:4px 9px; border-radius:999px; white-space:nowrap; }
+  .fh-res.g { background:#E5F1E5; color:#1F4D1F; } .fh-res.a { background:#FFF4DB; color:#6B4500; } .fh-res.r { background:#FBE6E4; color:#8E1B12; } .fh-res.m { background:#F1F3F1; color:#5a635a; }
+  .fh-p { font-weight:800; } .fh-p.good { color:#1F4D1F; } .fh-p.warn { color:#6B4500; } .fh-p.bad { color:#8E1B12; } .fh-p.mut { color:var(--muted); }
+  .fh-strip { display:flex; gap:2px; flex-wrap:wrap; }
+  .fh-strip i { width:8px; height:16px; border-radius:2px; display:inline-block; }
+  .fh-strip i.y { background:#2d6a2d; box-shadow:none; } .fh-strip i.c { background:#A9CFA9; } .fh-strip i.r { background:#D9534A; box-shadow:none; }
+  .fh-find { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
+  .fh-find input { height:34px; width:170px; border:1.5px solid #C9D0C8; border-radius:8px; padding:0 8px; }
+  .fh-note { font-size:11.5px; color:var(--muted); line-height:1.5; }
+  .fh-rep { width:100%; min-height:220px; border:1.5px solid #C9D0C8; border-radius:10px; padding:10px; font-size:12px; line-height:1.5; resize:vertical; }
+  .fh-row { display:flex; gap:8px; }
+  .fh-signed { font-size:11.5px; color:var(--muted); margin:0 14px 8px; line-height:1.5; }
+  .fh-signed b { color:var(--g-deep); }
+  body.fh-on .fab, body.fh-on .done-strip { display:none; }
+  @media print { body.fh-on .hdr, body.fh-on .nav, body.fh-on .main, body.fh-on .bar, body.fh-on .fh-bar, body.fh-on .fh-top, body.fh-on .fh-row { display:none !important; } body.fh-on, body.fh-on html { overflow:visible !important; height:auto !important; } .fleet { position:static; } .fh-scrollwrap { overflow:visible; } .fh-rep { border:0; min-height:0; height:auto; } }
 </style>
 </head>
 <body>
@@ -639,6 +727,11 @@
   <div class="sh-body" id="vfull-body"></div>
 </div>
 
+<section class="fleet" id="fleet" hidden aria-label="Fleet Health">
+  <div class="fh-bar"><button type="button" class="fh-back" onclick="closeFleet()">&#8592; CG Staff</button><img src="logo.png" alt=""><h1>NCEMS <span>Fleet Health</span></h1><button type="button" class="fh-btn" onclick="FH.at=0;fhLoad()" title="Refresh">Refresh</button></div>
+  <div class="fh-scrollwrap"><div id="fh-body"></div></div>
+</section>
+
 <div class="pv" id="pv" onclick="if(event.target===this)pvClose()">
   <div class="pv-top"><span id="pv-cap"></span><a id="pv-open" href="#" target="_blank" rel="noopener">Full size</a><button type="button" onclick="pvClose()" aria-label="Close">&#10005;</button></div>
   <img id="pv-img" alt="">
@@ -694,7 +787,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.26.2';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.27';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -1008,7 +1101,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadReminders(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; })]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadReminders(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; }), loadFleetToday().catch(() => {})]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -1946,7 +2039,7 @@ function renderHome() {
 
   /* Vehicle checks (first: daily operations) */
   const SEC = {};
-  SEC.veh = secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', 'Ambulances ' + vehDayLabel(), vehSecBody(), '<button class="go" onclick="openVeh()">Open vehicles</button>' + link(CONFIG.checksUrl, 'EP Checker', true), () => openVeh());
+  SEC.veh = secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', vehCardSmall(), vehSecBody(), '<button class="go" onclick="openFleet()">Open vehicles</button><button class="go ghost" onclick="openVeh()">Problems</button>' + link(CONFIG.checksUrl, 'EP Checker', true), () => openFleet());   /* 1.27 Doug: Open vehicles goes to Fleet Health */
 
   /* Shift Ops */
   const open = openItems(), since48 = now.getTime() - 48 * 3600000;
@@ -2201,7 +2294,7 @@ function vehSecBody() {
   });
   S.states.forEach(s => s.handoff.forEach(h => rows.push(rowi(s.unit + ': ' + h.i.label, 'Fixed at check by ' + vehCrew(h.c) + ', left by ' + (h.prev ? vehCrew(h.prev) + ' ' + fmtDate(new Date(h.prev.at)) : 'prior crew'), 'info', () => vehOpenIssueBy(h.c.id, h.i.label), photoBtn(vehPhotosFor(h.c, h.i))))));
   S.states.forEach(s => { if (!s.st.oos) s.openIss.filter(o => o.i.state === 'open').forEach(o => rows.push(rowi(s.unit + ': ' + o.i.label, 'Open · ' + vehCrew(o.c), 'warn', () => vehOpenIssueBy(o.c.id, o.i.label), photoBtn(vehPhotosFor(o.c, o.i))))); });
-  return banner + '<div class="stats">' + stat(S.checked.length + '/' + S.inSvc.length, 'Checked', '', () => openVeh()) +
+  return banner + fhSignedLine() + '<div class="stats">' + stat(S.checked.length + '/' + S.inSvc.length, 'Checked', '', () => openVeh()) +
     (openN ? statBtn(openN, 'Open issues', 'warn', 'openVehIssues(\'open\')') : stat(openN, 'Open issues', '', () => openVeh())) +
     (handN ? statBtn(handN, 'Left by prior', 'bad', 'openVehIssues(\'hand\')') : stat(handN, 'Left by prior', '', () => openVeh())) +
     stat(oosN, 'Out of svc', '', () => openVeh()) + '</div>' +
@@ -2681,6 +2774,254 @@ function vehDeepLink() {
   }
 }
 
+/* 1.27: today's counts for the vehicle card, from the same Worker (GET /fleet/today) */
+let vehFleet = null;
+async function loadFleetToday() {
+  if (DEMO) { vehFleet = { day: fhToday(), rigs: [{ rig: 'M25A', check: { pct: 100 } }, { rig: 'M25B', check: { pct: 96 } }, { rig: 'M19', check: null }, { rig: 'M18', check: null }, { rig: 'M14', oos: { reason: 'Transmission' } }], due: [{ rig: 'Rescue 7', check: { pct: 100 } }, { rig: 'Rescue 8', check: null }], signins: [{ crew: 'M51', name: 'Pat Lee' }, { crew: 'M51', name: 'Chris Wong' }, { crew: 'M52', name: 'Sam Ortiz' }] }; return; }
+  try { vehFleet = await cfApi('/fleet/today'); } catch (e) { vehFleet = null; }
+}
+function vehCardSmall() {
+  const f = vehFleet;
+  if (!f || !f.rigs) return 'Ambulances ' + vehDayLabel();
+  const inSvc = f.rigs.filter(r => !r.oos), done = inSvc.filter(r => r.check && r.check.pct >= 75).length;
+  const due = f.due || [], dd = due.filter(r => r.check && r.check.pct >= 75).length;
+  return vehDayLabel() + ' · Ambulances ' + done + '/' + inSvc.length + ' · Other units ' + (due.length ? dd + '/' + due.length : 'none due');
+}
+function fhSignedLine() {
+  const f = vehFleet; if (!f || !f.signins) return '';
+  if (!f.signins.length) return '<div class="fh-signed">No one has picked a crew in the EP Checker yet today.</div>';
+  const by = {}; f.signins.forEach(s => { (by[s.crew] = by[s.crew] || []).push(s.name); });
+  return '<div class="fh-signed">Signed in to the Checker: ' + Object.keys(by).sort().map(c => '<b>' + esc(c) + '</b> ' + esc(by[c].join(', '))).join(' · ') + '</div>';
+}
+/* ---------- 1.27 FLEET HEALTH (Doug 10/25: "Open vehicles" goes to the Fleet Health page) ----------
+   Full screen page over the dashboard. Data: ncems-checks Worker 1.3 GET /fleet/summary (admins and readers),
+   crews from Derek's schedule (saved hourly by the Worker), checks from the EP Checker.
+   Problems and out of service come from the vehicle checks this page already loads (veh).
+   Opens from Open vehicles, the vehicle card, or cgstaff.northcountryems.org/#fleet (the EP Checker's i). */
+const FH = { range: '7', from: '', to: '', data: null, d30: null, busy: false, err: '', q: '', sort: 'name', want: /^#fleet/.test(location.hash), report: false };
+const FH_SUB = { M25A: 'M51 primary', M19: 'M54 primary', M25B: 'M52 primary' };
+const FH_UC = { M51: '#2E6B2E', M52: '#1F5C8B', M53: '#6b4fa0', M54: '#7a1f1f' };
+function fhYmd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function fhAdd(ymd, n) { const [y, m, d] = ymd.split('-').map(Number); const x = new Date(Date.UTC(y, m - 1, d + n)); return x.toISOString().slice(0, 10); }
+function fhToday() { return fhYmd(vehDayStart()); }
+function fhLabel(ymd, today) { if (ymd === today) return 'Today'; const d = new Date(ymd + 'T12:00:00'); return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + ' ' + (d.getMonth() + 1) + '/' + d.getDate(); }
+function fhLong(ymd) { const d = new Date(ymd + 'T12:00:00'); return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }); }
+function fhPct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+function fhRangeDates() {
+  const t = fhToday();
+  if (FH.range === 'custom' && FH.from && FH.to) return { from: FH.from, to: FH.to };
+  if (FH.range === 'week') return { from: fhAdd(t, -7), to: fhAdd(t, -1) };
+  const n = { today: 1, '7': 7, '14': 14, '30': 30 }[FH.range] || 7;
+  return { from: fhAdd(t, -(n - 1)), to: t };
+}
+async function fhLoad() {
+  if (FH.busy) return;
+  FH.busy = true; FH.err = ''; renderFleet();
+  const r = fhRangeDates(), t = fhToday();
+  try {
+    const want30 = !FH.d30 || FH.d30.to !== t;
+    const [a, b] = await Promise.all([
+      DEMO ? fhDemo(r.from, r.to) : cfApi('/fleet/summary?from=' + r.from + '&to=' + r.to),
+      want30 ? (DEMO ? fhDemo(fhAdd(t, -29), t) : cfApi('/fleet/summary?from=' + fhAdd(t, -29) + '&to=' + t)) : Promise.resolve(FH.d30)
+    ]);
+    FH.data = a; FH.d30 = b;
+  } catch (e) {
+    FH.err = e.status === 403 ? 'Your account is not on the Fleet Health list. Ask Doug.' : (e.message || 'Could not load Fleet Health.');
+  }
+  FH.busy = false; renderFleet();
+}
+function openFleet() {
+  closeSheets();
+  $('fleet').hidden = false;
+  document.body.classList.add('fh-on');
+  try { if (location.hash !== '#fleet') history.replaceState(history.state, '', location.pathname + location.search + '#fleet'); } catch (e) {}
+  if (!FH.data || Date.now() - (FH.at || 0) > 120000) { FH.at = Date.now(); fhLoad(); } else renderFleet();
+}
+function closeFleet() {
+  $('fleet').hidden = true;
+  document.body.classList.remove('fh-on');
+  try { if (location.hash) history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {}
+}
+function fhSetRange(r) { FH.range = r; FH.report = false; if (r !== 'custom') { FH.at = Date.now(); fhLoad(); } else renderFleet(); }
+function fhCustom() { const f = $('fh-from').value, t = $('fh-to').value; if (!f || !t) return; FH.from = f <= t ? f : t; FH.to = f <= t ? t : f; FH.at = Date.now(); fhLoad(); }
+function fhCellHtml(k, txt, tip) { return '<span class="fh-c ' + k + '" title="' + esc(tip || txt) + '">' + esc(txt) + '</span>'; }
+function fhProblems() {
+  if (!veh) return { list: [], openN: 0, unfixedN: 0, oos: [] };
+  const S = vehSummary(), list = [];
+  let openN = 0, unfixedN = 0;
+  S.states.forEach(s => {
+    if (s.st.oos) return;
+    s.openIss.forEach(o => { openN++; if (o.i.state === 'unfixed') unfixedN++; list.push({ rig: s.unit, what: o.i.label, state: o.i.state === 'unfixed' ? 'Unable to fix' : 'Open', bad: o.i.state === 'unfixed', at: o.c.at }); });
+  });
+  const oos = S.states.filter(s => s.st.oos).map(s => ({ rig: s.unit, reason: s.st.reason || '', at: s.st.at || '' }));
+  list.sort((a, b) => (b.bad - a.bad) || String(a.at).localeCompare(String(b.at)));
+  return { list, openN, unfixedN, oos };
+}
+function fhAgeDays(at) { const t = Date.parse(at); return isNaN(t) ? 0 : Math.max(0, Math.floor((Date.now() - t) / 86400000)); }
+function fhProvRows() {
+  const d = FH.data, d30 = FH.d30 || d;
+  if (!d) return [];
+  const byKey = {};
+  (d30.providers || []).forEach(p => { byKey[p.email || p.name] = { p30: p }; });
+  (d.providers || []).forEach(p => { (byKey[p.email || p.name] = byKey[p.email || p.name] || {}).p = p; });
+  let rows = Object.values(byKey).filter(x => x.p).map(x => {
+    const p = x.p, q = x.p30 || p;
+    return { name: p.name, role: p.role, shifts: p.shifts, crewDone: p.crewDone, handsOn: p.handsOn, today: p.today,
+      c30: q.shifts ? fhPct(q.crewDone, q.shifts) : null, h30: q.shifts ? fhPct(q.handsOn, q.shifts) : null, n30: q.shifts, marks: q.marks || [] };
+  });
+  const qq = FH.q.trim().toLowerCase();
+  if (qq) rows = rows.filter(r => r.name.toLowerCase().includes(qq));
+  const s = FH.sort;
+  rows.sort((a, b) => s === 'hands' ? ((a.h30 == null ? 999 : a.h30) - (b.h30 == null ? 999 : b.h30)) || a.name.localeCompare(b.name)
+    : s === 'comp' ? ((a.c30 == null ? 999 : a.c30) - (b.c30 == null ? 999 : b.c30)) || a.name.localeCompare(b.name)
+    : s === 'shifts' ? (b.shifts - a.shifts) || a.name.localeCompare(b.name) : a.name.localeCompare(b.name));
+  return rows;
+}
+function fhPctCls(v) { return v == null ? 'mut' : v >= 90 ? 'good' : v >= 75 ? 'warn' : 'bad'; }
+function fhReportText() {
+  const d = FH.data; if (!d) return '';
+  const T = d.totals, P = fhProblems(), L = [];
+  L.push('NCEMS Fleet Health, ' + fhLabel(d.from, '') + ' to ' + fhLabel(d.to, '') + ' (check days 0730 to 0730)');
+  L.push('');
+  L.push('Ambulance rig days checked: ' + T.ambDone + ' of ' + T.ambDue + ' (' + fhPct(T.ambDone, T.ambDue) + '%), counting a rig as checked at ' + d.doneAt + '% or more');
+  L.push('Other units due and checked: ' + T.othDone + ' of ' + T.othDue);
+  L.push('Crew days with every rig checked: ' + T.crewDone + ' of ' + T.crewDays);
+  const missed = [];
+  (d.rigs || []).forEach(r => r.days.forEach(x => { if (!x.oos && x.day !== d.today && !(x.check && x.check.pct >= d.doneAt)) missed.push(r.rig + ' ' + fhLabel(x.day, '') + (x.check ? ' (' + x.check.pct + '%)' : '')); }));
+  (d.others || []).forEach(r => r.days.forEach(x => { if (x.due && x.day !== d.today && !(x.check && x.check.pct >= d.doneAt)) missed.push(r.rig + ' ' + fhLabel(x.day, '')); }));
+  L.push('');
+  L.push('Missed: ' + (missed.length ? missed.join('; ') : 'none'));
+  const crewMiss = (d.crewDays || []).filter(c => !c.open && !c.done && c.rigs.length).map(c => fhLabel(c.day, '') + ' ' + c.crew + ' (' + c.people.map(p => p.name).join(', ') + ')');
+  L.push('Crew days not done: ' + (crewMiss.length ? crewMiss.join('; ') : 'none'));
+  L.push('Out of service now: ' + (P.oos.length ? P.oos.map(o => o.rig + (o.reason ? ', ' + o.reason : '')).join('; ') : 'none'));
+  L.push('Open problems: ' + P.openN + (P.unfixedN ? ' (' + P.unfixedN + ' unable to fix)' : ''));
+  const low = fhProvRows().filter(r => r.n30 >= 2 && r.h30 != null && r.h30 < 50).map(r => r.name + ' ' + r.h30 + '%');
+  L.push('Hands on under 50% (last 30 days, 2+ shifts): ' + (low.length ? low.join('; ') : 'none'));
+  return L.join('\n');
+}
+function fhCopyReport() { const t = fhReportText(); try { navigator.clipboard.writeText(t).then(() => toast('Report copied'), () => toast('Select the text and copy it', true)); } catch (e) { toast('Select the text and copy it', true); } }
+function fhCsv() {
+  const d = FH.data; if (!d) return;
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const rows = [['Type', 'Day', 'Unit or crew', 'Person', 'Seat', 'Percent', 'Checked by', 'Result']];
+  (d.rigs || []).concat(d.others || []).forEach(r => r.days.forEach(x => {
+    if (r.kind === 'other' && !x.due && !x.check) return;
+    rows.push(['Rig day', x.day, r.rig, '', '', x.check ? x.check.pct : '', x.check ? x.check.by : '', x.oos ? 'Out of service' : x.check && x.check.pct >= d.doneAt ? 'Checked' : x.check ? 'Partial' : x.day === d.today ? 'Not yet' : 'Missed']);
+  }));
+  (d.crewDays || []).forEach(c => c.people.forEach(p => rows.push(['Crew day', c.day, c.crew, p.name, p.seat, '', p.submitted.join(' '), (c.open ? 'In progress' : c.done ? 'All done' : 'Not done') + (p.submitted.length ? ', checked' : p.signedIn ? ', signed in' : ', did not sign in')])));
+  const blob = new Blob([rows.map(r => r.map(q).join(',')).join('\r\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'fleet-health-' + d.from + '-to-' + d.to + '.csv';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function renderFleet() {
+  const el = $('fh-body'); if (!el || $('fleet').hidden) return;
+  const d = FH.data, t = fhToday();
+  const ranges = [['today', 'Today'], ['7', '7 days'], ['14', '14 days'], ['30', '30 days'], ['custom', 'Custom']];
+  let h = '<div class="fh-top"><div class="fh-title"><h2>Fleet health and daily checks</h2><p>' + esc(fhLong(t)) + ' · check days run 0730 to 0730' + (d ? ' · showing ' + esc(fhLabel(d.from, '')) + ' to ' + esc(fhLabel(d.to, '')) : '') + '</p></div>' +
+    '<div class="fh-seg" role="group" aria-label="Date range">' + ranges.map(([k, l]) => '<button type="button" class="' + (FH.range === k ? 'on' : '') + '" onclick="fhSetRange(\'' + k + '\')">' + l + '</button>').join('') + '</div>' +
+    '<button type="button" class="fh-btn dark" onclick="FH.report=!FH.report;renderFleet()">Weekly report</button><button type="button" class="fh-btn" onclick="fhCsv()"' + (d ? '' : ' disabled') + '>Export CSV</button></div>';
+  if (FH.range === 'custom') h += '<div class="fh-custom"><label>From <input type="date" id="fh-from" value="' + esc(FH.from || fhAdd(t, -13)) + '" max="' + t + '"></label><label>To <input type="date" id="fh-to" value="' + esc(FH.to || t) + '" max="' + t + '"></label><button type="button" class="fh-btn dark" onclick="fhCustom()">Show</button><span>Up to 92 days</span></div>';
+  if (FH.err) h += '<div class="fh-err">' + esc(FH.err) + ' <button type="button" class="fh-btn" onclick="fhLoad()">Try again</button></div>';
+  if (FH.busy && !d) { el.innerHTML = h + '<div class="fh-card fh-msg">Loading Fleet Health...</div>'; return; }
+  if (!d) { el.innerHTML = h; return; }
+  if (FH.report) h += '<section class="fh-card"><div class="fh-h"><h3>Weekly report</h3><span>' + (FH.range === 'week' ? 'Last 7 full days' : 'For the range shown. <a href="#" onclick="fhSetRange(\'week\');FH.report=true;return false">Use the last 7 full days</a>') + '</span></div><textarea class="fh-rep" readonly>' + esc(fhReportText()) + '</textarea><div class="fh-row"><button type="button" class="fh-btn dark" onclick="fhCopyReport()">Copy</button><button type="button" class="fh-btn" onclick="window.print()">Print</button></div></section>';
+  const T = d.totals, P = fhProblems();
+  const missedRigs = [];
+  (d.rigs || []).forEach(r => r.days.forEach(x => { if (!x.oos && x.day !== d.today && !(x.check && x.check.pct >= d.doneAt)) missedRigs.push(r.rig); }));
+  const othMissed = [];
+  (d.others || []).forEach(r => r.days.forEach(x => { if (x.due && !(x.check && x.check.pct >= d.doneAt) && x.day !== d.today) othMissed.push(r.rig); }));
+  const crewMiss = (d.crewDays || []).filter(c => !c.open && !c.done && c.rigs.length);
+  h += '<div class="fh-card fh-kpis">' +
+    '<div><span>Ambulance rig days checked</span><b>' + T.ambDone + ' of ' + T.ambDue + '</b><small>' + fhPct(T.ambDone, T.ambDue) + '% of in service rig days' + (missedRigs.length ? ', missed: ' + esc([...new Set(missedRigs)].join(', ')) : '') + '</small></div>' +
+    '<div><span>Other units due and checked</span><b>' + T.othDone + ' of ' + T.othDue + '</b><small>' + (othMissed.length ? esc([...new Set(othMissed)].join(', ')) + ' not done' : T.othDue ? 'All done' : 'None due') + '</small></div>' +
+    '<div><span>Crew days with every rig checked</span><b>' + T.crewDone + ' of ' + T.crewDays + '</b><small>' + (crewMiss.length ? 'Missed: ' + esc(crewMiss.slice(0, 3).map(c => fhLabel(c.day, '') + ' ' + c.crew).join(', ')) + (crewMiss.length > 3 ? ' and ' + (crewMiss.length - 3) + ' more' : '') : T.crewDays ? 'None missed' : 'No crew days yet') + '</small></div>' +
+    '<div><span>Open problems</span><b class="' + (P.openN ? 'bad' : '') + '">' + P.openN + '</b><small>' + (P.unfixedN ? P.unfixedN + ' unable to fix' : P.openN ? 'None marked unable to fix' : 'Nothing open') + '</small></div>' +
+    '<div><span>Out of service</span><b class="' + (P.oos.length ? 'oos' : '') + '">' + (P.oos.length ? esc(P.oos.map(o => o.rig).join(', ')) : 'None') + '</b><small>' + esc(P.oos.map(o => (o.at ? 'since ' + fhLabel(fhYmd(new Date(o.at)), '') : '') + (o.reason ? ', ' + o.reason : '')).join('; ')) + '</small></div></div>';
+  // grid
+  const days = d.days || [];
+  const cols = 'grid-template-columns: 130px repeat(' + days.length + ', minmax(' + (days.length > 14 ? 38 : 52) + 'px, 1fr))';
+  let g = '<span></span>' + days.map(x => '<span class="fh-dh' + (x.day === d.today ? ' now' : '') + '">' + esc(fhLabel(x.day, d.today)).replace(' ', '<br>') + '</span>').join('');
+  (d.rigs || []).forEach(r => {
+    g += '<span class="fh-rn">' + esc(r.rig) + '<small>' + esc(FH_SUB[r.rig] || 'Spare') + '</small></span>';
+    r.days.forEach(x => {
+      if (x.oos) g += fhCellHtml('o', 'OOS', 'Out of service');
+      else if (x.check) g += fhCellHtml(x.check.pct >= d.doneAt ? 'g' : 'a', x.check.pct + '%', x.check.pct + '% by ' + (x.check.by || '') + ' ' + fmtDT(new Date(x.check.at)));
+      else if (x.day === d.today) g += fhCellHtml('n', 'not yet', 'Not checked yet today');
+      else g += fhCellHtml('r', '0', 'Not checked');
+    });
+  });
+  (d.others || []).forEach(r => {
+    g += '<span class="fh-rn">' + esc(r.rig) + '<small>' + esc(r.dueDays.length ? r.dueDays.map(x => x + 's').join(', ') : 'No set day') + '</small></span>';
+    r.days.forEach(x => {
+      if (x.check) g += fhCellHtml(x.check.pct >= d.doneAt ? 'g' : 'a', x.check.pct + '%', x.check.pct + '% by ' + (x.check.by || '') + (x.due ? '' : ' (not due that day)'));
+      else if (!x.due) g += fhCellHtml('x', '', 'Not due');
+      else if (x.day === d.today) g += fhCellHtml('n', 'due', 'Due today, not checked yet');
+      else g += fhCellHtml('r', '0', 'Due, not checked');
+    });
+  });
+  h += '<div class="fh-two"><section class="fh-card fh-wide"><div class="fh-h"><h3>Every rig, every day</h3><span>Best check that day, percent complete</span></div><div class="fh-scroll"><div class="fh-grid" style="' + cols + '">' + g + '</div></div>' +
+    '<div class="fh-key"><span><i class="g"></i>Checked, ' + d.doneAt + '% or more</span><span><i class="a"></i>Partial</span><span><i class="r"></i>Missed</span><span><i class="o"></i>Out of service</span><span>Blank: not due that day</span></div></section>';
+  // trend + problems
+  const tr = (d.trend || []).slice(-14);
+  h += '<section class="fh-side"><div class="fh-card"><div class="fh-h"><h3>Ambulances checked each day</h3></div><div class="fh-trend">' + tr.map(x => {
+    const p = fhPct(x.done, x.due);
+    return '<div><b>' + x.done + '/' + x.due + '</b><i style="height:' + Math.max(4, p) + '%" class="' + (x.day === d.today ? 'now' : p < 100 ? 'short' : '') + '"></i><span>' + esc(fhLabel(x.day, d.today).split(' ')[0]) + '</span></div>';
+  }).join('') + '</div></div>' +
+    '<div class="fh-card"><div class="fh-h"><h3>Problems by rig</h3></div>' + (P.list.length || P.oos.length ? P.oos.map(o => '<div class="fh-prob"><b>' + esc(o.rig) + '</b><span>Out of service' + (o.reason ? ': ' + esc(o.reason) : '') + '</span><em class="oos">OOS</em></div>').join('') + P.list.slice(0, 8).map(p => '<div class="fh-prob"><b>' + esc(p.rig) + '</b><span>' + esc(p.what) + '</span><em class="' + (p.bad ? 'bad' : 'warn') + '">' + esc(p.state) + (p.bad ? '' : ', ' + fhAgeDays(p.at) + 'd') + '</em></div>').join('') + (P.list.length > 8 ? '<div class="fh-more">and ' + (P.list.length - 8) + ' more</div>' : '') : '<div class="fh-more">' + (veh ? 'No open problems.' : 'Vehicle checks still loading.') + '</div>') +
+    '<button type="button" class="fh-btn dark fh-full" onclick="closeFleet();openVeh()">Problems, Fixed and out of service</button></div></section></div>';
+  // crews
+  const crews = (d.crewDays || []).slice().sort((a, b) => b.day.localeCompare(a.day) || a.crew.localeCompare(b.crew));
+  const sched = d.schedule && (d.schedule.generated_at || d.schedule.pulled_at);
+  h += '<section class="fh-card"><div class="fh-h"><h3>Crews: who was on and what got done</h3><span>From the Aladtec schedule' + (sched ? ' (schedule as of ' + esc(String(d.schedule.generated_at || '').slice(5, 16) || fmtDT(new Date(d.schedule.pulled_at))) + ')' : '') + '. The whole crew gets credit for a done day; the dots show who actually signed in and checked.</span></div>' +
+    (crews.length ? '<div class="fh-scroll"><table class="fh-tab"><thead><tr><th>Day</th><th>Crew</th><th>On duty, and did they check</th><th>Rigs</th><th class="r">Result</th></tr></thead><tbody>' + crews.map(c => {
+      const ppl = c.people.map(p => '<span class="fh-pp"><i class="' + (p.submitted.length ? 'y' : p.signedIn ? 's' : 'n') + '"></i>' + esc(p.name) + ' <small>' + esc(p.submitted.length ? p.submitted.join(', ') : p.signedIn ? 'signed in, no check' : 'did not sign in') + '</small></span>').join('') || '<small>No one on the schedule</small>';
+      const miss = c.rigs.filter(r => c.checked.indexOf(r) < 0);
+      const res = c.open ? ['a', c.checked.length + ' of ' + c.rigs.length + ' so far'] : c.done ? ['g', 'All done'] : c.rigs.length ? ['r', esc(miss.join(', ')) + ' missed'] : ['m', 'No rigs'];
+      return '<tr><td class="nw">' + esc(fhLabel(c.day, d.today)) + '</td><td><b style="color:' + (FH_UC[c.crew] || '#333') + '">' + esc(c.crew) + '</b></td><td>' + ppl + '</td><td>' + esc(c.rigs.join(', ')) + (c.claimed ? '' : c.rigs.length ? ' <small>(primary, not claimed in the app)</small>' : '') + '</td><td class="r"><span class="fh-res ' + res[0] + '">' + res[1] + '</span></td></tr>';
+    }).join('') + '</tbody></table></div>' : '<div class="fh-more">No crews on the schedule in this range yet. The Worker saves the schedule every hour, starting 10/24.</div>') +
+    '<div class="fh-key"><span><i class="dot y"></i>signed in and submitted a check</span><span><i class="dot s"></i>signed in, no check</span><span><i class="dot n"></i>on duty, did not sign in to the Checker</span></div></section>';
+  // providers
+  const pr = fhProvRows();
+  const th = (k, l, cls) => '<th class="' + (cls || '') + '"><button type="button" class="fh-sort' + (FH.sort === k ? ' on' : '') + '" onclick="FH.sort=\'' + k + '\';renderFleet()">' + l + '</button></th>';
+  h += '<section class="fh-card"><div class="fh-h"><h3>Providers</h3><span>Everyone on the crew schedule except CG Staff who worked a shift in this range</span><label class="fh-find">Find <input type="search" id="fh-q" value="' + esc(FH.q) + '" placeholder="Name" oninput="FH.q=this.value;fhProvOnly()"></label></div><div id="fh-prov">' + fhProvTable(pr, th) + '</div>' +
+    '<div class="fh-note">Shift compliance: the crew\'s rigs got checked on shifts this person worked (the whole crew gets credit). Hands on: this person signed in and submitted part of the check themselves, so a low number means the partner signed everything off. Strip: one mark per shift in the last 30 days, oldest first. Green: they checked. Light green: the crew got it done without them. Red: the crew\'s rigs were missed. Today is left out until the crew finishes.</div></section>';
+  el.innerHTML = h;
+}
+function fhProvTable(pr, th) {
+  th = th || ((k, l, cls) => '<th class="' + (cls || '') + '"><button type="button" class="fh-sort' + (FH.sort === k ? ' on' : '') + '" onclick="FH.sort=\'' + k + '\';renderFleet()">' + l + '</button></th>');
+  if (!pr.length) return '<div class="fh-more">' + (FH.q ? 'No one matches.' : 'No shifts scored in this range yet.') + '</div>';
+  return '<div class="fh-scroll"><table class="fh-tab"><thead><tr>' + th('name', 'Name') + th('shifts', 'Shifts worked', 'r') + '<th class="r">Crew checks done</th><th class="r">Signed in and checked</th>' + th('comp', 'Shift compliance, 30 days', 'r') + th('hands', 'Hands on, 30 days', 'r') + '<th>Last 30 days, by shift</th></tr></thead><tbody>' +
+    pr.map(r => '<tr><td><b>' + esc(r.name) + '</b> <small>' + esc(r.role) + '</small></td><td class="r">' + r.shifts + '</td><td class="r">' + r.crewDone + ' of ' + r.shifts + '</td><td class="r">' + r.handsOn + '</td>' +
+      '<td class="r"><span class="fh-p ' + fhPctCls(r.c30) + '">' + (r.c30 == null ? 'n/a' : r.c30 + '%') + '</span></td><td class="r"><span class="fh-p ' + fhPctCls(r.h30) + '">' + (r.h30 == null ? 'n/a' : r.h30 + '%') + '</span></td>' +
+      '<td><span class="fh-strip">' + r.marks.map(m => '<i class="' + m.mark + '" title="' + esc(fhLabel(m.day, '') + ' ' + m.crew + ': ' + (m.mark === 'y' ? 'checked' : m.mark === 'c' ? 'crew got it done' : 'missed')) + '"></i>').join('') + '</span></td></tr>').join('') +
+    '</tbody></table></div>';
+}
+function fhProvOnly() { const el = $('fh-prov'); if (el) el.innerHTML = fhProvTable(fhProvRows()); }
+/* demo mode (?demo) sample, so the page can be looked at without signing in */
+function fhDemo(from, to) {
+  const days = []; for (let x = from; x <= to; x = fhAdd(x, 1)) days.push(x);
+  const today = fhToday(), rot = { Sunday: ['SAR 51'], Monday: ['Rescue 51'], Tuesday: ['Rescue 7', 'Rescue 8'], Wednesday: ['Rescue 3', 'Rescue 4'], Thursday: ['Rescue 1'] };
+  const dow = x => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(x + 'T12:00:00').getDay()];
+  const rnd = (s => () => (s = (s * 9301 + 49297) % 233280) / 233280)(7);
+  const ck = (x, p) => p ? { pct: p, by: 'Sample', at: x + 'T16:10:00Z' } : null;
+  const rigs = ['M25A', 'M19', 'M25B', 'M18', 'M14'].map(r => ({ rig: r, kind: 'ambulance', days: days.map(x => ({ day: x, oos: r === 'M14' && x >= fhAdd(today, -1), check: x === today && r !== 'M25A' ? null : ck(x, rnd() < 0.12 ? 0 : rnd() < 0.1 ? 60 : 100) })) }));
+  const others = ['SAR 51', 'Rescue 51', 'Rescue 1', 'Rescue 3', 'Rescue 4', 'Rescue 7', 'Rescue 8'].map(r => ({ rig: r, kind: 'other', dueDays: Object.keys(rot).filter(k => rot[k].includes(r)), days: days.map(x => { const due = (rot[dow(x)] || []).includes(r); return { day: x, due, check: due && x !== today && rnd() > 0.2 ? ck(x, 100) : null }; }) }));
+  const names = { M51: ['Pat Lee', 'Chris Wong'], M52: ['Sam Ortiz', 'Dana Kim'], M54: ['Alex Rivera', 'Jordan Price'] };
+  const crewDays = [], prov = {};
+  days.forEach(x => Object.keys(names).forEach(c => {
+    const done = rnd() > 0.2, open = x === today;
+    const people = names[c].map((n, i) => { const sub = rnd() > (i ? 0.6 : 0.15) ? ['M25A'] : []; return { name: n, email: n.toLowerCase().replace(' ', '.') + '@x', seat: i ? 'C2' : 'C1', signedIn: sub.length > 0 || rnd() > 0.5, submitted: sub }; });
+    crewDays.push({ day: x, crew: c, rigs: [{ M51: 'M25A', M52: 'M25B', M54: 'M19' }[c]], claimed: true, checked: done ? [{ M51: 'M25A', M52: 'M25B', M54: 'M19' }[c]] : [], done: done && !open, open: open, people });
+    if (!open) people.forEach(p => { const o = prov[p.name] = prov[p.name] || { name: p.name, email: p.email, seats: {}, shifts: 0, crewDone: 0, handsOn: 0, signedIn: 0, marks: [], role: p.seat === 'C1' ? 'Paramedic' : 'EMT' }; o.shifts++; if (done) o.crewDone++; if (p.submitted.length) o.handsOn++; o.marks.push({ day: x, crew: c, mark: p.submitted.length ? 'y' : done ? 'c' : 'r' }); });
+  }));
+  const trend = days.map(x => { const due = rigs.filter(r => !r.days.find(y => y.day === x).oos).length; return { day: x, due, done: rigs.filter(r => { const y = r.days.find(z => z.day === x); return !y.oos && y.check && y.check.pct >= 75; }).length }; });
+  const T = { ambDue: 0, ambDone: 0, othDue: 0, othDone: 0, crewDays: crewDays.filter(c => !c.open).length, crewDone: crewDays.filter(c => c.done).length };
+  trend.forEach(x => { T.ambDue += x.due; T.ambDone += x.done; });
+  others.forEach(r => r.days.forEach(y => { if (y.due) { T.othDue++; if (y.check) T.othDone++; } }));
+  return Promise.resolve({ ok: true, from, to, today, doneAt: 75, days: days.map(x => ({ day: x, dow: dow(x) })), totals: T, trend, rigs, others, oos: {}, crewDays, providers: Object.values(prov), schedule: null });
+}
+
 /* ---------------- boot ---------------- */
 async function boot() {
   if (IS_AUTH_POPUP) { document.body.innerHTML = '<p style="font-family:sans-serif;padding:24px">Signing in...</p>'; return; }
@@ -2691,6 +3032,8 @@ async function boot() {
   if (DEMO) {
     items = demoItems(); demoExtras(); lastSync = new Date(); setView(/[?&]view=board/.test(location.search) ? 'board' : lsGet(LS.view, 'home')); render();
     if (/[?&]view=brief/.test(location.search)) openBrief();
+    loadFleetToday().then(() => renderHome());
+    if (FH.want) openFleet();
     return;
   }
   if (IN_FRAME) { const a = $('open-browser'); a.style.display = 'block'; a.href = location.href; }
@@ -2708,6 +3051,7 @@ async function boot() {
   await refresh(false);
   if (/[?&]view=brief/.test(location.search)) renderBrief();
   vehDeepLink();
+  if (FH.want && isStaff()) { FH.want = false; openFleet(); }   // 1.27: cgstaff.northcountryems.org/#fleet
   timer = setInterval(() => { if (!document.hidden) refresh(false).then(() => { if ($('brief').classList.contains('show')) renderBrief(); }); }, CONFIG.refreshSeconds * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(false); });
 }
