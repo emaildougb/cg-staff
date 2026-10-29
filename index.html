@@ -134,6 +134,7 @@
   .cr-card:hover { background:var(--os-green-l); border-color:#a3c9a3; }
   .cr-card:focus-visible, a.cr-al:focus-visible, .cr-next a:focus-visible, .cr-tabs button:focus-visible { outline:2px solid var(--os-green); outline-offset:2px; }
   .cr-unit { font-size:16px; font-weight:800; letter-spacing:-.2px; color:var(--os-green); margin-bottom:4px; }
+  .cr-card.oos3 { border:2px solid #C13E3E; } .cr-oos3 { color:#C13E3E; font-weight:800; font-size:12px; letter-spacing:.3px; text-transform:uppercase; margin-bottom:4px; }   /* 1.29: third call from another station */
   .cr-seat { display:flex; gap:8px; align-items:baseline; font-size:14.5px; line-height:1.5; min-width:0; }
   .cr-seat i { font-style:normal; flex:0 0 32px; font-size:12px; font-weight:600; color:var(--os-text3); }
   .cr-seat span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -787,7 +788,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.28.1';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.29';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -1834,12 +1835,14 @@ function crPiece(p, split) {
 }
 function crCard(u) {
   const lines = [];
+  let oos3 = false;   /* 1.29: a third call person is on this unit (Derek's M54 C1_3RD / C2_3RD) */
   for (const s of u.seats) {
     const split = s.pieces.length > 1;
     if (!s.pieces.length) continue;
+    if (s.oos3) oos3 = true;
     s.pieces.forEach((p, i) => lines.push('<div class="cr-seat"><i>' + (i ? '' : crSeatShort(s.seat)) + '</i><span>' + crPiece(p, split) + '</span></div>'));
   }
-  return '<a class="cr-card" style="--uc:' + (UNIT_COLOR[u.unit] || '#555B66') + '" href="' + esc(CONFIG.aladtecUrl) + '" target="_blank" rel="noopener"><div class="cr-unit">' + esc(u.unit) + '</div><div class="cr-seats">' + (lines.join('') || '<div class="cr-msg">No one listed</div>') + '</div></a>';
+  return '<a class="cr-card' + (oos3 ? ' oos3' : '') + '" style="--uc:' + (UNIT_COLOR[u.unit] || '#555B66') + '" href="' + esc(CONFIG.aladtecUrl) + '" target="_blank" rel="noopener"><div class="cr-unit">' + esc(u.unit) + '</div>' + (oos3 ? '<div class="cr-oos3">Out of station coverage</div>' : '') + '<div class="cr-seats">' + (lines.join('') || '<div class="cr-msg">No one listed</div>') + '</div></a>';
 }
 function crLast(name) { const p = String(name || '').trim().split(/\s+/); return p.length > 1 ? p[p.length - 1] : p[0] || ''; }
 function crShort(u) {   // "M51 Komm / Cooper" for the tomorrow line on a computer
