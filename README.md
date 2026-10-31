@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.30**
+**Version 1.30.1**
 
 ## Links
 
@@ -115,6 +115,9 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.30.1 (10/31/2026)
+- Vehicle Checks: fuel, DEF, main O2 level, fridge temperature and narc counts are routine levels, not problems (Doug). They no longer show as Open problems, handoff fixes, Problems by rig on Fleet Health, the shift briefing, the dashboard rows or search. The check line no longer lists fuel, DEF or O2 and the Narcs short line is gone. Everything is still in **Full check**
 
 ### v1.30 (10/31/2026)
 - Crews strip: change who is on a rig. Derek's schedule only updates when he pulls it, so a shift picked up since then still shows OPEN. Tap a crew card or **Change** (today or tomorrow), pick a name from the NCEMS list (the allncems group, same 64 names as Forms) or type any name, and tap Save. **Open** marks a seat open. The seat shows a green **Changed** tag for everyone in CG Staff. **Use the schedule** puts Derek's data back for that seat. Works for M53 on days it isn't in the schedule
