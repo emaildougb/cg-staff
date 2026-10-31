@@ -148,6 +148,36 @@
   .cr-next a { color:var(--os-text); text-decoration:none; border-radius:6px; padding:2px 4px; }
   .cr-next a:hover { background:var(--os-green-l); }
   .cr-next a b { color:var(--os-green); font-weight:800; margin-right:5px; }
+  .cr-tag.edit { background:var(--os-green-l); color:var(--os-green); }   /* 1.30: changed in CG Staff */
+  button.cr-card { font:inherit; text-align:left; cursor:pointer; width:100%; }
+  button.cr-edit { font-size:13px; font-weight:600; color:#fff; background:var(--os-green); border:1px solid var(--os-green); border-radius:8px; padding:5px 10px; cursor:pointer; transition:background .15s; }
+  button.cr-edit:hover { background:#245a24; }
+  .cr-next button { font:inherit; color:var(--os-text); background:none; border:0; border-radius:6px; padding:2px 4px; cursor:pointer; }
+  .cr-next button:hover { background:var(--os-green-l); }
+  .cr-next button b { color:var(--os-green); font-weight:800; margin-right:5px; }
+  .cr-next button.cr-edit { color:#fff; background:var(--os-green); padding:4px 10px; margin-left:auto; font-size:13px; font-weight:600; }
+  .cr-next button.cr-edit:hover { background:#245a24; }
+  /* crew change sheet */
+  .ce { font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color:#1a1a1a; }
+  .ce-days { display:flex; gap:6px; margin-bottom:12px; }
+  .ce-days button { flex:1; font:inherit; font-size:14px; font-weight:700; padding:9px 8px; border-radius:8px; border:1px solid #d5e2d5; background:#fff; color:#1a1a1a; cursor:pointer; }
+  .ce-days button.on { background:#2d6a2d; border-color:#2d6a2d; color:#fff; }
+  .ce-help { font-size:13px; color:#5f675f; line-height:1.45; margin-bottom:12px; }
+  .ce-unit { border:1px solid #d5e2d5; border-radius:10px; padding:10px 12px; margin-bottom:10px; }
+  .ce-unit h4 { font-size:16px; font-weight:800; color:var(--uc,#2d6a2d); margin:0 0 6px; }
+  .ce-row { padding:6px 0; border-top:1px solid #eef3ee; } .ce-row:first-of-type { border-top:0; }
+  .ce-lab { display:flex; gap:8px; align-items:baseline; font-size:13px; color:#5f675f; margin-bottom:5px; }
+  .ce-lab b { color:#1a1a1a; font-size:13px; font-weight:700; min-width:30px; }
+  .ce-lab .was { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ce-in { display:flex; gap:6px; }
+  .ce-in input { flex:1; min-width:0; font:inherit; font-size:16px; padding:9px 10px; border:1px solid #c9d8c9; border-radius:8px; background:#fff; }
+  .ce-in input:focus { outline:2px solid #2d6a2d; outline-offset:0; border-color:#2d6a2d; }
+  .ce-in button { font:inherit; font-size:13px; font-weight:700; padding:0 11px; border-radius:8px; border:1px solid #d5e2d5; background:#fff; color:#1a1a1a; cursor:pointer; white-space:nowrap; }
+  .ce-in button.save { background:#2d6a2d; border-color:#2d6a2d; color:#fff; }
+  .ce-in button:disabled { opacity:.5; cursor:default; }
+  .ce-chg { font-size:12.5px; color:#2d6a2d; margin-top:5px; }
+  .ce-chg button { font:inherit; font-size:12.5px; font-weight:700; color:#c0392b; background:none; border:0; padding:0 0 0 6px; cursor:pointer; text-decoration:underline; }
+  .ce-warn { font-size:12.5px; color:#9a5f06; margin-top:5px; }
   .cr-msg { font-size:14px; color:var(--os-text3); }
   .cr-msg.err { color:var(--os-red); }
   .cr-tabs { display:none; }
@@ -740,6 +770,12 @@
   <button type="button" class="pv-nav next" id="pv-next" onclick="pvStep(1)" aria-label="Next">&#8250;</button>
   <div class="pv-foot" id="pv-foot"></div>
 </div>
+<div class="sheet" id="sh-crew">
+  <div class="sh-head"><h2>Change crews</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
+  <div class="sh-body ce" id="crew-body"></div>
+</div>
+<datalist id="ncems-staff"></datalist>
+
 <div class="sheet" id="sh-info">
   <div class="sh-head"><h2>About Shift Ops</h2><button class="icon-btn" onclick="closeSheets()" aria-label="Close">&#10005;</button></div>
   <div class="sh-body" id="info-body"></div>
@@ -788,7 +824,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.29';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.30';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -816,6 +852,10 @@ const CONFIG = {
   /* 1.23: reminders Doug sets for one chief or a few. once = shows until they tap Done. daily = comes back every day at 0600 until they tap Done for today.
      Done marks are small files on the CG Staff site in App Data/Reminders, so they follow the person to any device and Doug can see who has done what. */
   remindersFolder: 'App Data/Reminders',
+  /* 1.30: crew changes made in CG Staff when someone picks up a shift after Derek's last pull.
+     One small file per seat per day: App Data/Crew Changes/<YYYY-MM-DD> <unit> <C1|C2>.json  {person, by, email, at}
+     person "" means the seat is open. Deleting the file goes back to Derek's schedule. */
+  crewChangesFolder: 'App Data/Crew Changes',
   reminders: [
     { id: 'forms-upload', who: ['d.madler', 'd.langdon'], mode: 'once',
       text: 'Upload your forms with Doug\'s Forms app.', go: 'https://forms.northcountryems.org/', goLabel: 'Open Forms' },
@@ -1102,7 +1142,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadReminders(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; }), loadFleetToday().catch(() => {})]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadCrewEdits().catch(() => {}), loadReminders(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; }), loadFleetToday().catch(() => {})]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -1825,14 +1865,16 @@ function asOfLabel(g) {   // "2026-10-23 18:22" -> "10/23 1822", built from the 
 }
 function asOfDays(g) { const m = /^(\d{4}-\d{2}-\d{2})/.exec(g || ''); return m ? dayDiff(m[1], pacificToday()) : null; }
 function hm4(t) { return String(t || '').replace(':', ''); }
-function crTag(t) { return t === 'trade' ? '<span class="cr-tag">Trade</span>' : t === 'cover' ? '<span class="cr-tag cover">Cover</span>' : t === 'extra' ? '<span class="cr-tag ot">OT</span>' : ''; }
+function crTag(t) { return t === 'edit' ? '<span class="cr-tag edit">Changed</span>' : t === 'trade' ? '<span class="cr-tag">Trade</span>' : t === 'cover' ? '<span class="cr-tag cover">Cover</span>' : t === 'extra' ? '<span class="cr-tag ot">OT</span>' : ''; }
 function crSeatShort(s) { return s === 'C1' ? 'PM' : s === 'C2' ? 'EMT' : s === 'AC' ? 'AC' : s; }
 function crPiece(p, split) {
   const t = split ? ' <span class="t">' + esc(hm4(p.start)) + ' to ' + esc(hm4(p.end)) + '</span>' : '';
   if (p.state === 'filled') return esc(p.person) + crTag(p.tag) + t;
+  if (p.tag === 'edit') return '<span class="cr-open">OPEN</span>' + crTag('edit');
   if (p.state === 'hidden') return '<span class="t">not shown in Aladtec export</span>' + t;
   return '<span class="cr-open">OPEN</span>' + t;
 }
+let cardDay = 'now';   /* which day the cards being drawn belong to, for the change sheet */
 function crCard(u) {
   const lines = [];
   let oos3 = false;   /* 1.29: a third call person is on this unit (Derek's M54 C1_3RD / C2_3RD) */
@@ -1842,16 +1884,120 @@ function crCard(u) {
     if (s.oos3) oos3 = true;
     s.pieces.forEach((p, i) => lines.push('<div class="cr-seat"><i>' + (i ? '' : crSeatShort(s.seat)) + '</i><span>' + crPiece(p, split) + '</span></div>'));
   }
-  return '<a class="cr-card' + (oos3 ? ' oos3' : '') + '" style="--uc:' + (UNIT_COLOR[u.unit] || '#555B66') + '" href="' + esc(CONFIG.aladtecUrl) + '" target="_blank" rel="noopener"><div class="cr-unit">' + esc(u.unit) + '</div>' + (oos3 ? '<div class="cr-oos3">Out of station coverage</div>' : '') + '<div class="cr-seats">' + (lines.join('') || '<div class="cr-msg">No one listed</div>') + '</div></a>';
+  return '<button type="button" class="cr-card' + (oos3 ? ' oos3' : '') + '" style="--uc:' + (UNIT_COLOR[u.unit] || '#555B66') + '" onclick="openCrewEdit(\'' + (cardDay || 'now') + '\',\'' + esc(u.unit) + '\')" title="Tap to change who is on ' + esc(u.unit) + '"><div class="cr-unit">' + esc(u.unit) + '</div>' + (oos3 ? '<div class="cr-oos3">Out of station coverage</div>' : '') + '<div class="cr-seats">' + (lines.join('') || '<div class="cr-msg">No one listed</div>') + '</div></button>';
 }
 function crLast(name) { const p = String(name || '').trim().split(/\s+/); return p.length > 1 ? p[p.length - 1] : p[0] || ''; }
 function crShort(u) {   // "M51 Komm / Cooper" for the tomorrow line on a computer
-  const seat = id => { const s = u.seats.find(x => x.seat === id); if (!s) return ''; return s.pieces.map(p => p.state === 'filled' ? esc(crLast(p.person)) + crTag(p.tag) : p.state === 'open' ? '<span class="cr-open">OPEN</span>' : '?').join(' + '); };
+  const seat = id => { const s = u.seats.find(x => x.seat === id); if (!s) return ''; return s.pieces.map(p => p.state === 'filled' ? esc(crLast(p.person)) + crTag(p.tag) : p.state === 'open' ? '<span class="cr-open">OPEN</span>' + (p.tag === 'edit' ? crTag('edit') : '') : '?').join(' + '); };
   const parts = ['C1', 'C2'].map(seat).filter(Boolean);
-  return '<a href="' + esc(CONFIG.aladtecUrl) + '" target="_blank" rel="noopener" style="--uc:' + (UNIT_COLOR[u.unit] || '#555B66') + '"><b>' + esc(u.unit) + '</b>' + parts.join(' / ') + '</a>';
+  return '<button type="button" onclick="openCrewEdit(\'next\',\'' + esc(u.unit) + '\')" title="Tap to change who is on ' + esc(u.unit) + ' tomorrow"><b>' + esc(u.unit) + '</b>' + parts.join(' / ') + '</button>';
 }
 function crDayLabel(s) { return s && s.shift ? esc(s.shift) + ' shift' : ''; }
 function crDate(s) { return s ? '<span class="cr-date">' + esc(ymdLabel(s.date, true)) + '</span>' : ''; }   /* big date pill, Doug 10/23: make the date obvious */
+/* ---------- 1.30 Crew changes (Doug 10/31) ----------
+   Derek's schedule only updates when he pulls it, so a shift picked up after that still shows OPEN.
+   Any CG Staff member can tap a crew card (or Change) and put someone on a seat for today or tomorrow.
+   The change is a file in CONFIG.crewChangesFolder, shows with a green Changed tag, and wins over Derek's data
+   for that seat and day. "Use the schedule" deletes the file. Names come from the allncems group (same list as Forms 1.2),
+   and any name can be typed for someone not on it. */
+const NCEMS_STAFF = ["Alderman, Dallas", "Allison, Jason", "Andrus, Chuck", "Anthony, Jeremy", "Avery, Tracey", "Baker, Preston", "Bauska, Hunter", "Becker, Remington", "Ben Abdallah, Wala", "Boyce, Doug", "Canfield, Eli", "Cooper, Naomi", "Cornelia, Hayden", "Davis, Jacob", "Dawkins, Lauren", "Dickson, Joseph", "Fergason, Ashton", "Fields, Andrew", "Fox, Danielle", "Fox, Josh", "Griffith, Ariel", "Hagen, Stephanie", "Hinton, Trevor", "Hughey, Matthew", "Jory, Georgia", "Knight, Aaron", "Komm, Tyler", "LaBarbera, Sean", "Langdon, Derek", "Larson, Danielle", "Leavitt, Victoria", "Lendev, Alexander", "Long, Garrett", "Madler, Dennis", "Mallare, Lacy", "Maylone, Lyndsey", "Mraz, Michael", "Murray, Kelan", "Noble, Isabella", "O'Donnell-Field, Connor", "O'Loughlin, Kelly", "Parks, Sean", "Pedersen, Timothy", "Quintero, Richard", "Reid, Kim", "Reyes, Jesus", "Robb, Brody", "Robertson, Josh", "Rohrer, Brant", "Russell, Roni", "Savage, Ryan", "Schmitz, Jamie", "Schutts, Stephen", "Scott, Colin", "Scott, McKenzie", "Seibert, Carol", "Shirley, Bryce", "Skinner, Heath", "Slack, Joseph", "Snow, Keith", "Stafford, Nicholas", "Venneri, Tyler", "Wagner, Mike", "Waliezer, Dustin"];
+const staffFirstLast = n => { const m = /^([^,]+),\s*(.+)$/.exec(n); return m ? m[2] + ' ' + m[1] : n; };
+const CE_UNITS = ['M51', 'M52', 'M53', 'M54'], CE_SEATS = [['C1', 'PM'], ['C2', 'EMT']];
+let crewEdits = {}, crewEditsAt = 0, ceDay = 'now', ceBusy = false;
+const ceKey = (date, unit, seat) => date + ' ' + unit + ' ' + seat;
+async function loadCrewEdits() {
+  if (DEMO) return;
+  await getSiteId();
+  const out = {}, today = pacificToday();
+  let url = '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.crewChangesFolder) + ':/children?$top=999';
+  const want = [];
+  try {
+    while (url) { const j = await graph(url); (j.value || []).forEach(x => { const m = /^(\d{4}-\d{2}-\d{2}) (M5\d) (C[12])\.json$/i.exec(x.name || ''); if (m && dayDiff(today, m[1]) >= -1) want.push({ k: ceKey(m[1], m[2].toUpperCase(), m[3].toUpperCase()), u: x['@microsoft.graph.downloadUrl'] }); }); url = j['@odata.nextLink'] || null; }
+  } catch (e) { if (e.status !== 404) throw e; }
+  await Promise.all(want.map(async w => { try { const r = await fetch(w.u, { cache: 'no-store' }); if (r.ok) out[w.k] = await r.json(); } catch (e) {} }));
+  crewEdits = out; crewEditsAt = Date.now();
+}
+/* Derek's day with our changes laid over it */
+function crewView(s) {
+  if (!s) return s;
+  const v = Object.assign({}, s, { units: (s.units || []).map(u => Object.assign({}, u, { seats: u.seats.map(x => Object.assign({}, x)) })) });
+  for (const unit of CE_UNITS) for (const [seat, short] of CE_SEATS) {
+    const e = crewEdits[ceKey(s.date, unit, seat)]; if (!e) continue;
+    let u = v.units.find(x => x.unit === unit);
+    if (!u) { u = { unit, name: 'Medic ' + unit.slice(1), seats: [] }; v.units.push(u); v.units.sort((a, b) => a.unit.localeCompare(b.unit)); }
+    const piece = { person: e.person || '', state: e.person ? 'filled' : 'open', start: '', end: '', tag: 'edit' };
+    const i = u.seats.findIndex(x => x.seat === seat), ns = { seat, label: short, pieces: [piece] };
+    if (i >= 0) u.seats[i] = ns; else u.seats.splice(seat === 'C1' ? 0 : u.seats.filter(x => x.seat === 'C1').length, 0, ns);
+  }
+  return v;
+}
+function ceDayObj(which) { return crews && crews.shifts.find(s => s.which === which); }
+function openCrewEdit(which, unit) {
+  if (!crews) return;
+  ceDay = which === 'next' ? 'next' : 'now';
+  const dl = $('ncems-staff'); if (dl && !dl.children.length) dl.innerHTML = NCEMS_STAFF.map(staffFirstLast).sort().map(n => '<option value="' + esc(n) + '">').join('');
+  renderCrewEdit(); showSheet('sh-crew');
+  if (unit) setTimeout(() => { const el = document.getElementById('ce-u-' + unit); if (el) el.scrollIntoView({ block: 'start' }); }, 60);
+}
+function ceSchedText(s, unit, seat) {
+  const u = s && (s.units || []).find(x => x.unit === unit), x = u && u.seats.find(y => y.seat === seat);
+  if (!x || !x.pieces.length) return unit === 'M53' ? 'not staffed' : 'not listed';
+  return x.pieces.map(p => p.state === 'filled' ? p.person + (x.pieces.length > 1 ? ' ' + hm4(p.start) + ' to ' + hm4(p.end) : '') : p.state === 'open' ? 'OPEN' + (x.pieces.length > 1 ? ' ' + hm4(p.start) + ' to ' + hm4(p.end) : '') : 'hidden').join(', ');
+}
+function renderCrewEdit() {
+  const s = ceDayObj(ceDay), nowS = ceDayObj('now'), nextS = ceDayObj('next');
+  if (!s) { $('crew-body').innerHTML = '<div class="ce-help">No schedule day to change.</div>'; return; }
+  let h = '<div class="ce-days"><button class="' + (ceDay === 'now' ? 'on' : '') + '" onclick="ceDay=\'now\';renderCrewEdit()">Today ' + esc(ymdLabel(nowS && nowS.date)) + '</button>' +
+    (nextS ? '<button class="' + (ceDay === 'next' ? 'on' : '') + '" onclick="ceDay=\'next\';renderCrewEdit()">Tomorrow ' + esc(ymdLabel(nextS.date)) + '</button>' : '') + '</div>' +
+    '<div class="ce-help">Put someone on a seat when a shift was picked up after Derek\'s last schedule pull (' + esc(asOfLabel(crews.generated_at)) + '). Pick from the NCEMS list or type any name. Everyone in CG Staff sees the change. <a href="' + esc(CONFIG.aladtecUrl) + '" target="_blank" rel="noopener" style="color:#2d6a2d;font-weight:700">Open Aladtec</a></div>';
+  for (const unit of CE_UNITS) {
+    h += '<div class="ce-unit" id="ce-u-' + unit + '" style="--uc:' + (UNIT_COLOR[unit] || '#2d6a2d') + '"><h4>' + unit + '</h4>';
+    for (const [seat, short] of CE_SEATS) {
+      const id = unit + seat, e = crewEdits[ceKey(s.date, unit, seat)];
+      h += '<div class="ce-row"><div class="ce-lab"><b>' + short + '</b><span class="was">Schedule: ' + esc(ceSchedText(s, unit, seat)) + '</span></div>' +
+        '<div class="ce-in"><input id="ce-' + id + '" list="ncems-staff" autocomplete="off" autocapitalize="words" placeholder="Name" value="' + esc(e ? e.person || '' : '') + '" oninput="ceCheck(\'' + id + '\')" onkeydown="if(event.key===\'Enter\')ceSave(\'' + unit + '\',\'' + seat + '\')">' +
+        '<button type="button" class="save" ' + (ceBusy ? 'disabled ' : '') + 'onclick="ceSave(\'' + unit + '\',\'' + seat + '\')">Save</button>' +
+        '<button type="button" ' + (ceBusy ? 'disabled ' : '') + 'onclick="ceSave(\'' + unit + '\',\'' + seat + '\',true)" title="Mark this seat open">Open</button></div>' +
+        '<div class="ce-warn" id="ce-w-' + id + '"></div>' +
+        (e ? '<div class="ce-chg">Changed to ' + (e.person ? '<b>' + esc(e.person) + '</b>' : '<b>OPEN</b>') + ' by ' + esc(e.by || 'CG Staff') + (e.at ? ' ' + esc(fmtDT(new Date(e.at))) : '') + '<button type="button" onclick="ceClear(\'' + unit + '\',\'' + seat + '\')">Use the schedule</button></div>' : '') +
+        '</div>';
+    }
+    h += '</div>';
+  }
+  $('crew-body').innerHTML = h;
+}
+function ceKnown(n) { const k = String(n || '').trim().toLowerCase(); return !k || NCEMS_STAFF.some(f => staffFirstLast(f).toLowerCase() === k); }
+function ceCheck(id) { const v = $('ce-' + id).value, w = $('ce-w-' + id); if (w) w.textContent = ceKnown(v) ? '' : 'Not on the NCEMS list. It will save as typed.'; }
+function ceFileUrl(date, unit, seat) { return GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.crewChangesFolder + '/' + date + ' ' + unit + ' ' + seat + '.json') + ':/content'; }
+async function ceSave(unit, seat, open) {
+  const s = ceDayObj(ceDay); if (!s || ceBusy) return;
+  const inp = $('ce-' + unit + seat), person = open ? '' : String(inp ? inp.value : '').replace(/\s+/g, ' ').trim();
+  if (!open && !person) { toast('Type or pick a name first, or tap Open.', true); if (inp) inp.focus(); return; }
+  const e = { date: s.date, unit, seat, person, by: meName(), email: meEmail(), at: new Date().toISOString(), from: 'CG Staff ' + VERSION };
+  const k = ceKey(s.date, unit, seat);
+  if (DEMO) { crewEdits[k] = e; haptic(); renderCrewEdit(); renderHome(); toast((person || 'Open') + ' on ' + unit + ' (demo, not saved)'); return; }
+  ceBusy = true; renderCrewEdit();
+  try {
+    const token = await getToken(); await getSiteId();
+    const res = await fetch(ceFileUrl(s.date, unit, seat), { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(e, null, 1) });
+    if (!res.ok) throw new Error('SharePoint said ' + res.status);
+    crewEdits[k] = e; haptic(); toast(person ? person + ' is on ' + unit + ' ' + (seat === 'C1' ? 'PM' : 'EMT') + '.' : unit + ' ' + (seat === 'C1' ? 'PM' : 'EMT') + ' marked open.');
+  } catch (er) { toast('Could not save that. ' + er.message, true); }
+  finally { ceBusy = false; renderCrewEdit(); renderHome(); }
+}
+async function ceClear(unit, seat) {
+  const s = ceDayObj(ceDay); if (!s || ceBusy) return;
+  const k = ceKey(s.date, unit, seat);
+  if (DEMO) { delete crewEdits[k]; renderCrewEdit(); renderHome(); toast('Back to the schedule (demo)'); return; }
+  ceBusy = true; renderCrewEdit();
+  try {
+    const token = await getToken(); await getSiteId();
+    const res = await fetch(ceFileUrl(s.date, unit, seat).replace(/:\/content$/, ''), { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok && res.status !== 404) throw new Error('SharePoint said ' + res.status);
+    delete crewEdits[k]; toast('Back to Derek\'s schedule for that seat.');
+  } catch (er) { toast('Could not change that. ' + er.message, true); }
+  finally { ceBusy = false; renderCrewEdit(); renderHome(); }
+}
 function setCrewTab(t) { crewTab = t; lsSet(LS.crewtab, t); renderHome(); }
 function crewsHtml() {
   const al = '<a class="cr-al" href="' + esc(CONFIG.aladtecUrl) + '" target="_blank" rel="noopener">Open Aladtec</a>';
@@ -1859,19 +2005,20 @@ function crewsHtml() {
     const msg = crewsErr || 'Loading crews...';
     return '<div class="crews"><div class="cr-head"><h3>Crews</h3>' + al + '</div><div class="cr-msg' + (crewsErr ? ' err' : '') + '">' + esc(msg) + '</div></div>';
   }
-  const now = crews.shifts.find(s => s.which === 'now'), next = crews.shifts.find(s => s.which === 'next');
+  const now = crewView(crews.shifts.find(s => s.which === 'now')), next = crewView(crews.shifts.find(s => s.which === 'next'));
   const old = asOfDays(crews.generated_at), isOld = old != null && old >= CONFIG.crewsOldDays;
   const asof = '<span class="cr-asof' + (isOld ? ' old' : '') + '">Schedule data as of ' + esc(asOfLabel(crews.generated_at)) + (isOld ? ' (' + old + ' days old)' : '') + (crewsErr ? ' · ' + esc(crewsErr) : '') + '</span>';
-  const cards = s => !s ? '' : s.missing ? '<div class="cr-msg">Not in the schedule data yet.</div>'
-    : '<div class="cr-cards" style="--n:' + Math.max(s.units.length, 1) + '">' + (s.units.map(crCard).join('') || '<div class="cr-msg">No ambulances listed.</div>') + '</div>';
+  const cards = s => { if (!s) return ''; cardDay = s.which; return s.missing && !s.units.length ? '<div class="cr-msg">Not in the schedule data yet. <button type="button" class="cr-edit" onclick="openCrewEdit(\'' + s.which + '\')">Add crews</button></div>'
+    : '<div class="cr-cards" style="--n:' + Math.max(s.units.length, 1) + '">' + (s.units.map(crCard).join('') || '<div class="cr-msg">No ambulances listed.</div>') + '</div>'; };
+  const ed = which => '<button type="button" class="cr-edit" onclick="openCrewEdit(\'' + which + '\')">Change</button>';
   if (isPhone()) {
     const s = crewTab === 'next' ? next : now;
     return '<div class="crews"><div class="cr-head"><h3>' + (crewTab === 'next' ? 'Tomorrow' : 'Today') + '</h3>' + crDate(s) + '<span class="cr-day">' + crDayLabel(s) + '</span>' +
-      '<div class="cr-tabs"><button class="' + (crewTab !== 'next' ? 'on' : '') + '" onclick="setCrewTab(\'now\')">Today</button><button class="' + (crewTab === 'next' ? 'on' : '') + '" onclick="setCrewTab(\'next\')">Tomorrow</button></div>' + asof + '</div>' + cards(s) + '</div>';
+      '<div class="cr-tabs"><button class="' + (crewTab !== 'next' ? 'on' : '') + '" onclick="setCrewTab(\'now\')">Today</button><button class="' + (crewTab === 'next' ? 'on' : '') + '" onclick="setCrewTab(\'next\')">Tomorrow</button></div>' + ed(crewTab === 'next' ? 'next' : 'now') + asof + '</div>' + cards(s) + '</div>';
   }
   const nextLine = !next ? '' : '<div class="cr-next"><b class="lbl">Tomorrow</b>' + crDate(next) + '<span class="cr-day">' + crDayLabel(next) + '</span>' +
-    (next.missing ? '<span class="cr-msg">Not in the schedule data yet.</span>' : next.units.map(crShort).join('')) + '</div>';
-  return '<div class="crews"><div class="cr-head"><h3>Today</h3>' + crDate(now) + '<span class="cr-day">' + crDayLabel(now) + '</span>' + asof + al + '</div>' + cards(now) + nextLine + '</div>';
+    (next.missing && !next.units.length ? '<span class="cr-msg">Not in the schedule data yet.</span>' : next.units.map(crShort).join('')) + ed('next') + '</div>';
+  return '<div class="crews"><div class="cr-head"><h3>Today</h3>' + crDate(now) + '<span class="cr-day">' + crDayLabel(now) + '</span>' + asof + ed('now') + al + '</div>' + cards(now) + nextLine + '</div>';
 }
 
 /* ---------- Scheduling: NCEMS Open Shifts (Derek's app), two read-only feeds ----------

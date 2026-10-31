@@ -1,6 +1,6 @@
 # CG Staff Handoff
 
-Updated 10/24/2026 for version **1.26.2** (built from live 1.26.1). Check the raw files for merge markers after each upload.
+Updated 10/31/2026 for version **1.30** (built from live 1.29). Check the raw files for merge markers after each upload.
 
 - Live: [https://cgstaff.northcountryems.org/](https://cgstaff.northcountryems.org/)
 - Upload: [https://github.com/emaildougb/cg-staff/upload/main](https://github.com/emaildougb/cg-staff/upload/main)
@@ -52,6 +52,7 @@ Files in the repo (upload all of them every version): `index.html`, `logo.png`, 
 | Facilities, Grounds | Facility Work Orders, Facility Services, Grounds Tracker lists on the FacilitiesandGrounds SharePoint site | Read only |
 | Incident Reports | `ncems-api` Worker, https://ncems-api.d-boyce.workers.dev/bin/incident-reports | Read only, counts and types only, no names. Worker only answers its ADMINS list |
 | Crews strip (1.21) | `ncems-schedule-crews` Worker, https://ncems-schedule-crews.d-boyce.workers.dev/crews (North Country Cloudflare). It holds Doug's key for Derek's Schedule API as secret `NCEMS_SCHEDULE_KEY` and returns names and seats only | Read only. Key, Derek's prompt and API Usage Guide saved on the CG Staff site at `App Data/Schedule API (Derek)/`. The key never goes in index.html (public repo) |
+| Crew changes (1.30) | CG Staff SharePoint, `App Data/Crew Changes/<YYYY-MM-DD> <unit> <C1 or C2>.json` | Any CG Staff member can put someone on a seat for today or tomorrow when the schedule is stale. The file wins over Derek's data for that seat; deleting it (Use the schedule) goes back. Names list `NCEMS_STAFF` is a copy of Forms' STAFF (allncems group, 10/19); update both when people come and go |
 | Scheduling | Derek's Open Shifts feeds: Crew 1 `ncems-ot.d-langdon.workers.dev/dashboard`, Crew 2 `ncems-c2.d-langdon.workers.dev/dashboard` | Read only. **Derek's app, Derek's accounts. Leave it alone** |
 
 Firebase (`ncems-hub-9111d`) and Cloudinary are retired as of 10/21. Old notes about them in the README are history only.

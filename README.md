@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.29**
+**Version 1.30**
 
 ## Links
 
@@ -116,7 +116,11 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 
 ## Changelog
 
-### v1.29 (10/29/2026)
+### v1.30 (10/31/2026)
+- Crews strip: change who is on a rig. Derek's schedule only updates when he pulls it, so a shift picked up since then still shows OPEN. Tap a crew card or **Change** (today or tomorrow), pick a name from the NCEMS list (the allncems group, same 64 names as Forms) or type any name, and tap Save. **Open** marks a seat open. The seat shows a green **Changed** tag for everyone in CG Staff. **Use the schedule** puts Derek's data back for that seat. Works for M53 on days it isn't in the schedule
+- Saved on the CG Staff site in **App Data/Crew Changes**, one small file per seat per day (`2026-10-31 M52 C1.json`) with who changed it and when. Only today and tomorrow are read; older files are history
+- Crew cards no longer open Aladtec. **Open Aladtec** is in the strip header on a computer and at the top of the Change crews sheet on a phone
+
 - Crews strip: M54 third call. When Derek's feed has a third call medic (M54.C1_3RD) or EMT (M54.C2_3RD) on the shift, that person shows as PM or EMT in place of the open M54 seat, with **Out of station coverage** in bold red and a red border on the card. The Worker `ncems-schedule-crews` 1.2 reads those two seats.
 
 ### v1.28.1 (10/25/2026)
