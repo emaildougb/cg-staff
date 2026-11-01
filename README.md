@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.30.1**
+**Version 1.30.2**
 
 ## Links
 
@@ -115,6 +115,9 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.30.2 (10/31/2026)
+- Change crews: names now show as tap to pick buttons under the box while you type (first or last name, any part). Matching ignores apostrophes, hyphens and spaces, so "Kelly OLoughlin" or the iPhone's curly apostrophe finds Kelly O'Loughlin. A name that matches the list saves with the list's spelling. The phone's own pop up list is gone (it missed names with apostrophes)
 
 ### v1.30.1 (10/31/2026)
 - Vehicle Checks: fuel, DEF, main O2 level, fridge temperature and narc counts are routine levels, not problems (Doug). They no longer show as Open problems, handoff fixes, Problems by rig on Fleet Health, the shift briefing, the dashboard rows or search. The check line no longer lists fuel, DEF or O2 and the Narcs short line is gone. Everything is still in **Full check**

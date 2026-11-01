@@ -178,6 +178,10 @@
   .ce-chg { font-size:12.5px; color:#2d6a2d; margin-top:5px; }
   .ce-chg button { font:inherit; font-size:12.5px; font-weight:700; color:#c0392b; background:none; border:0; padding:0 0 0 6px; cursor:pointer; text-decoration:underline; }
   .ce-warn { font-size:12.5px; color:#9a5f06; margin-top:5px; }
+  .ce-sug { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .ce-sug:empty { display:none; }
+  .ce-sug button { font:inherit; font-size:14px; padding:7px 11px; border-radius:8px; border:1px solid #a3c9a3; background:#e8f4e8; color:#1a1a1a; cursor:pointer; }
+  .ce-sug button:hover { background:#d6ebd6; }
   .cr-msg { font-size:14px; color:var(--os-text3); }
   .cr-msg.err { color:var(--os-red); }
   .cr-tabs { display:none; }
@@ -824,7 +828,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.30.1';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.30.2';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -1955,10 +1959,10 @@ function renderCrewEdit() {
     for (const [seat, short] of CE_SEATS) {
       const id = unit + seat, e = crewEdits[ceKey(s.date, unit, seat)];
       h += '<div class="ce-row"><div class="ce-lab"><b>' + short + '</b><span class="was">Schedule: ' + esc(ceSchedText(s, unit, seat)) + '</span></div>' +
-        '<div class="ce-in"><input id="ce-' + id + '" list="ncems-staff" autocomplete="off" autocapitalize="words" placeholder="Name" value="' + esc(e ? e.person || '' : '') + '" oninput="ceCheck(\'' + id + '\')" onkeydown="if(event.key===\'Enter\')ceSave(\'' + unit + '\',\'' + seat + '\')">' +
+        '<div class="ce-in"><input id="ce-' + id + '" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="words" placeholder="Name" value="' + esc(e ? e.person || '' : '') + '" oninput="ceCheck(\'' + id + '\')" onkeydown="if(event.key===\'Enter\')ceSave(\'' + unit + '\',\'' + seat + '\')">' +
         '<button type="button" class="save" ' + (ceBusy ? 'disabled ' : '') + 'onclick="ceSave(\'' + unit + '\',\'' + seat + '\')">Save</button>' +
         '<button type="button" ' + (ceBusy ? 'disabled ' : '') + 'onclick="ceSave(\'' + unit + '\',\'' + seat + '\',true)" title="Mark this seat open">Open</button></div>' +
-        '<div class="ce-warn" id="ce-w-' + id + '"></div>' +
+        '<div class="ce-sug" id="ce-s-' + id + '"></div><div class="ce-warn" id="ce-w-' + id + '"></div>' +
         (e ? '<div class="ce-chg">Changed to ' + (e.person ? '<b>' + esc(e.person) + '</b>' : '<b>OPEN</b>') + ' by ' + esc(e.by || 'CG Staff') + (e.at ? ' ' + esc(fmtDT(new Date(e.at))) : '') + '<button type="button" onclick="ceClear(\'' + unit + '\',\'' + seat + '\')">Use the schedule</button></div>' : '') +
         '</div>';
     }
@@ -1966,13 +1970,27 @@ function renderCrewEdit() {
   }
   $('crew-body').innerHTML = h;
 }
-function ceKnown(n) { const k = String(n || '').trim().toLowerCase(); return !k || NCEMS_STAFF.some(f => staffFirstLast(f).toLowerCase() === k); }
-function ceCheck(id) { const v = $('ce-' + id).value, w = $('ce-w-' + id); if (w) w.textContent = ceKnown(v) ? '' : 'Not on the NCEMS list. It will save as typed.'; }
+/* 1.30.2: match on letters only, so "Kelly OLoughlin", "kelly o'loughlin" and the iPhone's curly apostrophe all find Kelly O'Loughlin */
+const ceNorm = n => String(n || '').toLowerCase().replace(/[^a-z]/g, '');
+function ceMatch(n) { const k = ceNorm(n); if (!k) return null; return NCEMS_STAFF.map(staffFirstLast).find(f => ceNorm(f) === k || ceNorm(f.split(' ').reverse().join(' ')) === k) || null; }
+function ceKnown(n) { return !String(n || '').trim() || !!ceMatch(n); }
+function ceSuggest(n) {
+  const words = String(n || '').toLowerCase().split(/[\s,]+/).map(ceNorm).filter(Boolean); if (!words.length) return [];
+  return NCEMS_STAFF.map(staffFirstLast).filter(f => { const parts = f.toLowerCase().split(/\s+/).map(ceNorm), all = ceNorm(f); return words.every(w => parts.some(p => p.startsWith(w)) || all.includes(w)); }).sort().slice(0, 6);
+}
+function cePick(id, name) { const i = $('ce-' + id); if (i) { i.value = name; i.focus(); } ceCheck(id); }
+function ceCheck(id) {
+  const v = $('ce-' + id).value, w = $('ce-w-' + id), sg = $('ce-s-' + id);
+  const exact = ceMatch(v), list = exact ? [] : ceSuggest(v);
+  if (sg) sg.innerHTML = list.map(n => '<button type="button" onclick="cePick(\'' + id + '\',this.textContent)">' + esc(n) + '</button>').join('');
+  if (w) w.textContent = !String(v).trim() || exact || list.length ? '' : 'Not on the NCEMS list. It will save as typed.';
+}
 function ceFileUrl(date, unit, seat) { return GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.crewChangesFolder + '/' + date + ' ' + unit + ' ' + seat + '.json') + ':/content'; }
 async function ceSave(unit, seat, open) {
   const s = ceDayObj(ceDay); if (!s || ceBusy) return;
-  const inp = $('ce-' + unit + seat), person = open ? '' : String(inp ? inp.value : '').replace(/\s+/g, ' ').trim();
+  const inp = $('ce-' + unit + seat); let person = open ? '' : String(inp ? inp.value : '').replace(/\s+/g, ' ').trim();
   if (!open && !person) { toast('Type or pick a name first, or tap Open.', true); if (inp) inp.focus(); return; }
+  if (!open && ceMatch(person)) person = ceMatch(person);   /* 1.30.2: saved with the list's spelling */
   const e = { date: s.date, unit, seat, person, by: meName(), email: meEmail(), at: new Date().toISOString(), from: 'CG Staff ' + VERSION };
   const k = ceKey(s.date, unit, seat);
   if (DEMO) { crewEdits[k] = e; haptic(); renderCrewEdit(); renderHome(); toast((person || 'Open') + ' on ' + unit + ' (demo, not saved)'); return; }
