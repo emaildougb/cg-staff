@@ -178,6 +178,13 @@
   .ce-chg { font-size:12.5px; color:#2d6a2d; margin-top:5px; }
   .ce-chg button { font:inherit; font-size:12.5px; font-weight:700; color:#c0392b; background:none; border:0; padding:0 0 0 6px; cursor:pointer; text-decoration:underline; }
   .ce-warn { font-size:12.5px; color:#9a5f06; margin-top:5px; }
+  .ce-hrs-btn { font:inherit; font-size:12.5px; font-weight:700; color:#1a5a8a; background:none; border:0; padding:6px 0 0; cursor:pointer; text-decoration:underline; }
+  .ce-hrs { display:none; margin-top:6px; padding:8px 10px; background:#f5f8f5; border:1px solid #e3ece3; border-radius:8px; }
+  .ce-row.hrs .ce-hrs { display:block; }
+  .ce-tm { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:13px; color:#4a4a4a; }
+  .ce-tm input[type=time] { font:inherit; font-size:15px; padding:6px 8px; border:1px solid #c9d8c9; border-radius:8px; background:#fff; }
+  .ce-hrs .ce-in { margin-top:8px; }
+  .ce-sub { font-size:12px; color:#5f675f; margin-top:8px; }
   .ce-sug { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
   .ce-sug:empty { display:none; }
   .ce-sug button { font:inherit; font-size:14px; padding:7px 11px; border-radius:8px; border:1px solid #a3c9a3; background:#e8f4e8; color:#1a1a1a; cursor:pointer; }
@@ -296,6 +303,23 @@
   .flag:hover { color:#9a7a00; background:#f4f0de; }
   .flag.on { color:#B8860B; } .flag.on svg { fill:currentColor; }
   .card-more { display:none; }
+  /* 1.31 (Doug 11/1): compact cards, tap to expand, columns run down the page instead of scrolling inside */
+  .card-more { font-size:12.5px; line-height:1.45; color:#333; margin-top:6px; }
+  .card.open .card-more { display:block; }
+  .card.open .card-title { -webkit-line-clamp:unset; }
+  .card.open { box-shadow:0 0 0 2px var(--tri, #9fb39f), 0 4px 14px rgba(0,0,0,.18); }
+  .cm-det { white-space:pre-wrap; word-break:break-word; }
+  .cm-note { margin-top:5px; background:#f3f6f3; border-radius:6px; padding:5px 7px; }
+  .cm-meta { margin-top:5px; font-size:11px; color:var(--muted); }
+  .cm-open { margin-top:7px; width:100%; min-height:36px; border:2px solid var(--border); background:#fff; border-radius:8px; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--g-deep); }
+  .card-title { margin:4px 0 2px !important; -webkit-line-clamp:2; }
+  .card-foot { margin-top:4px; }
+  .card-foot:empty { display:none; }
+  @media (min-width:761px) {
+    .board { overflow-y:auto; }
+    .col { max-height:none; }
+    .col-body { overflow:visible; }
+  }
   .seg.tri-seg button { display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; }
   .seg.tri-seg button small { font-size:9px; letter-spacing:.5px; opacity:.8; margin-top:2px; }
   .seg.tri-seg button.on[data-t="Red"] { background:#C13E3E; border-color:#C13E3E; color:#fff; }
@@ -457,6 +481,8 @@
   .br-item { display:flex; gap:10px; align-items:flex-start; padding:9px 11px; border-radius:10px; background:#fafcfa; border:1px solid #e2eae2; border-left:6px solid var(--c); }
   .br-item .t { flex:1; font-size:15px; font-weight:700; line-height:1.3; }
   .br-item .t span { display:block; font-size:11px; color:var(--muted); font-weight:600; margin-top:3px; }
+  .br-det { font-size:13px; font-weight:400; line-height:1.45; color:#333; margin-top:6px; white-space:pre-wrap; word-break:break-word; }
+  .br-note { font-size:12.5px; font-weight:400; line-height:1.4; color:#333; margin-top:6px; background:#f3f6f3; border-radius:6px; padding:5px 8px; }
   .br-none { font-size:14px; color:var(--muted); padding:6px 2px; }
   @media (max-width:760px) { .br-list { grid-template-columns:1fr; } .br-head h2 { font-size:16px; } .br-head img { display:none; } }
   @media print {
@@ -828,7 +854,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.30.2';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.31';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -1191,24 +1217,22 @@ function cardHtml(it) {
   const notes = parseNotes(it.notes), noteCount = notes.length, id = esc(it.id);
   const more = (it.details ? '<div class="cm-det">' + esc(it.details) + '</div>' : '') +
     (notes[0] ? '<div class="cm-note"><b>' + esc(notes[0].when || '') + (notes[0].who ? ' ' + esc(firstName(notes[0].who)) : '') + ':</b> ' + esc(notes[0].text) + '</div>' : '') +
-    '<div class="cm-meta">' + esc(group(it.category).name) + ' · in ' + fmtDate(it.dateIn) + (it.source ? ' · ' + esc(it.source === 'Add to Trello' ? 'Email' : it.source) : '') + '</div><button class="cm-open" onclick="event.stopPropagation();openItem(\'' + id + '\')">Open card</button>';
+    '<div class="cm-meta"><b>' + esc(soId(it)) + '</b> · ' + esc(it.assigned || 'Unassigned') + ' · ' + esc(group(it.category).name) + ' · in ' + fmtDate(it.dateIn) + (it.source ? ' · ' + esc(it.source === 'Add to Trello' ? 'Email' : it.source) : '') + '</div><button class="cm-open" onclick="event.stopPropagation();openItem(\'' + id + '\')">Open card</button>';
   return '<div class="card' + (it.brief ? ' flagged' : '') + (expandedId === it.id ? ' open' : '') + '" style="--tri:' + (t ? t.c : '#cfd8cf') + '" data-id="' + id + '" draggable="' + (!isPhone()) + '" onclick="cardClick(event,\'' + id + '\')" ondblclick="openItem(\'' + id + '\')">' +
     '<div class="card-top">' +
       '<button class="tri ' + (t ? '' : 'none') + '" title="' + (t ? t.label + ': ' + t.sub : 'Not triaged') + '. Tap to change" onclick="event.stopPropagation();cycleTriage(\'' + id + '\')"></button>' +
-      '<span class="sid">' + esc(soId(it)) + '</span>' +
+      '<span class="sid"></span>' +
       '<button class="flag ' + (it.brief ? 'on' : '') + '" title="' + (it.brief ? 'On the shift briefing. Tap to remove' : 'Tap to put on the shift briefing') + '" onclick="event.stopPropagation();toggleBrief(\'' + id + '\')">' + FLAG_SVG + '</button>' +
       '<span class="age ' + ac + '" title="Days on the board">' + ageLabel(age) + '</span></div>' +
     (t ? '' : '<button type="button" class="needtri" title="No one has rated this yet. Tap to set Red" onclick="event.stopPropagation();cycleTriage(\'' + id + '\')">Needs triage</button>') +
     (t && staleDays(it) >= CONFIG.updateDays ? '<button type="button" class="needupd" title="Nothing has changed on this card in ' + staleDays(it) + ' days. Open it and add a status note" onclick="event.stopPropagation();openItem(\'' + id + '\')">Update status · ' + staleDays(it) + 'd</button>' : '') +
     '<div class="card-title">' + esc(it.title) + '</div>' +
-    '<div class="card-foot"><span class="who"><span class="av" style="background:' + (PERSON_COLOR[it.assigned] || '#8A918A') + '">' + esc(initials(it.assigned)) + '</span>' + esc(firstName(it.assigned)) + '</span>' +
-    pill + (noteCount ? '<span class="card-note">' + noteCount + ' note' + (noteCount > 1 ? 's' : '') + '</span>' : '') + '</div>' +
+    (pill || noteCount ? '<div class="card-foot">' + pill + (noteCount ? '<span class="card-note">' + noteCount + ' note' + (noteCount > 1 ? 's' : '') + '</span>' : '') + '</div>' : '') +
     '<div class="card-more">' + more + '</div></div>';
 }
 /* 1.25 Doug: one click or tap anywhere on a card opens it, on a computer and a phone. The old click to preview is gone */
 let expandedId = null;
-function cardClick(e, id) {
-  openItem(id); return;
+function cardClick(e, id) {   /* 1.31 (Doug 11/1): a tap expands the card in place; Open card (or a double click) opens it */
   expandedId = expandedId === id ? null : id;
   document.querySelectorAll('.card.open').forEach(c => { if (c.dataset.id !== expandedId) c.classList.remove('open'); });
   const c = document.querySelector('.card[data-id="' + id + '"]'); if (c) c.classList.toggle('open', expandedId === id);
@@ -1590,8 +1614,11 @@ window.addEventListener('popstate', e => {
 function setBriefHours(h) { briefHours = h; lsSet(LS.hours, h); renderBrief(); }
 let briefAll = false;
 function setBriefAll(v) { briefAll = v; renderBrief(); }
-function brItem(i, extra) {
-  return '<div class="br-item" style="--c:' + (TRIAGE[i.triage] ? TRIAGE[i.triage].c : group(i.category).color) + '"><div class="t">' + esc(i.title) + '<span>' + esc(group(i.category).name) + ' · ' + esc(i.assigned) + (extra ? ' · ' + extra : '') + '</span></div></div>';
+function brItem(i, extra) {   /* 1.31 (Doug 11/1): the briefing shows the details and latest note, since the board cards are short now */
+  const n = parseNotes(i.notes)[0], det = String(i.details || '').trim();
+  return '<div class="br-item" style="--c:' + (TRIAGE[i.triage] ? TRIAGE[i.triage].c : group(i.category).color) + '"><div class="t">' + esc(i.title) + '<span>' + esc(soId(i)) + ' · ' + esc(group(i.category).name) + ' · ' + esc(i.assigned || 'Unassigned') + ' · in ' + fmtDate(i.dateIn) + (extra ? ' · ' + extra : '') + '</span>' +
+    (det ? '<p class="br-det">' + esc(det.length > 400 ? det.slice(0, 400) + '...' : det) + '</p>' : '') +
+    (n ? '<p class="br-note"><b>' + esc(n.when || '') + (n.who ? ' ' + esc(firstName(n.who)) : '') + ':</b> ' + esc(n.text) + '</p>' : '') + '</div></div>';
 }
 function renderBrief() {
   document.querySelectorAll('#brief .fchip[data-h]').forEach(b => b.classList.toggle('on', +b.dataset.h === briefHours));
@@ -1872,6 +1899,7 @@ function hm4(t) { return String(t || '').replace(':', ''); }
 function crTag(t) { return t === 'edit' ? '<span class="cr-tag edit">Changed</span>' : t === 'trade' ? '<span class="cr-tag">Trade</span>' : t === 'cover' ? '<span class="cr-tag cover">Cover</span>' : t === 'extra' ? '<span class="cr-tag ot">OT</span>' : ''; }
 function crSeatShort(s) { return s === 'C1' ? 'PM' : s === 'C2' ? 'EMT' : s === 'AC' ? 'AC' : s; }
 function crPiece(p, split) {
+  if (p.tag === 'edit' && p.start && p.end && !(p.start === CE_FULL && p.end === CE_FULL)) split = true;   /* 1.31: hours on a change */
   const t = split ? ' <span class="t">' + esc(hm4(p.start)) + ' to ' + esc(hm4(p.end)) + '</span>' : '';
   if (p.state === 'filled') return esc(p.person) + crTag(p.tag) + t;
   if (p.tag === 'edit') return '<span class="cr-open">OPEN</span>' + crTag('edit');
@@ -1892,7 +1920,7 @@ function crCard(u) {
 }
 function crLast(name) { const p = String(name || '').trim().split(/\s+/); return p.length > 1 ? p[p.length - 1] : p[0] || ''; }
 function crShort(u) {   // "M51 Komm / Cooper" for the tomorrow line on a computer
-  const seat = id => { const s = u.seats.find(x => x.seat === id); if (!s) return ''; return s.pieces.map(p => p.state === 'filled' ? esc(crLast(p.person)) + crTag(p.tag) : p.state === 'open' ? '<span class="cr-open">OPEN</span>' + (p.tag === 'edit' ? crTag('edit') : '') : '?').join(' + '); };
+  const seat = id => { const s = u.seats.find(x => x.seat === id); if (!s) return ''; return s.pieces.map(p => p.state === 'filled' ? esc(crLast(p.person)) + (p.tag === 'edit' && p.start && p.end && !(p.start === CE_FULL && p.end === CE_FULL) ? ' <span class="t">' + esc(hm4(p.start)) + '-' + esc(hm4(p.end)) + '</span>' : '') + crTag(p.tag) : p.state === 'open' ? '<span class="cr-open">OPEN</span>' + (p.tag === 'edit' ? crTag('edit') : '') : '?').join(' + '); };
   const parts = ['C1', 'C2'].map(seat).filter(Boolean);
   return '<button type="button" onclick="openCrewEdit(\'next\',\'' + esc(u.unit) + '\')" title="Tap to change who is on ' + esc(u.unit) + ' tomorrow"><b>' + esc(u.unit) + '</b>' + parts.join(' / ') + '</button>';
 }
@@ -1929,12 +1957,27 @@ function crewView(s) {
     const e = crewEdits[ceKey(s.date, unit, seat)]; if (!e) continue;
     let u = v.units.find(x => x.unit === unit);
     if (!u) { u = { unit, name: 'Medic ' + unit.slice(1), seats: [] }; v.units.push(u); v.units.sort((a, b) => a.unit.localeCompare(b.unit)); }
-    const piece = { person: e.person || '', state: e.person ? 'filled' : 'open', start: '', end: '', tag: 'edit' };
-    const i = u.seats.findIndex(x => x.seat === seat), ns = { seat, label: short, pieces: [piece] };
+    const pieces = Array.isArray(e.pieces) && e.pieces.length ? e.pieces.map(p => ({ person: p.person || '', state: p.person ? 'filled' : 'open', start: p.start || '', end: p.end || '', tag: 'edit' }))
+      : [{ person: e.person || '', state: e.person ? 'filled' : 'open', start: '', end: '', tag: 'edit' }];
+    const i = u.seats.findIndex(x => x.seat === seat), ns = { seat, label: short, pieces };
     if (i >= 0) u.seats[i] = ns; else u.seats.splice(seat === 'C1' ? 0 : u.seats.filter(x => x.seat === 'C1').length, 0, ns);
   }
   return v;
 }
+/* 1.31 (Doug 11/1): part of a shift. Hours on the first person, and an optional second person for the rest */
+const CE_FULL = '07:30';
+function ceHasHours(e) { return !!(e && Array.isArray(e.pieces) && e.pieces.some(p => p.start && p.end && !(p.start === CE_FULL && p.end === CE_FULL))); }
+function ceHoursHtml(id, e) {
+  const P = e && Array.isArray(e.pieces) ? e.pieces : [], a = P[0] || {}, b = P[1] || {};
+  const tm = (k, v, d) => '<input type="time" id="ce-' + k + '" value="' + esc(v || d) + '" step="900">';
+  return '<button type="button" class="ce-hrs-btn" onclick="ceToggleHours(\'' + id + '\')">' + (ceHasHours(e) ? 'Hours' : 'Part of the shift? Set hours') + '</button>' +
+    '<div class="ce-hrs"><div class="ce-tm">Works from ' + tm(id + '-f', a.start, '07:30') + ' to ' + tm(id + '-t', a.end, '19:30') + '</div>' +
+    '<div class="ce-sub">Rest of the shift (leave blank if you don\'t know yet)</div>' +
+    '<div class="ce-in"><input id="ce-' + id + 'b" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="words" placeholder="Name for the rest" value="' + esc(b.person || '') + '" oninput="ceCheck(\'' + id + 'b\')"></div>' +
+    '<div class="ce-sug" id="ce-s-' + id + 'b"></div><div class="ce-warn" id="ce-w-' + id + 'b"></div>' +
+    '<div class="ce-tm" style="margin-top:6px">From ' + tm(id + 'b-f', b.start, a.end || '19:30') + ' to ' + tm(id + 'b-t', b.end, '07:30') + '</div></div>';
+}
+function ceToggleHours(id) { const r = $('ce-r-' + id); if (r) r.classList.toggle('hrs'); }
 function ceDayObj(which) { return crews && crews.shifts.find(s => s.which === which); }
 function openCrewEdit(which, unit) {
   if (!crews) return;
@@ -1958,12 +2001,12 @@ function renderCrewEdit() {
     h += '<div class="ce-unit" id="ce-u-' + unit + '" style="--uc:' + (UNIT_COLOR[unit] || '#2d6a2d') + '"><h4>' + unit + '</h4>';
     for (const [seat, short] of CE_SEATS) {
       const id = unit + seat, e = crewEdits[ceKey(s.date, unit, seat)];
-      h += '<div class="ce-row"><div class="ce-lab"><b>' + short + '</b><span class="was">Schedule: ' + esc(ceSchedText(s, unit, seat)) + '</span></div>' +
+      h += '<div class="ce-row' + (ceHasHours(e) ? ' hrs' : '') + '" id="ce-r-' + id + '"><div class="ce-lab"><b>' + short + '</b><span class="was">Schedule: ' + esc(ceSchedText(s, unit, seat)) + '</span></div>' +
         '<div class="ce-in"><input id="ce-' + id + '" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="words" placeholder="Name" value="' + esc(e ? e.person || '' : '') + '" oninput="ceCheck(\'' + id + '\')" onkeydown="if(event.key===\'Enter\')ceSave(\'' + unit + '\',\'' + seat + '\')">' +
         '<button type="button" class="save" ' + (ceBusy ? 'disabled ' : '') + 'onclick="ceSave(\'' + unit + '\',\'' + seat + '\')">Save</button>' +
         '<button type="button" ' + (ceBusy ? 'disabled ' : '') + 'onclick="ceSave(\'' + unit + '\',\'' + seat + '\',true)" title="Mark this seat open">Open</button></div>' +
-        '<div class="ce-sug" id="ce-s-' + id + '"></div><div class="ce-warn" id="ce-w-' + id + '"></div>' +
-        (e ? '<div class="ce-chg">Changed to ' + (e.person ? '<b>' + esc(e.person) + '</b>' : '<b>OPEN</b>') + ' by ' + esc(e.by || 'CG Staff') + (e.at ? ' ' + esc(fmtDT(new Date(e.at))) : '') + '<button type="button" onclick="ceClear(\'' + unit + '\',\'' + seat + '\')">Use the schedule</button></div>' : '') +
+        '<div class="ce-sug" id="ce-s-' + id + '"></div><div class="ce-warn" id="ce-w-' + id + '"></div>' + ceHoursHtml(id, e) +
+        (e ? '<div class="ce-chg">Changed to ' + (ceHasHours(e) ? e.pieces.map(p => '<b>' + esc(p.person) + '</b> ' + esc(hm4(p.start)) + ' to ' + esc(hm4(p.end))).join(', ') : e.person ? '<b>' + esc(e.person) + '</b>' : '<b>OPEN</b>') + ' by ' + esc(e.by || 'CG Staff') + (e.at ? ' ' + esc(fmtDT(new Date(e.at))) : '') + '<button type="button" onclick="ceClear(\'' + unit + '\',\'' + seat + '\')">Use the schedule</button></div>' : '') +
         '</div>';
     }
     h += '</div>';
@@ -1992,6 +2035,15 @@ async function ceSave(unit, seat, open) {
   if (!open && !person) { toast('Type or pick a name first, or tap Open.', true); if (inp) inp.focus(); return; }
   if (!open && ceMatch(person)) person = ceMatch(person);   /* 1.30.2: saved with the list's spelling */
   const e = { date: s.date, unit, seat, person, by: meName(), email: meEmail(), at: new Date().toISOString(), from: 'CG Staff ' + VERSION };
+  const row = $('ce-r-' + unit + seat), id = unit + seat;
+  if (!open && row && row.classList.contains('hrs')) {   /* 1.31: hours */
+    const v = k => (($('ce-' + k) || {}).value || '').trim();
+    const f = v(id + '-f'), t = v(id + '-t');
+    if (!f || !t) { toast('Set both times, or tap Hours to close it.', true); return; }
+    e.pieces = [{ person, start: f, end: t }];
+    let p2 = String(v(id + 'b')).replace(/\s+/g, ' ').trim(); if (p2 && ceMatch(p2)) p2 = ceMatch(p2);
+    if (p2) { const f2 = v(id + 'b-f'), t2 = v(id + 'b-t'); if (!f2 || !t2) { toast('Set both times for the second person.', true); return; } e.pieces.push({ person: p2, start: f2, end: t2 }); }
+  }
   const k = ceKey(s.date, unit, seat);
   if (DEMO) { crewEdits[k] = e; haptic(); renderCrewEdit(); renderHome(); toast((person || 'Open') + ' on ' + unit + ' (demo, not saved)'); return; }
   ceBusy = true; renderCrewEdit();

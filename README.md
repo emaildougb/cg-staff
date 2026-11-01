@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.30.2**
+**Version 1.31**
 
 ## Links
 
@@ -115,6 +115,11 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.31 (11/1/2026)
+- Change crews: **Part of the shift? Set hours** under each seat. Set when the person works (like 0730 to 1400) and, if you know it, who covers the rest and their hours. The crew card shows both names with their times and the Changed tag
+- Shift Briefing Notes board: cards are shorter. The SO number and owner name are gone from the card face; tap a card to expand it in place (details, latest note, SO number, owner, Open card). Double click or Open card opens the full card. Columns now run down the page instead of scrolling inside the column, so a group with 10 items just gets longer
+- Shift Briefing (Briefing button): each item now shows its SO number, date in, details and latest note
 
 ### v1.30.2 (10/31/2026)
 - Change crews: names now show as tap to pick buttons under the box while you type (first or last name, any part). Matching ignores apostrophes, hyphens and spaces, so "Kelly OLoughlin" or the iPhone's curly apostrophe finds Kelly O'Loughlin. A name that matches the list saves with the list's spelling. The phone's own pop up list is gone (it missed names with apostrophes)
