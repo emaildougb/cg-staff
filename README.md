@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.31**
+**Version 1.31.1**
 
 ## Links
 
@@ -115,6 +115,11 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.31.1 (11/1/2026)
+- Vehicle problems: the cooler (fridge) out of range stays a critical problem, since some medications must be replaced when the refrigerator is off range
+- Vehicle problems: gurney and tire pressure items no longer show as problems on the check line, the handoff, the briefing or the dashboard. They stay in Full check
+- Still critical: brake lights, horn, lights, oil, unsafe tires and crew or patient equipment. Fuel, DEF, O2 psi and narcotic counts stay off the problem lists (as in 1.30.1)
 
 ### v1.31 (11/1/2026)
 - Change crews: **Part of the shift? Set hours** under each seat. Set when the person works (like 0730 to 1400) and, if you know it, who covers the rest and their hours. The crew card shows both names with their times and the Changed tag
