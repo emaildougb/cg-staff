@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.31.2**
+**Version 1.31.3**
 
 ## Links
 
@@ -115,6 +115,10 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.31.3 (11/1/2026)
+- Dashboard tiles that open the board with a filter (for example Need triage) now land on the first group that really has matching cards on a phone. Before, the phone could open on an empty group (Needs Triaged, 0) while the cards sat in Logistics
+- Vehicle problem rule unchanged from 1.31.2
 
 ### v1.31.2 (11/1/2026)
 - Vehicle problems match Apparatus Checker 2.44: an issue the Checker marks `minor: true` is never a problem, and narcotic counts (labels ending "(count N)"), gurney check keys (g|) and the tire pressure key (s|tire) are noted, not problems. Cooler stays critical

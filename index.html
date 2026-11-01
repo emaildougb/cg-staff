@@ -854,7 +854,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.31.2';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.31.3';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -2218,7 +2218,13 @@ function stat(n, label, cls, go) {
   const k = DASH_ACTS.push(go) - 1;   /* 1.11: number tiles click through too */
   return '<button type="button" class="stat ' + (cls || '') + '" onclick="dashGo(' + k + ')"><b>' + n + '</b><span>' + label + '</span></button>';
 }
-function boardWith(f) { return () => { setView('board'); setFilter(f); }; }
+/* 1.31.3: a dashboard tile that filters the board lands on a group that really has matching cards (phone shows one group at a time) */
+function boardWith(f) { return () => { setView('board'); setFilter(f); if (isPhone() && f !== 'all') landOnFilled(); }; }
+function landOnFilled() {
+  const open = openItems().filter(passes);
+  const g = GROUPS.find(g => open.some(i => (i.category || 'Needs Triaged') === g.key));
+  if (g && g.key !== phoneTab) setTab(g.key);
+}
 /* 1.10: every dashboard row opens the thing it's about */
 let DASH_ACTS = [];
 function dashGo(n) { const f = DASH_ACTS[n]; if (f) f(); }
