@@ -854,7 +854,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.31.1';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.31.2';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -2444,7 +2444,7 @@ function vehCrew(c) { return c && c.crew ? esc(c.crew) : 'crew'; }
 function vehAppVer(c) { const m = String((c && c.app) || '').match(/^(\d+)\.(\d+)/); return m ? (+m[1]) * 100 + (+m[2]) : 0; }
 /* 1.30.1 (Doug 10/31): fuel, DEF, main O2 level, fridge temp and narc counts are routine levels, not problems.
    They stay in the full check record but never show as open problems, handoff fixes, counts or dashboard rows. */
-function vehMinor(i) { return /^s\|(fuel|def|o2)$/.test((i && i.key) || '') || /^(Fuel |DEF at |Main O2 at )|gurney|tire pressure|tire psi/i.test((i && i.label) || ''); }
+function vehMinor(i) { return !!(i && i.minor) || /^s\|(fuel|def|o2|tire)$|^g\|/.test((i && i.key) || '') || /^(Fuel |DEF at |Main O2 at )|gurney|tire pressure|tire psi|\(count \d+\)$/i.test((i && i.label) || ''); }   // 1.31.2: same rule as Checker 2.44 issueMinor()
 function vehTransient(i) { return /^(Fuel |DEF at )/i.test(i.label || ''); }
 function vehIssId(i) { return i.key || i.label; }
 function vehPhotos(c) { return (c && Array.isArray(c.photos) ? c.photos : []).filter(p => p && /^(https:\/\/|data:image\/)/.test(p.url || '')); }
