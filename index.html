@@ -854,7 +854,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.31.3';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.32';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -882,6 +882,7 @@ const CONFIG = {
   /* 1.23: reminders Doug sets for one chief or a few. once = shows until they tap Done. daily = comes back every day at 0600 until they tap Done for today.
      Done marks are small files on the CG Staff site in App Data/Reminders, so they follow the person to any device and Doug can see who has done what. */
   remindersFolder: 'App Data/Reminders',
+  touchFolder: 'App Data/Card Touches',   // 1.32: each person's own file, <name>.json, lists the cards they have opened or changed and when
   /* 1.30: crew changes made in CG Staff when someone picks up a shift after Derek's last pull.
      One small file per seat per day: App Data/Crew Changes/<YYYY-MM-DD> <unit> <C1|C2>.json  {person, by, email, at}
      person "" means the seat is open. Deleting the file goes back to Derek's schedule. */
@@ -1162,6 +1163,7 @@ async function createItem(fields) {
 /* apply a change locally first, put it back if SharePoint says no */
 async function applyChange(id, local, fields, okMsg) {
   const it = items.find(i => i.id === id); if (!it) return false;
+  recordTouch(id);   /* 1.32: changing a card counts as touching it too */
   const before = Object.assign({}, it);
   Object.assign(it, local, { modified: new Date() }); render();   /* 1.24: any change clears Update status right away */
   try { await patchFields(id, fields); if (okMsg) toast(okMsg); cacheLocal(); return true; }
@@ -1172,7 +1174,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadCrewEdits().catch(() => {}), loadReminders(manual).catch(() => {}), loadVeh().catch(e => { vehErr = e.message; }), loadFleetToday().catch(() => {})]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadCrewEdits().catch(() => {}), loadReminders(manual).catch(() => {}), loadTouches().catch(() => {}), loadVeh().catch(e => { vehErr = e.message; }), loadFleetToday().catch(() => {})]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -1381,7 +1383,38 @@ function parseNotes(s) {
   });
 }
 
-function openItem(id) { openId = id; renderItemSheet(); showSheet('sh-item'); }
+function openItem(id) { openId = id; recordTouch(id); renderItemSheet(); showSheet('sh-item'); }
+/* 1.32 Doug: a card counts as touched by a BC when they open it (or change it). Each person writes only their own file, so two people never write the same file */
+let touchMemo = {}, touchTimer = null, touchBusy = false, touchAt = 0;
+function touchFile() { return CONFIG.touchFolder + '/' + meEmail().split('@')[0] + '.json'; }
+function recordTouch(id) {
+  if (DEMO || !meEmail() || !id) return;
+  touchMemo[id] = new Date().toISOString();
+  clearTimeout(touchTimer); touchTimer = setTimeout(flushTouches, 1500);
+}
+async function loadTouches() {
+  if (DEMO || !meEmail()) return;
+  if (touchAt && Date.now() - touchAt < 5 * 60000) return;
+  await getSiteId();
+  try {
+    const token = await getToken();
+    const res = await fetch(GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(touchFile()) + ':/content', { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+    if (res.ok) { const j = JSON.parse(await res.text()); Object.assign(touchMemo, j.touches || {}); }
+    touchAt = Date.now();
+  } catch (e) { /* first time, or offline: keep what we have */ }
+}
+async function flushTouches() {
+  if (DEMO || !meEmail() || touchBusy) return;
+  touchBusy = true;
+  try {
+    const token = await getToken(); await getSiteId();
+    const body = JSON.stringify({ person: meName(), email: meEmail(), updated: new Date().toISOString(), version: VERSION, touches: touchMemo }, null, 1);
+    const res = await fetch(GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(touchFile()) + ':/content',
+      { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body });
+    if (!res.ok) throw new Error('SharePoint said ' + res.status);
+  } catch (e) { /* keep the memo; the next open saves it again */ }
+  finally { touchBusy = false; }
+}
 function renderItemSheet() {
   const it = items.find(i => i.id === openId); if (!it) { closeSheets(); return; }
   const g = group(it.category), done = it.status === STATUS.DONE;

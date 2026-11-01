@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.31.3**
+**Version 1.32**
 
 ## Links
 
@@ -115,6 +115,10 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.32 (11/1/2026)
+- Card touches: when a BC opens a card on the board, or changes it (triage, briefing, status, notes), CG Staff records it in App Data/Card Touches/<name>.json, one file per person, with the card ID and the time. Each person writes only their own file
+- Built for the coming 7am shift briefing email: a card a BC has not opened or changed is still waiting on them
 
 ### v1.31.3 (11/1/2026)
 - Dashboard tiles that open the board with a filter (for example Need triage) now land on the first group that really has matching cards on a phone. Before, the phone could open on an empty group (Needs Triaged, 0) while the cards sat in Logistics
