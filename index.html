@@ -854,7 +854,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.32';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.32.2';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -1227,7 +1227,6 @@ function cardHtml(it) {
       '<button class="flag ' + (it.brief ? 'on' : '') + '" title="' + (it.brief ? 'On the shift briefing. Tap to remove' : 'Tap to put on the shift briefing') + '" onclick="event.stopPropagation();toggleBrief(\'' + id + '\')">' + FLAG_SVG + '</button>' +
       '<span class="age ' + ac + '" title="Days on the board">' + ageLabel(age) + '</span></div>' +
     (t ? '' : '<button type="button" class="needtri" title="No one has rated this yet. Tap to set Red" onclick="event.stopPropagation();cycleTriage(\'' + id + '\')">Needs triage</button>') +
-    (t && staleDays(it) >= CONFIG.updateDays ? '<button type="button" class="needupd" title="Nothing has changed on this card in ' + staleDays(it) + ' days. Open it and add a status note" onclick="event.stopPropagation();openItem(\'' + id + '\')">Update status · ' + staleDays(it) + 'd</button>' : '') +
     '<div class="card-title">' + esc(it.title) + '</div>' +
     (pill || noteCount ? '<div class="card-foot">' + pill + (noteCount ? '<span class="card-note">' + noteCount + ' note' + (noteCount > 1 ? 's' : '') + '</span>' : '') + '</div>' : '') +
     '<div class="card-more">' + more + '</div></div>';
@@ -1390,7 +1389,7 @@ function touchFile() { return CONFIG.touchFolder + '/' + meEmail().split('@')[0]
 function recordTouch(id) {
   if (DEMO || !meEmail() || !id) return;
   touchMemo[id] = new Date().toISOString();
-  clearTimeout(touchTimer); touchTimer = setTimeout(flushTouches, 1500);
+  clearTimeout(touchTimer); touchTimer = setTimeout(flushTouches, 300);
 }
 async function loadTouches() {
   if (DEMO || !meEmail()) return;
@@ -1403,18 +1402,24 @@ async function loadTouches() {
     touchAt = Date.now();
   } catch (e) { /* first time, or offline: keep what we have */ }
 }
-async function flushTouches() {
+async function flushTouches(tries) {   // 1.32.1 Doug: a card save that failed once must not vanish; retry, then say so
   if (DEMO || !meEmail() || touchBusy) return;
-  touchBusy = true;
+  touchBusy = true; let ok = false;
   try {
     const token = await getToken(); await getSiteId();
     const body = JSON.stringify({ person: meName(), email: meEmail(), updated: new Date().toISOString(), version: VERSION, touches: touchMemo }, null, 1);
     const res = await fetch(GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(touchFile()) + ':/content',
       { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body });
     if (!res.ok) throw new Error('SharePoint said ' + res.status);
-  } catch (e) { /* keep the memo; the next open saves it again */ }
+    ok = true;
+  } catch (e) { /* keep the memo and try again below */ }
   finally { touchBusy = false; }
+  if (ok) return;
+  const n = (tries || 0) + 1;
+  if (n <= 3) { setTimeout(() => flushTouches(n), n * 4000); return; }
+  toast('Your card opens did not save to SharePoint. CG Staff will keep trying when you open a card or come back online.');
 }
+window.addEventListener('online', () => { if (Object.keys(touchMemo).length) flushTouches(0); });
 function renderItemSheet() {
   const it = items.find(i => i.id === openId); if (!it) { closeSheets(); return; }
   const g = group(it.category), done = it.status === STATUS.DONE;
@@ -1460,7 +1465,7 @@ async function saveItem() {
   if (c !== it.category) { local.category = c; fields.Category = c; }
   if (w !== it.assigned) { local.assigned = w; fields.AssignedTo = w; }
   readAssignFields('it', it, local, fields);
-  if (!Object.keys(fields).length) { toast('No changes'); return; }
+  if (!Object.keys(fields).length) { recordTouch(it.id); flushTouches(0); toast('Saved. Marked as looked at.'); return; }
   if (await applyChange(it.id, local, fields, 'Saved')) renderItemSheet();
 }
 async function takeIt() {

@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.32**
+**Version 1.32.2**
 
 ## Links
 
@@ -115,6 +115,14 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.32.2 (11/10/2026)
+- Removed the Update status day tag from board cards.
+- Yes, save changes now counts as looking at the card even when nothing was edited. It says so instead of No changes.
+- Card touches save about 1 second after opening instead of 2.
+
+### v1.32.1 (11/3/2026)
+- Card touch saves retry three times and show a message if they still do not reach SharePoint. Also tries again when the phone or computer comes back online.
 
 ### v1.32 (11/1/2026)
 - Card touches: when a BC opens a card on the board, or changes it (triage, briefing, status, notes), CG Staff records it in App Data/Card Touches/<name>.json, one file per person, with the card ID and the time. Each person writes only their own file
