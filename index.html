@@ -854,7 +854,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.32.2';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.33';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -882,6 +882,8 @@ const CONFIG = {
   /* 1.23: reminders Doug sets for one chief or a few. once = shows until they tap Done. daily = comes back every day at 0600 until they tap Done for today.
      Done marks are small files on the CG Staff site in App Data/Reminders, so they follow the person to any device and Doug can see who has done what. */
   remindersFolder: 'App Data/Reminders',
+  /* 1.33: neuro interventional schedule (Legacy Salmon Creek), written by Doug's scheduled Claude task from Chief Shirley's monthly Excel */
+  nirFile: 'Neuro IR Coverage (do not delete)/nir-coverage.json',
   touchFolder: 'App Data/Card Touches',   // 1.32: each person's own file, <name>.json, lists the cards they have opened or changed and when
   /* 1.30: crew changes made in CG Staff when someone picks up a shift after Derek's last pull.
      One small file per seat per day: App Data/Crew Changes/<YYYY-MM-DD> <unit> <C1|C2>.json  {person, by, email, at}
@@ -1174,7 +1176,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadCrewEdits().catch(() => {}), loadReminders(manual).catch(() => {}), loadTouches().catch(() => {}), loadVeh().catch(e => { vehErr = e.message; }), loadFleetToday().catch(() => {})]); vehSyncLinks(); vehArchive(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadCrewEdits().catch(() => {}), loadReminders(manual).catch(() => {}), loadTouches().catch(() => {}), loadVeh().catch(e => { vehErr = e.message; }), loadFleetToday().catch(() => {})]); vehSyncLinks(); vehArchive(); briefSyncSoon(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -1263,7 +1265,30 @@ function toggleBrief(id) {
   if (needCols()) return;
   const it = items.find(i => i.id === (id || openId)); if (!it) return;
   const v = !it.brief;
-  applyChange(it.id, { brief: v }, { Briefing: v }, v ? 'On the shift briefing' : 'Off the shift briefing').then(() => { if (openId === it.id) renderItemSheet(); });
+  applyChange(it.id, { brief: v }, { Briefing: v }, v ? 'On the shift briefing' : 'Off the shift briefing').then(() => { if (openId === it.id) renderItemSheet(); briefSyncSoon(true); });
+}
+/* 1.33: Daily snapshot on the NCEMS Hub (Wall, Desk, phones). Crews can't read this SharePoint site, so when a BC or the
+   Chief has CG Staff open, the cards flagged for the shift briefing (not Completed) and the neuro IR file go to the
+   ncems-checks Worker (POST /fleet/brief/sync). The Hub reads them from GET /fleet/brief. Sent when something changed,
+   or every 30 minutes so the Hub can tell the list is current. Personnel matters never go on the board, so none go here */
+const BRIEF_SYNCERS = ['d.boyce', 'd.langdon', 'd.madler', 'b.shirley'];
+let briefSig = '', briefSentAt = 0, briefTimer = null;
+function briefSyncSoon(force) { if (force) briefSig = ''; clearTimeout(briefTimer); briefTimer = setTimeout(briefSync, 1500); }
+async function briefSync() {
+  if (DEMO || !account || BRIEF_SYNCERS.indexOf(meEmail().split('@')[0]) < 0) return;
+  const list = items.filter(i => i.brief && i.status !== STATUS.DONE).map(i => ({
+    id: i.id, so: soId(i), title: i.title, details: String(i.details || '').slice(0, 400), category: i.category,
+    assigned: i.assigned, triage: i.triage, status: i.status, dateIn: i.dateIn ? i.dateIn.toISOString() : '' }));
+  let nir = null;
+  try {
+    await getSiteId();
+    const res = await fetch(GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.nirFile) + ':/content', { headers: { Authorization: 'Bearer ' + await getToken() }, cache: 'no-store' });
+    if (res.ok) nir = await res.json();
+  } catch (e) { nir = null; }
+  const sig = JSON.stringify([list, nir]);
+  if (sig === briefSig && Date.now() - briefSentAt < 30 * 60e3) return;
+  try { await cfApi('/fleet/brief/sync', { method: 'POST', body: { items: list, nir } }); briefSig = sig; briefSentAt = Date.now(); }
+  catch (e) { /* quiet: the Hub shows how old its list is */ }
 }
 function render() {
   const open = openItems().filter(passes).sort(sortItems);

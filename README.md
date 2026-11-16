@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.32.2**
+**Version 1.33**
 
 ## Links
 
@@ -115,6 +115,10 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.33 (11/16/2026)
+- **Hub Daily snapshot feed.** When Doug, Derek, Dennis or Bryce has CG Staff open, the cards flagged **Mention at shift briefing** (not Completed) and the neuro interventional coverage file go to the ncems-checks Worker (POST /fleet/brief/sync, Worker 1.10), so the Hub can show them on the Wall, Desk and phones. Sent when something changes, at least every 30 minutes, and right after the flag is turned on or off
+- New CONFIG.nirFile: `Neuro IR Coverage (do not delete)/nir-coverage.json` on this site, written by Doug's scheduled Claude task from Chief Shirley's monthly Excel
 
 ### v1.32.2 (11/10/2026)
 - Removed the Update status day tag from board cards.
