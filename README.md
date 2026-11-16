@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.33**
+**Version 1.34**
 
 ## Links
 
@@ -116,9 +116,14 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
 
 ## Changelog
 
+### v1.34 (11/16/2026)
+- **Line for the Hub Wall.** A card that's on the shift briefing now has a **Line for the Hub Wall** box under the flag. Write one short sentence in your own words and tap **Save line**. The Wall shows that line, never the card details (those are often pasted email text). Blank means the Wall shows only the title
+- Lines are saved in `Neuro IR Coverage (do not delete)/briefing-lines.json` on this site and go to the Hub with the briefing list (field `say`, needs ncems-checks Worker 1.11)
+- Neuro interventional coverage is for **PeaceHealth Southwest (PHSW)**, not Legacy Salmon Creek. The schedule comes from the PeaceHealth Transfer Center (Jennifer Harbison) and Chief Shirley forwards it
+
 ### v1.33 (11/16/2026)
 - **Hub Daily snapshot feed.** When Doug, Derek, Dennis or Bryce has CG Staff open, the cards flagged **Mention at shift briefing** (not Completed) and the neuro interventional coverage file go to the ncems-checks Worker (POST /fleet/brief/sync, Worker 1.10), so the Hub can show them on the Wall, Desk and phones. Sent when something changes, at least every 30 minutes, and right after the flag is turned on or off
-- New CONFIG.nirFile: `Neuro IR Coverage (do not delete)/nir-coverage.json` on this site, written by Doug's scheduled Claude task from Chief Shirley's monthly Excel
+- New CONFIG.nirFile: `Neuro IR Coverage (do not delete)/nir-coverage.json` on this site, written by Doug's scheduled Claude task from the PHSW monthly Excel Chief Shirley forwards
 
 ### v1.32.2 (11/10/2026)
 - Removed the Update status day tag from board cards.

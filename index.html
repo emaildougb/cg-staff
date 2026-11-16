@@ -854,7 +854,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.33';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.34';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -882,8 +882,11 @@ const CONFIG = {
   /* 1.23: reminders Doug sets for one chief or a few. once = shows until they tap Done. daily = comes back every day at 0600 until they tap Done for today.
      Done marks are small files on the CG Staff site in App Data/Reminders, so they follow the person to any device and Doug can see who has done what. */
   remindersFolder: 'App Data/Reminders',
-  /* 1.33: neuro interventional schedule (Legacy Salmon Creek), written by Doug's scheduled Claude task from Chief Shirley's monthly Excel */
+  /* 1.33: neuro interventional schedule (PeaceHealth Southwest, PHSW), written by Doug's scheduled Claude task from the monthly
+     Excel the PeaceHealth Transfer Center sends and Chief Shirley forwards */
   nirFile: 'Neuro IR Coverage (do not delete)/nir-coverage.json',
+  /* 1.34: the short line the Hub Wall shows for each briefing card (written by a BC, never the raw email text). { lines: { itemId: text } } */
+  briefLinesFile: 'Neuro IR Coverage (do not delete)/briefing-lines.json',
   touchFolder: 'App Data/Card Touches',   // 1.32: each person's own file, <name>.json, lists the cards they have opened or changed and when
   /* 1.30: crew changes made in CG Staff when someone picks up a shift after Derek's last pull.
      One small file per seat per day: App Data/Crew Changes/<YYYY-MM-DD> <unit> <C1|C2>.json  {person, by, email, at}
@@ -1176,7 +1179,7 @@ function cacheLocal() { /* cache is refreshed on next load; nothing to do in dem
 async function refresh(manual) {
   if (refreshing) return; refreshing = true;
   $('refresh-btn').classList.add('spin');
-  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadCrewEdits().catch(() => {}), loadReminders(manual).catch(() => {}), loadTouches().catch(() => {}), loadVeh().catch(e => { vehErr = e.message; }), loadFleetToday().catch(() => {})]); vehSyncLinks(); vehArchive(); briefSyncSoon(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
+  try { await Promise.all([loadItems(), loadFng().catch(e => { fngErr = e.message; }), loadReports().catch(e => { repErr = e.message; }), loadOT(manual).catch(() => {}), loadCrews(manual).catch(() => {}), loadCrewEdits().catch(() => {}), loadReminders(manual).catch(() => {}), loadTouches().catch(() => {}), loadVeh().catch(e => { vehErr = e.message; }), loadFleetToday().catch(() => {}), loadBriefLines().catch(() => {})]); vehSyncLinks(); vehArchive(); briefSyncSoon(); if (vehOpen !== null && $('sh-veh').classList.contains('show')) renderVehSheet(); lastSync = new Date(); setSync(); render(); if (openId) renderItemSheet(); if (manual) toast('Up to date'); }
   catch (e) { setSync(e.message); if (manual) toast(e.message, true); }
   finally { refreshing = false; $('refresh-btn').classList.remove('spin'); }
 }
@@ -1279,6 +1282,8 @@ async function briefSync() {
   const list = items.filter(i => i.brief && i.status !== STATUS.DONE).map(i => ({
     id: i.id, so: soId(i), title: i.title, details: String(i.details || '').slice(0, 400), category: i.category,
     assigned: i.assigned, triage: i.triage, status: i.status, dateIn: i.dateIn ? i.dateIn.toISOString() : '' }));
+  await loadBriefLines();
+  list.forEach(x => { if (briefLines[x.id]) x.say = briefLines[x.id]; });
   let nir = null;
   try {
     await getSiteId();
@@ -1289,6 +1294,33 @@ async function briefSync() {
   if (sig === briefSig && Date.now() - briefSentAt < 30 * 60e3) return;
   try { await cfApi('/fleet/brief/sync', { method: 'POST', body: { items: list, nir } }); briefSig = sig; briefSentAt = Date.now(); }
   catch (e) { /* quiet: the Hub shows how old its list is */ }
+}
+/* 1.34 Doug: the Wall shows a short paraphrase, never the raw details (those are often pasted email text) */
+let briefLines = {}, briefLinesAt = 0;
+async function loadBriefLines(force) {
+  if (DEMO || (!force && Date.now() - briefLinesAt < 60e3)) return;
+  try {
+    await getSiteId();
+    const res = await fetch(GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.briefLinesFile) + ':/content', { headers: { Authorization: 'Bearer ' + await getToken() }, cache: 'no-store' });
+    if (res.ok) { const j = await res.json(); briefLines = (j && j.lines && typeof j.lines === 'object') ? j.lines : {}; briefLinesAt = Date.now(); }
+    else if (res.status === 404) { briefLines = {}; briefLinesAt = Date.now(); }
+  } catch (e) { /* keep what we had */ }
+}
+async function saveBriefLine() {
+  const it = items.find(i => i.id === openId), el = $('it-say'); if (!it || !el) return;
+  const v = el.value.replace(/\s+/g, ' ').trim().slice(0, 140);
+  try {
+    await loadBriefLines(true);
+    if (v) briefLines[it.id] = v; else delete briefLines[it.id];
+    const keep = {}; items.forEach(i => { if (i.brief && i.status !== STATUS.DONE && briefLines[i.id]) keep[i.id] = briefLines[i.id]; });
+    if (v) keep[it.id] = v;
+    const body = JSON.stringify({ updated: new Date().toISOString(), by: meName(), lines: keep }, null, 1);
+    const res = await fetch(GRAPH + '/sites/' + siteId + '/drive/root:/' + vehArchEnc(CONFIG.briefLinesFile) + ':/content',
+      { method: 'PUT', headers: { Authorization: 'Bearer ' + await getToken(), 'Content-Type': 'application/json' }, body });
+    if (!res.ok) throw new Error('SharePoint said ' + res.status);
+    briefLines = keep; briefLinesAt = Date.now();
+    toast(v ? 'Wall line saved' : 'Wall line cleared'); briefSyncSoon(true);
+  } catch (e) { toast('Could not save the Wall line. ' + e.message, true); }
 }
 function render() {
   const open = openItems().filter(passes).sort(sortItems);
@@ -1462,6 +1494,8 @@ function renderItemSheet() {
   }
   h += '<label class="lbl">Triage</label><div class="seg tri-seg">' + Object.keys(TRIAGE).map(k => '<button data-t="' + k + '" class="' + (it.triage === k ? 'on' : '') + '" onclick="setTriage(\'' + k + '\')">' + k + '<small>' + TRIAGE[k].sub + '</small></button>').join('') + '</div>';
   h += '<button class="brief-tog ' + (it.brief ? 'on' : '') + '" onclick="toggleBrief()">' + FLAG_SVG + '<span>' + (it.brief ? 'On the shift briefing' : 'Mention at shift briefing') + '</span><i>' + (it.brief ? 'ON' : 'OFF') + '</i></button>';
+  if (it.brief && !done) h += '<label class="lbl" for="it-say">Line for the Hub Wall</label><div class="note-add"><input class="inp" id="it-say" maxlength="140" placeholder="Say it in your own words for the crews, one short sentence" value="' + esc(briefLines[it.id] || '') + '" onkeydown="if(event.key===\'Enter\')saveBriefLine()"><button class="btn" onclick="saveBriefLine()">Save line</button></div>' +
+    '<div class="meta" style="margin-top:4px">The Wall shows this line, not the details. Leave it blank and the Wall shows only the title.</div>';
   if (mePerson() && it.assigned !== mePerson() && !done) h += '<div class="small-row"><button class="btn small ghost" onclick="takeIt()">Take it</button><span>Makes you the chief / owner of this card instead of ' + esc(firstName(it.assigned)) + '. It shows under Mine on the board. Nothing else on the card changes.</span></div>';
   h += '<label class="lbl">Notes</label>';
   h += '<div class="note-add"><input class="inp" id="note-in" placeholder="Add a note, like parts ordered, ETA Friday" onkeydown="if(event.key===\'Enter\')addNote()"><button class="btn" onclick="addNote()">Add</button></div>';
