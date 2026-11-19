@@ -876,7 +876,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.36';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.36.1';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -3151,7 +3151,7 @@ function fhSignedLine() {
 const FD13 = { data: null, err: '', busy: false, at: 0, tried: false };
 async function fd13Api(path) {
   let tok;
-  try { tok = (await msalApp.acquireTokenSilent({ scopes: SCOPES, account })).idToken; } catch (e) { throw new Error('Sign in again to see FD13 checks.'); }
+  try { tok = (await msalApp.acquireTokenSilent({ scopes: SCOPES, account })).idToken; } catch (e) { const err = new Error('Sign in to see FD13 checks.'); err.needSignIn = true; throw err; }
   let res;
   try { res = await fetch(CONFIG.fd13Api + path, { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }); }
   catch (e) { throw new Error('Could not reach the FD13 Worker from here.'); }
@@ -3160,6 +3160,7 @@ async function fd13Api(path) {
   if (!res.ok) { const err = new Error((data && data.error) || ('FD13 Worker ' + res.status)); err.status = res.status; throw err; }
   return data;
 }
+function fd13SignIn() { msalApp.acquireTokenRedirect({ scopes: SCOPES, account }).catch(() => {}); }
 function fd13When(v) { const d = new Date(v); return isNaN(d) ? '' : fmtDT(d); }
 function fd13Rigs() { return (FD13.data && FD13.data.rigs) || []; }
 function fd13Probs() { return (FD13.data && FD13.data.problems) || []; }
@@ -3179,6 +3180,7 @@ function fd13CardSmall() {
   const c = fd13Counts(); return c.done + ' of ' + c.total + ' checked today';
 }
 function fd13SecBody() {
+  if (!FD13.data && FD13.needSignIn) return '<button class="go" style="--c:#7A0A0A" onclick="event.stopPropagation();fd13SignIn()">Sign in to see FD13 checks</button>';
   if (!FD13.data) return '<div class="sec-msg">' + esc(FD13.err || 'Loading FD13 checks...') + '</div>';
   const c = fd13Counts(), p = fd13Probs();
   return '<div class="stats">' + stat(c.done + '/' + c.total, 'Checked today', '', () => openFd13()) + stat(p.length, 'Open problems', p.length ? 'bad' : '', () => openFd13()) + '</div>' +
@@ -3188,6 +3190,7 @@ function fd13Line(name, sub, pill, cls) { return '<div class="fd13-line"><div><b
 function renderFd13() {
   const el = $('fd13-body'); if (!el || $('fd13').hidden) return;
   if (FD13.busy && !FD13.data) { el.innerHTML = '<div class="fd13-card fd13-msg">Loading FD13 checks...</div>'; return; }
+  if (!FD13.data && FD13.needSignIn) { el.innerHTML = '<div class="fd13-card"><button class="go" style="--c:#7A0A0A" onclick="fd13SignIn()">Sign in to see FD13 checks</button></div>'; return; }
   if (!FD13.data) { el.innerHTML = '<div class="fd13-card fd13-msg">' + esc(FD13.err || 'No FD13 data yet.') + '</div>'; return; }
   const c = fd13Counts(), rigs = fd13Rigs(), probs = fd13Probs();
   let h = '<div class="fd13-card"><h3>Today</h3><div class="fd13-msg">' + c.done + ' of ' + c.total + ' FD13 rigs checked today.' +
@@ -3216,8 +3219,9 @@ async function fd13Load() {
   FD13.busy = true; renderFd13();
   try {
     const [t, p] = await Promise.all([fd13Api('/fire/today'), fd13Api('/fire/problems')]);
-    FD13.data = { rigs: (t && t.rigs) || [], problems: (p && p.problems) || [] }; FD13.err = '';
+    FD13.data = { rigs: (t && t.rigs) || [], problems: (p && p.problems) || [] }; FD13.err = ''; FD13.needSignIn = false;
   } catch (e) {
+    FD13.needSignIn = !!(e && e.needSignIn);
     FD13.err = e.status === 403 ? 'Your account is not on the FD13 list. Ask Doug.' : (e.message || 'Could not read FD13 checks.');
   }
   FD13.busy = false; FD13.at = Date.now();
