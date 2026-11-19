@@ -611,6 +611,24 @@
   .fh-btn { min-height:38px; padding:0 14px; border-radius:10px; border:1.5px solid #C9D0C8; background:#fff; color:#17201A; font-size:12px; font-weight:800; cursor:pointer; }
   .fh-btn.dark { background:#1C3A55; border-color:#1C3A55; color:#fff; }
   .fh-btn:disabled { opacity:.5; }
+  .fd13 { position:fixed; inset:0; z-index:46; background:#FBF7F7; display:flex; flex-direction:column; }
+  .fd13[hidden] { display:none; }
+  .fd13-bar { background:#7A0A0A; color:#fff; padding:calc(8px + env(safe-area-inset-top)) 14px 10px; display:flex; align-items:center; gap:10px; }
+  .fd13-bar h1 { font-size:16px; font-weight:800; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fd13-bar h1 span { color:#FFD9D9; }
+  .fd13-back { border:2px solid #fff; background:transparent; color:#fff; border-radius:10px; padding:8px 12px; font-size:12px; font-weight:800; letter-spacing:1px; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+  .fd13-body { flex:1; overflow:auto; padding:14px 16px 40px; -webkit-overflow-scrolling:touch; }
+  .fd13-card { background:#fff; border:1px solid #E3CFCF; border-radius:14px; padding:12px 14px; margin-bottom:12px; }
+  .fd13-card h3 { font-size:12px; font-weight:800; color:#7A0A0A; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .fd13-line { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:9px 0; border-top:1px solid #F1E6E6; font-size:14px; }
+  .fd13-line:first-of-type { border-top:0; }
+  .fd13-line small { color:#6b5a5a; font-size:12px; line-height:1.5; }
+  .fd13-pill { font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; white-space:nowrap; }
+  .fd13-pill.ok { background:#E6F2E6; color:#1f5c1f; }
+  .fd13-pill.open { background:#FBE4E4; color:#7A0A0A; }
+  .fd13-pill.none { background:#EFEFEF; color:#555; }
+  .fd13-msg { color:#6b5a5a; font-size:14px; line-height:1.5; }
+  .fd13-photo { display:inline-block; margin:4px 10px 0 0; font-size:12px; font-weight:700; color:#7A0A0A; }
   .fh-full { width:100%; margin-top:6px; }
   .fh-custom { display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:12.5px; color:var(--muted); }
   .fh-custom input { height:36px; border:1.5px solid #C9D0C8; border-radius:8px; padding:0 8px; margin-left:4px; }
@@ -788,6 +806,10 @@
   <div class="sh-body" id="vfull-body"></div>
 </div>
 
+<section class="fd13" id="fd13" hidden aria-label="FD13 Apparatus Check">
+  <div class="fd13-bar"><button type="button" class="fd13-back" onclick="closeFd13()">&#8592; CG Staff</button><h1>FD13 <span>Apparatus Check</span></h1><button type="button" class="fh-btn" onclick="fd13Load()">Refresh</button></div>
+  <div class="fd13-body" id="fd13-body"></div>
+</section>
 <section class="fleet" id="fleet" hidden aria-label="Fleet Health">
   <div class="fh-bar"><button type="button" class="fh-back" onclick="closeFleet()">&#8592; CG Staff</button><img src="logo.png" alt=""><h1>NCEMS <span>Fleet Health</span></h1><button type="button" class="fh-btn" onclick="FH.at=0;fhLoad()" title="Refresh">Refresh</button></div>
   <div class="fh-scrollwrap"><div id="fh-body"></div></div>
@@ -854,7 +876,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.35';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.36';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -908,6 +930,7 @@ const CONFIG = {
   checksUnits:'https://checks.northcountryems.org/units.json',
   /* 1.19: vehicle checks, out of service, Fixed and Shift Ops links live on the ncems-checks Worker (Doug's NCEMS Cloudflare). No more Firebase */
   checksApi:  'https://ncems-checks.d-boyce.workers.dev',
+  fd13Api:    'https://fd13-apparatus.d-boyce.workers.dev',   /* 1.36 FD13 Apparatus Check, read only */
   vehKeepDays: 45,
   vehArchive: 'App Data/Vehicle Checks', // 1.18: every check plus its photos is copied here on the CG Staff site
   vehUnits:   ['M25A', 'M25B', 'M19', 'M18', 'M14'], // fallback if units.json can't load
@@ -2362,7 +2385,7 @@ function renderHome() {
 
   /* Vehicle checks (first: daily operations) */
   const SEC = {};
-  SEC.veh = secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', vehCardSmall(), vehSecBody(), '<button class="go" onclick="openVeh()">Open vehicles</button><button class="go ghost" onclick="openFleet()">Fleet Health</button>', () => openVeh());   /* 1.27.1 Doug: Fleet Health button replaces EP Checker, Open vehicles back to the vehicle sheet */
+  SEC.veh = secHtml('#1C3A55', ICON.veh, 'Vehicle Checks', vehCardSmall(), vehSecBody(), '<button class="go" onclick="openVeh()">Open vehicles</button><button class="go ghost" onclick="openFleet()">Fleet Health</button><button class="go" style="--c:#7A0A0A" onclick="openFd13()">FD13 Apparatus Check</button>', () => openVeh());   /* 1.27.1 Doug: Fleet Health button replaces EP Checker, Open vehicles back to the vehicle sheet */
 
   /* Shift Ops */
   const open = openItems(), since48 = now.getTime() - 48 * 3600000;
@@ -2421,8 +2444,12 @@ function renderHome() {
   SEC.ot = secHtml('#8a6a1f', ICON.ot, 'Scheduling', 'Open Shifts' + (otUpdated() ? ' · as of ' + otUpdated() : ''), otSecBody(),
     link(otAppLink(), 'Open Shifts') + link(CONFIG.aladtecUrl, 'Open Aladtec', true), goUrl(otAppLink()));
 
-  /* 1.9 order: Scheduling, Shift Ops, Incident Reports on top; Vehicle Checks, Grounds, Facilities below */
-  h += ['ot', 'ops', 'rep', 'veh', 'grd', 'fac'].map(k => SEC[k]).join('');
+  /* 1.36 FD13 Apparatus Check card (read only, FD13 Worker) */
+  if (!FD13.tried) { FD13.tried = true; fd13Load(); }
+  SEC.fd13 = secHtml('#7A0A0A', ICON.veh, 'FD13 Apparatus Check', fd13CardSmall(), fd13SecBody(), '<button class="go" style="--c:#7A0A0A" onclick="openFd13()">Open FD13 checks</button>', () => openFd13());
+
+  /* 1.9 order: Scheduling, Shift Ops, Incident Reports on top; Vehicle Checks, FD13, Grounds, Facilities below */
+  h += ['ot', 'ops', 'rep', 'veh', 'fd13', 'grd', 'fac'].map(k => SEC[k]).join('');
   h += '</div>';
   el.innerHTML = h;
   renderGSearch();
@@ -3119,6 +3146,84 @@ function fhSignedLine() {
   const by = {}; f.signins.forEach(s => { (by[s.crew] = by[s.crew] || []).push(s.name); });
   return '<div class="fh-signed">Signed in to the Checker: ' + Object.keys(by).sort().map(c => '<b>' + esc(c) + '</b> ' + esc(by[c].join(', '))).join(' · ') + '</div>';
 }
+/* ---------- 1.36 FD13 APPARATUS CHECK (read only). Rigs and open problems come from the FD13 Worker (fd13-apparatus).
+   It never reads or writes NCEMS vehicle checks. Worker routes: GET /fire/today and GET /fire/problems (Microsoft ID token). ---------- */
+const FD13 = { data: null, err: '', busy: false, at: 0, tried: false };
+async function fd13Api(path) {
+  let tok;
+  try { tok = (await msalApp.acquireTokenSilent({ scopes: SCOPES, account })).idToken; } catch (e) { throw new Error('Sign in again to see FD13 checks.'); }
+  let res;
+  try { res = await fetch(CONFIG.fd13Api + path, { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }); }
+  catch (e) { throw new Error('Could not reach the FD13 Worker from here.'); }
+  if (res.status === 404) throw Object.assign(new Error('The FD13 Worker read route is not live yet.'), { status: 404 });
+  let data = null; try { data = await res.json(); } catch (e) {}
+  if (!res.ok) { const err = new Error((data && data.error) || ('FD13 Worker ' + res.status)); err.status = res.status; throw err; }
+  return data;
+}
+function fd13When(v) { const d = new Date(v); return isNaN(d) ? '' : fmtDT(d); }
+function fd13Rigs() { return (FD13.data && FD13.data.rigs) || []; }
+function fd13Probs() { return (FD13.data && FD13.data.problems) || []; }
+function fd13Counts() { const r = fd13Rigs(); return { done: r.filter(x => x.checked).length, total: r.length }; }
+function fd13PhotoUrl(k) {
+  if (!k) return '';
+  const s = String(k);
+  if (/^https:\/\//.test(s)) return s;
+  return CONFIG.fd13Api + '/photo/' + encodeURIComponent(s);
+}
+function fd13Photos(k) {
+  const u = fd13PhotoUrl(k);
+  return u ? '<a class="fd13-photo" href="' + esc(u) + '" target="_blank" rel="noopener">Photo</a>' : '';
+}
+function fd13CardSmall() {
+  if (!FD13.data) return FD13.err ? 'Not loaded' : 'Loading';
+  const c = fd13Counts(); return c.done + ' of ' + c.total + ' checked today';
+}
+function fd13SecBody() {
+  if (!FD13.data) return '<div class="sec-msg">' + esc(FD13.err || 'Loading FD13 checks...') + '</div>';
+  const c = fd13Counts(), p = fd13Probs();
+  return '<div class="stats">' + stat(c.done + '/' + c.total, 'Checked today', '', () => openFd13()) + stat(p.length, 'Open problems', p.length ? 'bad' : '', () => openFd13()) + '</div>' +
+    rowsHtml(p.slice(0, 4).map(x => rowi((x.apName || 'Rig') + ': ' + (x.item || ''), esc(x.by || '') + ' · ' + esc(fd13When(x.openedAt || x.updatedAt)), 'bad', () => openFd13())), 'No open FD13 problems.');
+}
+function fd13Line(name, sub, pill, cls) { return '<div class="fd13-line"><div><b>' + esc(name) + '</b><br><small>' + sub + '</small></div><span class="fd13-pill ' + cls + '">' + esc(pill) + '</span></div>'; }
+function renderFd13() {
+  const el = $('fd13-body'); if (!el || $('fd13').hidden) return;
+  if (FD13.busy && !FD13.data) { el.innerHTML = '<div class="fd13-card fd13-msg">Loading FD13 checks...</div>'; return; }
+  if (!FD13.data) { el.innerHTML = '<div class="fd13-card fd13-msg">' + esc(FD13.err || 'No FD13 data yet.') + '</div>'; return; }
+  const c = fd13Counts(), rigs = fd13Rigs(), probs = fd13Probs();
+  let h = '<div class="fd13-card"><h3>Today</h3><div class="fd13-msg">' + c.done + ' of ' + c.total + ' FD13 rigs checked today.' +
+    (FD13.err ? ' <b>' + esc(FD13.err) + '</b>' : '') + (FD13.at ? ' Updated ' + esc(fd13When(FD13.at)) + '.' : '') + '</div></div>';
+  h += '<div class="fd13-card"><h3>Rigs</h3>' + (rigs.length ? rigs.map(r => {
+    const open = r.openProblems || 0;
+    const sub = (r.checked ? 'Last check ' + esc((r.last && r.last.by) || '') + ' · ' + esc(fd13When(r.last && r.last.at)) : 'Not checked today') + (r.pct != null ? ' · ' + esc(String(r.pct)) + '% done' : '') + (r.inProgressBy ? ' · in progress: ' + esc(r.inProgressBy) : '');
+    return fd13Line(r.name || r.id || 'Rig', sub, open ? open + ' open' : (r.checked ? 'Checked' : 'Not checked'), open ? 'open' : (r.checked ? 'ok' : 'none'));
+  }).join('') : '<div class="fd13-msg">No FD13 rigs listed.</div>') + '</div>';
+  h += '<div class="fd13-card"><h3>Open problems</h3>' + (probs.length ? probs.map(x =>
+    fd13Line((x.apName || 'Rig') + ': ' + (x.item || '') + (x.zone ? ' (' + x.zone + ')' : ''),
+      esc(x.by || '') + ' · ' + esc(fd13When(x.openedAt || x.updatedAt)) + (fd13Photos(x.photo) ? '<br>' + fd13Photos(x.photo) : ''),
+      'Open', 'open')).join('') : '<div class="fd13-msg">No open FD13 problems.</div>') + '</div>';
+  el.innerHTML = h;
+}
+function openFd13() {
+  closeSheets();
+  $('fd13').hidden = false;
+  document.body.classList.add('fd13-on');
+  if (!FD13.data || Date.now() - FD13.at > 120000) fd13Load(); else renderFd13();
+}
+function closeFd13() { $('fd13').hidden = true; document.body.classList.remove('fd13-on'); }
+async function fd13Load() {
+  FD13.tried = true;
+  if (DEMO) { FD13.data = { rigs: [], problems: [] }; FD13.err = 'Demo: FD13 data is not shown.'; FD13.at = Date.now(); renderFd13(); return; }
+  FD13.busy = true; renderFd13();
+  try {
+    const [t, p] = await Promise.all([fd13Api('/fire/today'), fd13Api('/fire/problems')]);
+    FD13.data = { rigs: (t && t.rigs) || [], problems: (p && p.problems) || [] }; FD13.err = '';
+  } catch (e) {
+    FD13.err = e.status === 403 ? 'Your account is not on the FD13 list. Ask Doug.' : (e.message || 'Could not read FD13 checks.');
+  }
+  FD13.busy = false; FD13.at = Date.now();
+  renderFd13(); renderHome();
+}
+
 /* ---------- 1.27 FLEET HEALTH (Doug 10/25: "Open vehicles" goes to the Fleet Health page) ----------
    Full screen page over the dashboard. Data: ncems-checks Worker 1.3 GET /fleet/summary (admins and readers),
    crews from Derek's schedule (saved hourly by the Worker), checks from the EP Checker.

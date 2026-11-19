@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.35**
+**Version 1.36**
 
 ## Links
 
@@ -115,6 +115,13 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.36 (11/18/2026)
+
+- New FD13 Apparatus Check section (read only). A red card on the home page, a button on the Vehicle Checks card, and a full page showing each FD13 rig (checked today or not, percent done, last check by whom) and open problems with photo links.
+- Reads only from the FD13 Worker (fd13-apparatus): GET /fire/today and GET /fire/problems, signed in with the Command Staff Microsoft sign in. Never reads or writes NCEMS vehicle checks.
+- Changed in index.html: VERSION set to 1.36, CONFIG.fd13Api added, FD13 CSS, FD13 page markup and FD13 functions added. NCEMS Vehicle Checks functions unchanged.
+- FD13 Worker needs the CG Staff sign in client ID (f758d1fe) in CLIENT_ID and https://cgstaff.northcountryems.org in ORIGINS.
 
 ### v1.35 (11/16/2026)
 - Shift briefing reminder changed for Derek, Dennis, Doug and Bryce: "Please review your cards. Add anything that hasn't been reported, anything that is new, and anything you need to evaluate for a flag for the wall." Shows each day until tapped Done for today.
