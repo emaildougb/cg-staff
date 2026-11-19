@@ -2,7 +2,7 @@
 
 Command staff dashboard for North Country EMS. One sign-in, live counts for every admin area, the Shift Ops board built in, and today's ambulance checks.
 
-**Version 1.36.1**
+**Version 1.36.2**
 
 ## Links
 
@@ -115,6 +115,10 @@ Until they exist, the card shows the fields greyed out with a note, and everythi
    - SharePoint **Update item**: only Id, Title and RemindOn are filled in. Leave every other field out (Show all fills Category with a default and would overwrite cards). Id and Title from the card, RemindOn moved forward by RemindEvery days (kept at 15:00 UTC like the app does), or cleared when RemindEvery is 0 (Once)
 
 ## Changelog
+
+### v1.36.2 (11/19/2026)
+
+- Dashboard card order changed: Shift Briefing Notes, Scheduling, Vehicle Checks, FD13 Apparatus Check, Grounds, Incident Reports, Facilities.
 
 ### v1.36.1 (11/19/2026)
 

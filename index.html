@@ -876,7 +876,7 @@
    flows keep feeding the same list; this app is just the face.
    Sign-in is MSAL (no secrets). Data is Microsoft Graph.
    ============================================================ */
-const VERSION = '1.36.1';  /* CG Staff dashboard, includes Shift Ops board */
+const VERSION = '1.36.2';  /* CG Staff dashboard, includes Shift Ops board */
 
 const CONFIG = {
   clientId:  'f758d1fe-91b7-4bd5-92a9-1324d8bf0826',   // 1.20: NCEMS Command Staff Entra app (only the 7 CG Staff are assigned)
@@ -2448,8 +2448,8 @@ function renderHome() {
   if (!FD13.tried) { FD13.tried = true; fd13Load(); }
   SEC.fd13 = secHtml('#7A0A0A', ICON.veh, 'FD13 Apparatus Check', fd13CardSmall(), fd13SecBody(), '<button class="go" style="--c:#7A0A0A" onclick="openFd13()">Open FD13 checks</button>', () => openFd13());
 
-  /* 1.9 order: Scheduling, Shift Ops, Incident Reports on top; Vehicle Checks, FD13, Grounds, Facilities below */
-  h += ['ot', 'ops', 'rep', 'veh', 'fd13', 'grd', 'fac'].map(k => SEC[k]).join('');
+  /* 1.36.2 Doug's order: Shift Briefing Notes, Scheduling, Vehicle Checks; FD13 Apparatus Check, Grounds; Incident Reports, Facilities */
+  h += ['ops', 'ot', 'veh', 'fd13', 'grd', 'rep', 'fac'].map(k => SEC[k]).join('');
   h += '</div>';
   el.innerHTML = h;
   renderGSearch();
